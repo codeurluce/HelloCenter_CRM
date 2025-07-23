@@ -54,5 +54,20 @@ router.post('/login', async (req, res) => {
     res.status(500).json({ message: 'Erreur serveur' });
   }
 });
+const verifyToken = require('../middlewares/authMiddleware');
+const db = require('../db');
+
+// GET /api/me
+router.get('/me', verifyToken, async (req, res) => {
+  const userId = req.user.userId;
+
+  try {
+    const result = await db.query('SELECT id, name, email, role, status FROM users WHERE id = $1', [userId]);
+    const user = result.rows[0];
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+});
 
 module.exports = router;
