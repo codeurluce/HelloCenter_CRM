@@ -78,7 +78,7 @@ if (onLogin) onLogin();
           <div className="mx-auto w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl flex items-center justify-center mb-4">
             <span className="text-white font-bold text-2xl">CRM</span>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900">Hello Center</h2>
+          <h2 className="text-2xl font-bold text-gray-900" translate="no">Hello Center</h2>
           <p className="text-gray-600 mt-2">Veuillez vous connecter à votre compte</p>
         </div>
 

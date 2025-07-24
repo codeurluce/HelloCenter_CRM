@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Sidebar from '../components/Sidebar';
+import SidebarAdmin from '../components/SidebarAdmin.jsx';
 
 const AgentDashboard = () => {
   const [activeItem, setActiveItem] = useState('dashboard');
@@ -11,7 +11,7 @@ const AgentDashboard = () => {
 
   return (
     <div className="flex h-screen">
-      <Sidebar activeItem={activeItem} setActiveItem={setActiveItem} onLogout={handleLogout} />
+      <SidebarAdmin activeItem={activeItem} setActiveItem={setActiveItem} onLogout={handleLogout} />
       
       <main className="flex-1 p-6 bg-gray-100 overflow-auto">
         {activeItem === 'dashboard' && <h1 className="text-xl font-bold">Tableau de bord</h1>}
