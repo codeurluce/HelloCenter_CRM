@@ -4,7 +4,7 @@
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server/server.js"
   },
   "keywords": [],
   "author": "Codeurluce",
@@ -14,7 +14,15 @@
   },
   "description": "",
   "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.0",
+    "espress": "^0.0.0",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
     "lucide": "^0.525.0",
-    "react": "^19.1.0"
+    "pg": "^8.16.3",
+    "react": "^19.1.0",
+    "socket.io": "^4.8.1"
   }
 }
