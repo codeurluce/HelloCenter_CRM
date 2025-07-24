@@ -1,10 +1,19 @@
-// Connexion à PostgreSQL via pg
+// db.js
+require('dotenv').config();
+console.log('DATABASE_URL:', process.env.DATABASE_URL);
 
 const { Pool } = require('pg');
-require('dotenv').config();
-
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: process.env.DATABASE_URL, // ou config individuelle
 });
 
-module.exports = pool;
+pool.connect()
+  .then(() => console.log('✅ Base de données connectée'))
+  .catch(err => {
+    console.error('❌ Erreur de connexion à la base de données :', err);
+    process.exit(1); // stop le serveur si pas de connexion
+  });
+
+module.exports = {
+  query: (text, params) => pool.query(text, params),
+};
