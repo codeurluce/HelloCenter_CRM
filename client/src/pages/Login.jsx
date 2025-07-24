@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, User, Lock } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const Login = ({ onLogin }) => {
   const [formData, setFormData] = useState({
@@ -140,15 +141,6 @@ const Login = ({ onLogin }) => {
           </button>
         </form>
 
-        {/* Demo Credentials */}
-        <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-          <p className="text-sm text-gray-600 font-medium mb-2">Demo Credentials:</p>
-          <div className="text-xs text-gray-500 space-y-1">
-            <p><strong>Admin+:</strong> admin+ / any password</p>
-            <p><strong>Admin:</strong> admin / any password</p>
-            <p><strong>Agent:</strong> agent / any password</p>
-          </div>
-        </div>
       </div>
     </div>
   );
