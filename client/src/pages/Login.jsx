@@ -3,12 +3,10 @@ import { Eye, EyeOff, User, Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Login = ({ onLogin }) => {
-  const [formData, setFormData] = useState({
-    username: '',
-    password: ''
-  });
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({username: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleChange = (e) => {
@@ -19,35 +17,56 @@ const Login = ({ onLogin }) => {
     setError(''); // Clear error when user starts typing
   };
 
-  const handleSubmit = async (e) => {
+  const toggleShowPassword = () => {
+    setShowPassword(prev => !prev);
+  };
+    const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
+    setIsLoading(true);
 
-    // Simulate authentication
     try {
-      if (formData.username && formData.password) {
-        // Mock user data based on username
-        const userData = {
-          id: 1,
-          name: formData.username,
-          email: `${formData.username}@company.com`,
-          role: formData.username === 'admin+' ? 'Admin+' : formData.username === 'admin' ? 'Admin' : 'Agent',
-          status: 'Available',
-          isFirstLogin: false
-        };
-        
-        setTimeout(() => {
-          onLogin(userData);
-          setLoading(false);
-        }, 1000);
-      } else {
-        setError('Please fill in all fields');
-        setLoading(false);
+      const response = await fetch('http://localhost:5000/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formData.username,
+          password: formData.password
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Identifiants invalides.');
       }
+
+      const { user, token } = data;
+
+      // Stockage local
+      localStorage.setItem('token', token);
+      localStorage.setItem('role', user.role);
+if (onLogin) onLogin();
+      // Redirection par rôle
+      switch (user.role) {
+        case 'Agent':
+          console.log('submit', user.role)
+          navigate('/agent');
+          break;
+        case 'Manager':
+          navigate('/admin');
+          break;
+        case 'Admin':
+          navigate('/admin-plus');
+          break;
+        default:
+          setError("Rôle utilisateur inconnu.");
+      }
+
     } catch (err) {
-      setError('Login failed. Please try again.');
-      setLoading(false);
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -127,10 +146,10 @@ const Login = ({ onLogin }) => {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={isLoading}
             className="w-full bg-gradient-to-r from-blue-500 to-blue-700 text-white py-3 px-4 rounded-lg font-medium hover:from-blue-600 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? (
+            {isLoading ? (
               <div className="flex items-center justify-center">
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
                 Signing in...
@@ -139,6 +158,7 @@ const Login = ({ onLogin }) => {
               'Sign In'
             )}
           </button>
+          
         </form>
 
       </div>
