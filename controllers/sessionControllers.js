@@ -2,6 +2,7 @@ const db = require('../db');
 
 exports.createSession = async (req, res) => {
   try {
+    console.log('📥 Requête reçue pour session :', req.body);
     const { user_id, status, startTime, endTime } = req.body;
 
     if (!user_id || !status || !startTime || !endTime) {
