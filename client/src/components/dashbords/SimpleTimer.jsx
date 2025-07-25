@@ -1,17 +1,23 @@
-//  Pour gerer le timer
+//  components/dashboard/SimpleTimer.jsx
+
 import React, { useState, useEffect, useRef } from 'react';
 import { saveSessionToDB } from '../../api/saveSessionToDB';
 
 const agentId = localStorage.getItem('agentId'); // récupère l'ID agent stocké
 
 const SimpleTimer = () => {
-  const [status, setStatus] = useState(localStorage.getItem('agentStatus') || 'indisponible');
+  const [status, setStatus] = usedacState(localStorage.getItem('agentStatus') || 'indisponible');
   const [sessionTime, setSessionTime] = useState(parseInt(localStorage.getItem('sessionTime')) || 0);
   const [pauseTime, setPauseTime] = useState(parseInt(localStorage.getItem('pauseTime')) || 0);
-  const [currentStatus, setCurrentStatus] = useState(null);
+  const [currentStatus, setCurrentStatus] = useState(status);
   const [startTime, setStartTime] = useState(null);
+    const [endTime, setEndTime] = useState(null);
   const timerRef = useRef(null);
-
+const storedUser = JSON.parse(localStorage.getItem('user'));
+const userId = storedUser?.id;
+if (!userId) {
+  console.error('❌ Aucun user connecté !');
+}
   // Timer principal
   useEffect(() => {
     clearInterval(timerRef.current);
@@ -39,25 +45,45 @@ const SimpleTimer = () => {
 
   // Changement de statut + enregistrement session
   const handleStatusChange = async (newStatus) => {
-    const now = new Date();
+    const now = new Date().toISOString();
 
+   // 1. Sauvegarde l'ancienne session
+  if (startTime) {
+    await saveSessionToDB({
+      status,
+      startTime,
+      endTime: now.toISOString(),
+    });
+  }
     // Si un statut existait déjà, on enregistre la session précédente
     if (currentStatus && startTime && agentId) {
       await saveSessionToDB({
         user_id: agentId,
         status: currentStatus,
-        startTime: startTime,
-        endTime: now.toISOString(),
+        startTime,
+        endTime: now,
       });
     }
 
     // Met à jour les états
     setStatus(newStatus);
+    setStartTime(now);
     localStorage.setItem('agentStatus', newStatus);
-
     setCurrentStatus(newStatus);
-    setStartTime(now.toISOString());
+    
+    
   };
+  // Si l’agent quitte la page
+  useEffect(() => {
+    const handleUnload = () => {
+      if (status && startTime) {
+        saveSessionToDB({ user_id: agentId, status, startTime, endTime: new Date().toISOString() });
+      }
+    };
+
+    window.addEventListener('beforeunload', handleUnload);
+    return () => window.removeEventListener('beforeunload', handleUnload);
+  }, [status, startTime]);
 
   const formatTime = (seconds) => {
     const h = String(Math.floor(seconds / 3600)).padStart(2, '0');

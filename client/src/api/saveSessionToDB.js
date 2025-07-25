@@ -1,19 +1,24 @@
-import axios from 'axios';
+export const saveSessionToDB = async ({ status, startTime, endTime, user_id }) => {
+  const userId = user_id || JSON.parse(localStorage.getItem('user'))?.id;
 
-export const saveSessionToDB = async ({ user_id, status, startTime, endTime }) => {
+  if (!userId) {
+    console.error("Utilisateur non connecté");
+    return;
+  }
+
+  const durationCalc = Math.floor((new Date(endTime) - new Date(startTime)) / 1000);
+  const duration = durationCalc > 0 ? durationCalc : null;
+
   try {
-    console.log('Enregistrement session en cours...', { user_id, status, startTime, endTime });
-    
     const response = await fetch('http://localhost:5000/api/sessions', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        user_id,
+        user_id: userId,
         status,
-        start_time: startTime,
-        end_time: endTime,
+        start_time: new Date(startTime).toISOString(),
+        end_time: new Date(endTime).toISOString(),
+        duration
       }),
     });
 

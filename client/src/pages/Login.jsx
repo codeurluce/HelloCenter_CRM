@@ -28,6 +28,7 @@ const Login = ({ onLogin }) => {
         email: formData.email,
         password: formData.password
       });
+localStorage.setItem('user', JSON.stringify(response.data.user));
 
       const { user, token } = response.data;
 
@@ -57,6 +58,8 @@ const Login = ({ onLogin }) => {
       setIsLoading(false);
     }
   };
+
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex items-center justify-center p-4">
