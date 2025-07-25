@@ -2,6 +2,8 @@ import axios from 'axios';
 
 export const saveSessionToDB = async ({ user_id, status, startTime, endTime }) => {
   try {
+    console.log('Enregistrement session en cours...', { user_id, status, startTime, endTime });
+    
     const response = await fetch('http://localhost:5000/api/sessions', {
       method: 'POST',
       headers: {

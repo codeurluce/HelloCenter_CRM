@@ -1,3 +1,4 @@
+//  Pour gerer le timer
 import React, { useState, useEffect, useRef } from 'react';
 import { saveSessionToDB } from '../../api/saveSessionToDB';
 
