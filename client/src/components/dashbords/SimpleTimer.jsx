@@ -6,7 +6,7 @@ import { saveSessionToDB } from '../../api/saveSessionToDB';
 const agentId = localStorage.getItem('agentId'); // récupère l'ID agent stocké
 
 const SimpleTimer = () => {
-  const [status, setStatus] = usedacState(localStorage.getItem('agentStatus') || 'indisponible');
+  const [status, setStatus] = useState(localStorage.getItem('agentStatus') || 'indisponible');
   const [sessionTime, setSessionTime] = useState(parseInt(localStorage.getItem('sessionTime')) || 0);
   const [pauseTime, setPauseTime] = useState(parseInt(localStorage.getItem('pauseTime')) || 0);
   const [currentStatus, setCurrentStatus] = useState(status);
@@ -47,31 +47,20 @@ if (!userId) {
   const handleStatusChange = async (newStatus) => {
     const now = new Date().toISOString();
 
-   // 1. Sauvegarde l'ancienne session
-  if (startTime) {
+ if (startTime && userId) {
     await saveSessionToDB({
-      status,
+      status: currentStatus, // statut avant changement
       startTime,
-      endTime: now.toISOString(),
+      endTime: now,
     });
   }
-    // Si un statut existait déjà, on enregistre la session précédente
-    if (currentStatus && startTime && agentId) {
-      await saveSessionToDB({
-        user_id: agentId,
-        status: currentStatus,
-        startTime,
-        endTime: now,
-      });
-    }
 
     // Met à jour les états
     setStatus(newStatus);
     setStartTime(now);
     localStorage.setItem('agentStatus', newStatus);
     setCurrentStatus(newStatus);
-    
-    
+        
   };
   // Si l’agent quitte la page
   useEffect(() => {
