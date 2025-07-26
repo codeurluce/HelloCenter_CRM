@@ -37,7 +37,6 @@ const AgentDashboard = () => {
                 <main className="flex-1 p-6 bg-gray-100 overflow-auto">
                     {activeItem === 'dashboard' && (
                         <>
-                            <p className="text-xl mb-4">Vue d'ensemble de votre activite</p>
                             <StatGroup />
                             <div className=" mt-12 flex flex-col md:flex-row gap-6 ">
                                 <div className="flex-1">
