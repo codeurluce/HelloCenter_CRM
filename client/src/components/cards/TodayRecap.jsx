@@ -1,10 +1,48 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
-const TodayRecap = ({ data = { pending: 10, validated: 120, cancelled: 5 } }) => {
-  const total = Number(data.pending) + Number(data.validated) + Number(data.cancelled);
+const TodayRecap = () => {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchTodayData() {
+      try {
+        const response = await fetch('http://localhost:5000/api/sales/today-summary');
+        const result = await response.json();
+        console.log('Résultat API:', result);
+
+        const formattedData = {
+          pending: parseInt(result.pending_sales_today),
+          validated: parseInt(result.validated_sales_today),
+          cancelled: parseInt(result.cancelled_sales_today),
+        };
+
+        setData(formattedData);
+      } catch (err) {
+        console.error('Erreur chargement ventes du jour', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchTodayData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-40">
+        <div className="animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent"></div>
+        <span className="ml-3 text-gray-600">Chargement des statistiques...</span>
+      </div>
+    );
+  }
+
+  if (!data) return <p>Impossible de charger les données.</p>;
+
+  const total = data.pending + data.validated + data.cancelled;
 
   const getPercentage = (count) =>
-    total === 0 ? 0 : Math.round((Number(count) / total) * 100);
+    total === 0 ? 0 : Math.round((count / total) * 100);
 
   return (
     <div className="bg-white rounded-lg shadow p-6 w-full max-w-md">

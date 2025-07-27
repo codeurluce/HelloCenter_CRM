@@ -42,7 +42,7 @@ const AgentDashboard = () => {
                                 <div className="flex-1">
                                     <WeeklySalesChart />
                                 </div>
-                                    <TodayRecap />
+                                <TodayRecap />
                             </div>
                         </>
                     )}
