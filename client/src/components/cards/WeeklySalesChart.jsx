@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+
 import {
   BarChart,
   Bar,
@@ -8,16 +9,6 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-
-const data = [
-  { day: 'Lun', ventes: 12 },
-  { day: 'Mar', ventes: 15 },
-  { day: 'Mer', ventes: 9 },
-  { day: 'Jeu', ventes: 20 },
-  { day: 'Ven', ventes: 13 },
-  { day: 'Sam', ventes: 17 },
-  { day: 'Dim', ventes: 8 },
-];
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
@@ -32,6 +23,57 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 const WeeklySalesChart = () => {
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+useEffect(() => {
+  async function fetchWeeklySales() {
+    try {
+      const response = await fetch('http://localhost:5000/api/sales/weekly', {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`, // si token JWT
+        },
+      });
+      if (!response.ok) {
+        throw new Error(`Erreur HTTP : ${response.status}`);
+      }
+      const result = await response.json();
+
+      console.log('Données reçues:', result);
+
+      // jours de la semaine (Dimanche = 0)
+      const daysOfWeek = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+      const dayIndexToGetDay = [1, 2, 3, 4, 5, 6, 0];
+
+      // on crée une base avec 0 ventes pour chaque jour
+      const emptyWeekData = daysOfWeek.map((day) => ({ day, ventes: 0 }));
+
+      // on remplit avec les vraies données reçues du backend
+      const formattedData = emptyWeekData.map((dayEntry, index) => {
+        const targetDay = dayIndexToGetDay[index];
+        const found = result.find(r => {
+          const date = new Date(r.day);
+          return date.getDay() === targetDay;
+        });
+        return found
+          ? { day: dayEntry.day, ventes: parseInt(found.total_sales, 10) }
+          : dayEntry;
+      });
+
+      setData(formattedData);
+    } catch (err) {
+      console.error('Erreur chargement ventes de la semaine', err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  fetchWeeklySales();
+}, []);
+
+  if (loading) return <p>Chargement des ventes de la semaine...</p>;
+  if (!data.length) return <p>Aucune donnée disponible.</p>;
+
   return (
     <div className="bg-white p-6 rounded-2xl shadow w-full h-80">
       <h2 className="text-lg font-semibold mb-4">Ventes de la semaine</h2>
@@ -46,7 +88,7 @@ const WeeklySalesChart = () => {
             fill="#6366F1"
             radius={[6, 6, 0, 0]}
             barSize={40}
-            animationDuration={800}
+            animationDuration={5000}
           />
         </BarChart>
       </ResponsiveContainer>

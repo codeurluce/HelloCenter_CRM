@@ -4,7 +4,7 @@ import DashboardHeader from '../components/dashbords/DashbordHeader';
 import StatGroup from '../components/cards/StatGroup';
 import WeeklySalesChart from '../components/cards/WeeklySalesChart';
 import TodayRecap from '../components/cards/TodayRecap';
-
+import { motion } from 'framer-motion';
 
 const AgentDashboard = () => {
     const [activeItem, setActiveItem] = useState('dashboard');
@@ -37,6 +37,7 @@ const AgentDashboard = () => {
                 <main className="flex-1 p-6 bg-gray-100 overflow-auto">
                     {activeItem === 'dashboard' && (
                         <>
+                        
                             <StatGroup />
                             <div className=" mt-12 flex flex-col md:flex-row gap-6 ">
                                 <div className="flex-1">
