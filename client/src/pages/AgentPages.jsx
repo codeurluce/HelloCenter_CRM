@@ -38,7 +38,7 @@ const AgentDashboard = () => {
                     {activeItem === 'dashboard' && (
                         <>
                         
-                            <StatGroup />
+                            <StatGroup setActiveItem={setActiveItem}/>
                             <div className=" mt-12 flex flex-col md:flex-row gap-6 ">
                                 <div className="flex-1">
                                     <WeeklySalesChart />

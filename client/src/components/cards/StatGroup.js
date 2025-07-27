@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import StatCard from './StatCard';
 import { CalendarDays, PhoneOutgoing, Clock, CheckCircle, XCircle } from 'lucide-react';
 
-const StatGroup = () => {
+const StatGroup = ({ setActiveItem }) => {
   const [statsData, setStatsData] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -11,13 +11,13 @@ const StatGroup = () => {
       try {
         const response = await fetch('http://localhost:5000/api/sales/today-summary', {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`, // si auth
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
           },
         });
         const data = await response.json();
 
         setStatsData({
-          fichesDisponibles: 42, // Tu peux faire une autre API si tu veux ce chiffre
+          fichesDisponibles: 42, // Valeur fixe ici
           totalTransactions: parseInt(data.total_sales_today) || 0,
           ventesEnAttente: parseInt(data.pending_sales_today) || 0,
           ventesValidees: parseInt(data.validated_sales_today) || 0,
@@ -42,35 +42,35 @@ const StatGroup = () => {
       value: statsData.fichesDisponibles,
       icon: CalendarDays,
       color: 'border-green-500 text-green-600',
-      to: '/fichiers',
+      onClick: () => setActiveItem('files'), // correspond au key dans AgentDashboard
     },
     {
       title: 'Total des transactions',
       value: statsData.totalTransactions,
       icon: PhoneOutgoing,
       color: 'border-blue-500 text-blue-600',
-      to: '/ventes',
+      onClick: () => setActiveItem('files'),
     },
     {
       title: 'Ventes en attente',
       value: statsData.ventesEnAttente,
       icon: Clock,
       color: 'border-yellow-500 text-yellow-600',
-      to: '/ventes',
+      onClick: () => setActiveItem('sales'),
     },
     {
       title: 'Ventes validées',
       value: statsData.ventesValidees,
       icon: CheckCircle,
       color: 'border-green-500 text-green-600',
-      to: '/ventes',
+      onClick: () => setActiveItem('sales'),
     },
     {
       title: 'Ventes annulées',
       value: statsData.ventesAnnulees,
       icon: XCircle,
       color: 'border-red-500 text-red-600',
-      to: '/ventes',
+      onClick: () => setActiveItem('sales'),
     },
   ];
 
