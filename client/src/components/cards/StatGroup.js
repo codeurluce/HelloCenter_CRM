@@ -1,40 +1,73 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import StatCard from './StatCard';
 import { CalendarDays, PhoneOutgoing, Clock, CheckCircle, XCircle } from 'lucide-react';
 
 const StatGroup = () => {
+  const [statsData, setStatsData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        const response = await fetch('http://localhost:5000/api/sales/today-summary', {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`, // si auth
+          },
+        });
+        const data = await response.json();
+
+        setStatsData({
+          fichesDisponibles: 42, // Tu peux faire une autre API si tu veux ce chiffre
+          totalTransactions: parseInt(data.total_sales_today) || 0,
+          ventesEnAttente: parseInt(data.pending_sales_today) || 0,
+          ventesValidees: parseInt(data.validated_sales_today) || 0,
+          ventesAnnulees: parseInt(data.cancelled_sales_today) || 0,
+        });
+      } catch (error) {
+        console.error('Erreur fetch stats:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchStats();
+  }, []);
+
+  if (loading) return <p>Chargement des statistiques...</p>;
+  if (!statsData) return <p>Impossible de charger les données.</p>;
+
   const stats = [
     {
       title: 'Fiches disponibles',
-      value: 42,
+      value: statsData.fichesDisponibles,
       icon: CalendarDays,
       color: 'border-green-500 text-green-600',
       to: '/fichiers',
     },
     {
       title: 'Total des transactions',
-      value: 135,
+      value: statsData.totalTransactions,
       icon: PhoneOutgoing,
       color: 'border-blue-500 text-blue-600',
       to: '/ventes',
     },
     {
       title: 'Ventes en attente',
-      value: 10,
+      value: statsData.ventesEnAttente,
       icon: Clock,
       color: 'border-yellow-500 text-yellow-600',
       to: '/ventes',
     },
     {
       title: 'Ventes validées',
-      value: 120,
+      value: statsData.ventesValidees,
       icon: CheckCircle,
       color: 'border-green-500 text-green-600',
       to: '/ventes',
     },
     {
       title: 'Ventes annulées',
-      value: 5,
+      value: statsData.ventesAnnulees,
       icon: XCircle,
       color: 'border-red-500 text-red-600',
       to: '/ventes',
