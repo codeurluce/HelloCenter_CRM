@@ -4,10 +4,7 @@ const pool = require('../db'); // chemin vers ta config PostgreSQL
 const { getTodaySummary } = require('../controllers/salesControllers');
 const  auth  = require('../middlewares/authMiddleware');
 
-
-
-
-// GET /api/sales/weekly
+// GET /api/sales/weekly  pour consulter les ventes hebdomadaires par jour une barre
 router.get('/weekly', async (req, res) => {
   try {
     const result = await pool.query(`
@@ -16,7 +13,8 @@ router.get('/weekly', async (req, res) => {
         COUNT(*) AS total_sales,
         COUNT(CASE WHEN status = 'validated' THEN 1 END) AS validated_sales
       FROM sales
-      WHERE created_at >= CURRENT_DATE - INTERVAL '6 days'
+      WHERE created_at >= date_trunc('week', CURRENT_DATE)
+        AND created_at < date_trunc('week', CURRENT_DATE) + INTERVAL '7 days'
       GROUP BY day
       ORDER BY day;
     `);
@@ -26,6 +24,7 @@ router.get('/weekly', async (req, res) => {
     res.status(500).json({ message: 'Erreur serveur' });
   }
 });
+
 
 // GET /api/sales/today-summary
 router.get('/today-summary', async (req, res) => {

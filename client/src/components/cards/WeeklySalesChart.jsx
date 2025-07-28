@@ -56,7 +56,7 @@ useEffect(() => {
           return date.getDay() === targetDay;
         });
         return found
-          ? { day: dayEntry.day, ventes: parseInt(found.total_sales, 10) }
+          ? { day: dayEntry.day, ventes: parseInt(found.validated_sales, 10) }
           : dayEntry;
       });
 

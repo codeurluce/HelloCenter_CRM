@@ -1,4 +1,4 @@
-// controllers/salesController.js
+// controllers/salesController.js pour les ventes du jour
 const db = require('../db'); // selon ton setup
 
 exports.getTodaySummary = async (req, res) => {
@@ -24,9 +24,8 @@ exports.getTodaySummary = async (req, res) => {
   }
 };
 
-// --------------------------------------------
 
-// controllers/salesController.js 
+// controllers/salesController.js pour les ventes hebdomadaires
 const pool = require('../db');
 
 const getWeeklySales = async (req, res) => {
