@@ -46,7 +46,7 @@ const DashboardHeader = ({ activePage }) => {
     files: 'Fichiers',
     sales: 'Ventes',
     appointments: 'Rendez-vous',
-    support: 'Support',
+    agents: 'Espace Agent',
     settings: 'Paramètres',
   };
 

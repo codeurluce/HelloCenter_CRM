@@ -4,7 +4,10 @@ import DashboardHeader from '../components/dashbords/DashbordHeader';
 import StatGroup from '../components/cards/StatGroup';
 import WeeklySalesChart from '../components/cards/WeeklySalesChart';
 import TodayRecap from '../components/cards/TodayRecap';
-import { motion } from 'framer-motion';
+import AgentInfoPanel from '../components/componentsdesonglets/AgentInfoPanel';
+import VentesInfoPanel from '../components/componentsdesonglets/VentesInfoPanel.jsx';
+import FichesInfoPanel from '../components/componentsdesonglets/FichesInfoPanel.jsx';
+
 
 const AgentDashboard = () => {
     const [activeItem, setActiveItem] = useState('dashboard');
@@ -19,7 +22,7 @@ const AgentDashboard = () => {
         files: 'Fichiers',
         sales: 'Ventes',
         appointments: 'Rendez-vous',
-        support: 'Support',
+        agents: 'Espace Agent',
         settings: 'Setting'
     };
 
@@ -48,10 +51,28 @@ const AgentDashboard = () => {
                         </>
                     )}
 
-                    {activeItem === 'sales' && <p>Formulaire ou tableau de ventes...</p>}
+
+
+
+                    {activeItem === 'agents' && <AgentInfoPanel setActiveItem={setActiveItem} />}
+
+
+
+
+                    {activeItem === 'sales' && <VentesInfoPanel setActiveItem={setActiveItem} />}
+
+
+
+
+                    {activeItem === 'files' && <FichesInfoPanel setActiveItem={setActiveItem} />}
+
+
+
+
+
+
+                    
                     {activeItem === 'appointments' && <p>Voir les rendez-vous programmés...</p>}
-                    {activeItem === 'support' && <p>Demander de l'aide...</p>}
-                    {activeItem === 'files' && <p>Voir les fiches injectées...</p>}
                     {activeItem === 'settings' && <p>Paramètres de l'application...</p>}
                 </main>
             </div>

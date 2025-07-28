@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LayoutDashboard, HelpCircle, Settings, LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, CircleUser, Settings, LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ShoppingCart, Folder, Calendar } from 'react-feather';
 
 const Sidebar = ({ activeItem, setActiveItem, onLogout }) => {
@@ -10,7 +10,7 @@ const Sidebar = ({ activeItem, setActiveItem, onLogout }) => {
         { id: 'sales', label: 'Ventes', icon: ShoppingCart },
         { id: 'files', label: 'Fichiers', icon: Folder },
         { id: 'appointments', label: 'Rendez-vous', icon: Calendar },
-        { id: 'support', label: 'Support', icon: HelpCircle },
+        { id: 'agents', label: 'Agent', icon: CircleUser },
     ];
 
     const bottomItems = [
