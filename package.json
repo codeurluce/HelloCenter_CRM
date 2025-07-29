@@ -22,10 +22,13 @@
     "jsonwebtoken": "^9.0.2",
     "lucide": "^0.525.0",
     "pg": "^8.16.3",
-    "react": "^19.1.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
     "react-feather": "^2.0.10",
     "recharts": "^3.1.0",
     "socket.io": "^4.8.1",
-    "socket.io-client": "^4.8.1"
+    "socket.io-client": "^4.8.1",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5"
   }
 }
