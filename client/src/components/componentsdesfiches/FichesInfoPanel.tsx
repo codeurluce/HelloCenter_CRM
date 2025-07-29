@@ -1,8 +1,6 @@
-// component/componentsdesfiches/FichesInfoPanel.tsx
-
 import React, { useState, useMemo } from 'react';
 import { FileText, Clock, CheckCircle, Filter } from 'lucide-react';
-import { Fiche, ClotureData } from './types/fiche.ts';
+import { Fiche, ClotureData } from './types/fiche';
 import FicheCard from './FicheCard.tsx';
 import ClotureModal from './ClotureModal.tsx';
 
@@ -10,20 +8,22 @@ interface FichesInfoPanelProps {
   fiches: Fiche[];
   currentAgent: string;
   onTreatFiche: (ficheId: number) => void;
-  onCloseFiche: (ficheId: number, data: { tag: string; commentaire: string }) => void;
+  onCloseFiche: (ficheId: number, data: ClotureData) => void;
   onProgramRdv: (ficheId: number) => void;
+  onCancelFiche: (ficheId: number) => void;
 }
 
-type FilterType = 'toutes' | 'nouvelle' | 'en_traitement' | 'cloturee';
+type FilterType = 'nouvelle' | 'en_traitement' | 'cloturee' | 'toutes' ;
 
 const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
   fiches = [],
   currentAgent,
   onTreatFiche,
   onCloseFiche,
-  onProgramRdv
+  onProgramRdv,
+  onCancelFiche
 }) => {
-  const [activeFilter, setActiveFilter] = useState<FilterType>('toutes');
+  const [activeFilter, setActiveFilter] = useState<FilterType>('nouvelle');
   const [clotureModal, setClotureModal] = useState<{
     isOpen: boolean;
     ficheId: number | null;
@@ -34,30 +34,16 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
     clientName: ''
   });
 
-  // Calcul des compteurs
-  const counters = useMemo(() => {
-    return {
-      nouvelle: fiches.filter(f => f.statut === 'nouvelle').length,
-      en_traitement: fiches.filter(f => f.statut === 'en_traitement').length,
-      cloturee: fiches.filter(f => f.statut === 'cloturee').length,
-      toutes: fiches.length
-    };
-  }, [fiches]);
+  const counters = useMemo(() => ({
+    nouvelle: fiches.filter(f => f.statut === 'nouvelle').length,
+    en_traitement: fiches.filter(f => f.statut === 'en_traitement').length,
+    cloturee: fiches.filter(f => f.statut === 'cloturee').length,
+    toutes: fiches.length
+  }), [fiches]);
 
-  // Filtrage des fiches
   const filteredFiches = useMemo(() => {
-    return fiches.filter((fiche) => {
-      switch (activeFilter) {
-        case 'nouvelle':
-          return fiche.statut === 'nouvelle';
-        case 'en_traitement':
-          return fiche.statut === 'en_traitement';
-        case 'cloturee':
-          return fiche.statut === 'cloturee';
-        default:
-          return true;
-      }
-    });
+    if (activeFilter === 'toutes') return fiches;
+    return fiches.filter(f => f.statut === activeFilter);
   }, [fiches, activeFilter]);
 
   const handleCloseFiche = (ficheId: number) => {
@@ -74,6 +60,7 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
   const handleClotureSubmit = (data: ClotureData) => {
     if (clotureModal.ficheId) {
       onCloseFiche(clotureModal.ficheId, data);
+      setClotureModal({ isOpen: false, ficheId: null, clientName: '' });
     }
   };
 
@@ -110,7 +97,8 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
         return 'Toutes';
     }
   };
-
+console.log('Fiches reçues:', fiches);
+console.log('Tous les ids:', fiches.map(f => f.id));
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -127,7 +115,7 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
         {/* Filtres avec compteurs */}
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
           <div className="flex flex-wrap gap-3">
-            {(['toutes', 'nouvelle', 'en_traitement', 'cloturee'] as FilterType[]).map((filter) => (
+            {(['nouvelle', 'en_traitement', 'cloturee', 'toutes'] as FilterType[]).map(filter => (
               <button
                 key={filter}
                 onClick={() => setActiveFilter(filter)}
@@ -136,7 +124,7 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
                 {getFilterIcon(filter)}
                 <span>{getFilterLabel(filter)}</span>
                 <span className={`px-2 py-1 rounded-full text-xs font-bold ${
-                  activeFilter === filter 
+                  activeFilter === filter
                     ? 'bg-white/20 text-white'
                     : 'bg-blue-100 text-blue-600'
                 }`}>
@@ -149,17 +137,15 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
 
         {/* Résultats */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-          <div className="p-6 border-b border-gray-200">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">
-                {getFilterLabel(activeFilter)} ({filteredFiches.length})
-              </h2>
-              {filteredFiches.length > 0 && (
-                <span className="text-sm text-gray-500">
-                  Affichage de {filteredFiches.length} fiche{filteredFiches.length > 1 ? 's' : ''}
-                </span>
-              )}
-            </div>
+          <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-gray-900">
+              {getFilterLabel(activeFilter)} ({filteredFiches.length})
+            </h2>
+            {filteredFiches.length > 0 && (
+              <span className="text-sm text-gray-500">
+                Affichage de {filteredFiches.length} fiche{filteredFiches.length > 1 ? 's' : ''}
+              </span>
+            )}
           </div>
 
           {/* Liste des fiches */}
@@ -178,7 +164,7 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
               </div>
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                {filteredFiches.map((fiche) => (
+                {filteredFiches.map(fiche => (
                   <FicheCard
                     key={fiche.id}
                     fiche={fiche}
@@ -186,6 +172,7 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
                     onTreatFiche={onTreatFiche}
                     onCloseFiche={handleCloseFiche}
                     onProgramRdv={onProgramRdv}
+                    onCancelFiche={onCancelFiche}
                   />
                 ))}
               </div>
@@ -194,7 +181,6 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
         </div>
       </div>
 
-      {/* Modal de clôture */}
       <ClotureModal
         isOpen={clotureModal.isOpen}
         onClose={() => setClotureModal({ isOpen: false, ficheId: null, clientName: '' })}

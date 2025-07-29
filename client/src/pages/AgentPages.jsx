@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import Sidebar from '../components/Sidebar';
-import DashboardHeader from '../components/dashbords/DashbordHeader';
-import StatGroup from '../components/cards/StatGroup';
-import WeeklySalesChart from '../components/cards/WeeklySalesChart';
-import TodayRecap from '../components/cards/TodayRecap';
-import AgentInfoPanel from '../components/componentsdesonglets/AgentInfoPanel';
+import Sidebar from '../components/Sidebar.jsx';
+import DashboardHeader from '../components/dashbords/DashbordHeader.jsx';
+import StatGroup from '../components/cards/StatGroup.js';
+import WeeklySalesChart from '../components/cards/WeeklySalesChart.jsx';
+import TodayRecap from '../components/cards/TodayRecap.jsx';
+import AgentInfoPanel from '../components/componentsdesonglets/AgentInfoPanel.jsx';
 import VentesInfoPanel from '../components/componentsdesonglets/VentesInfoPanel.jsx';
 import FichesInfoPanel from '../components/componentsdesfiches/FichesInfoPanel.tsx';
 import axios from 'axios';
@@ -45,6 +45,23 @@ const AgentDashboard = () => {
       console.error('Erreur lors de la prise en charge de la fiche :', err);
     }
   };
+
+
+  const onCancelFiche = async (id) => {
+    try {
+      await fetch(`http://localhost:5000/api/fiches/${id}/statut`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ statut: 'nouvelle', assignedTo: null }),
+      });
+      fetchFiches();
+    } catch (error) {
+      console.error("Erreur lors de l'annulation de la prise en charge :", error);
+    }
+  };
+
+
+
 
   const handleCloture = async (ficheId, { tag, commentaire }) => {
     try {
@@ -105,6 +122,7 @@ const AgentDashboard = () => {
     onTraiter={handleTraitement}
     onCloturer={handleCloture}
     onProgramRdv={handleProgramRdv}
+    onCancelFiche={onCancelFiche}
   />
           )}
 

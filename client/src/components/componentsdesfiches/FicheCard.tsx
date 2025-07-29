@@ -9,6 +9,7 @@ interface FicheCardProps {
   onTreatFiche: (id: number) => void;
   onCloseFiche: (id: number) => void;
   onProgramRdv: (id: number) => void;
+  onCancelFiche: (id: number) => void;
 }
 
 const FicheCard: React.FC<FicheCardProps> = ({
@@ -16,7 +17,8 @@ const FicheCard: React.FC<FicheCardProps> = ({
   currentAgent,
   onTreatFiche,
   onCloseFiche,
-  onProgramRdv
+  onProgramRdv,
+  onCancelFiche
 }) => {
   const getStatusColor = (statut: string) => {
     switch (statut) {
@@ -72,14 +74,14 @@ const FicheCard: React.FC<FicheCardProps> = ({
               {fiche.code_postal && <span>({fiche.code_postal})</span>}
             </div>
           )}
-          
+
           {fiche.numero_mobile && (
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <Phone size={16} className="text-gray-400" />
               <span>{fiche.numero_mobile}</span>
             </div>
           )}
-          
+
           {fiche.mail_client && (
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <Mail size={16} className="text-gray-400" />
@@ -95,14 +97,14 @@ const FicheCard: React.FC<FicheCardProps> = ({
               {fiche.univers}
             </span>
           </div>
-          
+
           {fiche.assignedToName && (
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <User size={16} className="text-gray-400" />
               <span>Assignée à: <span className="font-medium">{fiche.assignedToName}</span></span>
             </div>
           )}
-          
+
           <div className="flex items-center gap-2 text-xs text-gray-500 mt-2">
             <Clock size={12} className="text-gray-400" />
             <span>Créée le {new Date(fiche.date_creation).toLocaleDateString('fr-FR')}</span>
@@ -156,6 +158,13 @@ const FicheCard: React.FC<FicheCardProps> = ({
               <Check size={16} />
               Clôturer
             </button>
+            <button
+              onClick={() => onCancelFiche(fiche.id)}
+              className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium shadow-sm"
+            >
+              Annuler
+            </button>
+
           </>
         )}
       </div>

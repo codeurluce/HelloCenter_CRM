@@ -7,6 +7,7 @@ const fichesControllers = require('../controllers/fichesControllers');
 // Récupérer toutes les fiches de la base de données
 // GET /api/files
 router.put('/:id/traiter', fichesControllers.traiterFiche); // Pour prendre en charge une fiche
+router.put('/:id/annuler', fichesControllers.annulerFiche); // Pour annuler une fiche
 console.log("Route PUT /:id/traiter initialisée");
 
 router.get('/', async (req, res) => {

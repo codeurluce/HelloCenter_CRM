@@ -4,3 +4,21 @@
 
 
 /* Tu peux ajouter ici des styles globaux en plus */
+.fiche-transition-enter {
+  opacity: 0;
+  transform: scale(0.95);
+}
+.fiche-transition-enter-active {
+  opacity: 1;
+  transform: scale(1);
+  transition: opacity 300ms, transform 300ms;
+}
+.fiche-transition-exit {
+  opacity: 1;
+  transform: scale(1);
+}
+.fiche-transition-exit-active {
+  opacity: 0;
+  transform: scale(0.95);
+  transition: opacity 300ms, transform 300ms;
+}
