@@ -24,9 +24,9 @@ const io = new Server(server, {
 // les API d'authentification, de sessions et de ventes
 app.use(cors());
 app.use(express.json());
+app.use('/api', authRoutes); // API pour l'authentification
 app.use('/api/sales', salesRoutes); // APi pour les ventes
 app.use('/api/sessions', sessionRoutes); // API pour les sessions
-app.use('/api', authRoutes); // API pour l'authentification
 app.use('/api/files', filesRoutes); // API pour les fichiers
 
 

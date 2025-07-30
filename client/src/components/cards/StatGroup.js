@@ -17,7 +17,7 @@ const StatGroup = ({ setActiveItem }) => {
         const data = await response.json();
 
         setStatsData({
-          fichesDisponibles: 42, // Valeur fixe ici
+        //   fichesDisponibles: parseInt(data.total_files_today) || 0,
           totalTransactions: parseInt(data.total_sales_today) || 0,
           ventesEnAttente: parseInt(data.pending_sales_today) || 0,
           ventesValidees: parseInt(data.validated_sales_today) || 0,
@@ -32,6 +32,33 @@ const StatGroup = ({ setActiveItem }) => {
 
     fetchStats();
   }, []);
+
+
+// useFfect pour aficher la liste total
+useEffect(() => {
+  async function fetchFilesStats() {
+    try {
+      const response = await fetch('http://localhost:5000/api/files/today-summary', {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+
+      const data = await response.json();
+      console.log('✅ Fiches nouvelles du jour:', data);
+
+      setStatsData(prev => ({
+        ...prev,
+        fichesDisponibles: parseInt(data.total_files_today) || 0
+      }));
+    } catch (error) {
+      console.error('Erreur lors du fetch des fiches du jour:', error);
+    }
+  }
+
+  fetchFilesStats();
+}, []);
+
 
   if (loading) return <p>Chargement des statistiques...</p>;
   if (!statsData) return <p>Impossible de charger les données.</p>;

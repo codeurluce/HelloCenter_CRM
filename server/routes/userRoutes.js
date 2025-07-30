@@ -99,7 +99,7 @@ router.post('/login', async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(401).json({ message: 'Mot de passe incorrect' });
 
-    const token = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, { expiresIn: '3d' });
+    const token = jwt.sign({ id: user.id, role: user.role, univers: user.profil }, JWT_SECRET, { expiresIn: '3d' });
 
     res.json({
       token,
@@ -109,7 +109,7 @@ router.post('/login', async (req, res) => {
         firstname: user.firstname,
         email: user.email,
         role: user.role,
-        profil: user.profil,
+        univers: user.profil,
       },
     });
   } catch (error) {
@@ -120,7 +120,7 @@ router.post('/login', async (req, res) => {
 
 // Route GET /api/me (infos utilisateur connecté)
 router.get('/me', verifyToken, async (req, res) => {
-  const userId = req.user.userId;
+  const userId = req.user.id;
 
   try {
     const result = await db.query(

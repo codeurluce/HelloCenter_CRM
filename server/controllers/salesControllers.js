@@ -17,7 +17,23 @@ exports.getTodaySummary = async (req, res) => {
         AND agent_id = $1
     `, [agentId]);
 
-    res.json(result.rows[0]);
+    // ✅ Récupérer le nombre de fiches "nouvelle" créées aujourd'hui
+    const filesTotal = await db.query(`
+      SELECT 
+        COUNT(*) AS total_files_today
+      FROM files
+      WHERE statut = 'nouvelle'
+        AND DATE(date_creation) = CURRENT_DATE
+    `);
+
+console.log('Résultat fichiers du jour:', filesTotal.rows[0]);
+    res.json({
+      total_sales_today: result.rows[0].total,
+      pending_sales_today: result.rows[0].pending,
+      validated_sales_today: result.rows[0].validated,
+      cancelled_sales_today: result.rows[0].cancelled,
+      total_files_today: filesTotal.rows[0].total_files_today
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Erreur serveur' });

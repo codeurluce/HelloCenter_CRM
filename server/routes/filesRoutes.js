@@ -1,15 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db'); // Connexion PostgreSQL
-const fichesControllers = require('../controllers/fichesControllers');
+const filesControllers = require('../controllers/filesControllers');
+const auth = require('../middlewares/authMiddleware')
 
 
-// Récupérer toutes les fiches de la base de données
-// GET /api/files
-router.put('/:id/traiter', fichesControllers.traiterFiche); // Pour prendre en charge une fiche
-router.put('/:id/annuler', fichesControllers.annulerFiche); // Pour annuler une fiche
-console.log("Route PUT /:id/traiter initialisée");
-
+// Récupérer toutes les fiches
 router.get('/', async (req, res) => {
   try {
     const result = await db.query('SELECT * FROM files ORDER BY id DESC');
@@ -19,5 +15,10 @@ router.get('/', async (req, res) => {
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
+
+// Autres routes PUT ici...
+router.put('/:id/traiter', filesControllers.traiterFiche);
+router.put('/:id/annuler', filesControllers.annulerFiche);
+router.get('/today-summary', auth, filesControllers.getTodayNewFilesByUniverse);
 
 module.exports = router;
