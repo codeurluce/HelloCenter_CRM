@@ -104,11 +104,11 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Gestion des Fiches</h1>
           <p className="text-gray-600">Gérez et suivez l'état de vos fiches clients</p>
-        </div>
 
-        {/* Filtres */}
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-          <div className="flex flex-wrap gap-3">
+
+{/* Filtres */}
+        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200 mt-6">
+          <div className="flex flex-wrap gap-3 mb-6">
             {(['nouvelle', 'en_traitement', 'cloturee', 'toutes'] as FilterType[]).map(filter => (
               <button
                 key={filter}
@@ -127,22 +127,10 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
               </button>
             ))}
           </div>
-        </div>
 
-        {/* Liste fiches */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-          <div className="p-6 border-b border-gray-200 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">
-              {getFilterLabel(activeFilter)} ({filteredFiches.length})
-            </h2>
-            {filteredFiches.length > 0 && (
-              <span className="text-sm text-gray-500">
-                Affichage de {filteredFiches.length} fiche{filteredFiches.length > 1 ? 's' : ''}
-              </span>
-            )}
-          </div>
-
-          <div className="p-6">
+{/* Liste fiches */}
+        <div className="bg-white rounded-xl shadow-sm">
+            <div className="p-6">
             {filteredFiches.length === 0 ? (
               <div className="text-center py-12">
                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -170,6 +158,11 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
             )}
           </div>
         </div>
+
+        </div>
+
+
+        </div>        
       </div>
 
       <ClotureModal
