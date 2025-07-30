@@ -33,7 +33,7 @@ exports.traiterFiche = async (req, res) => {
     console.log('🔧 Reçu pour traitement :', { id, statut, assignedTo, date_modification, profil });
 
     await db.query(
-      'UPDATE files SET statut = $1, agent_id = $2, date_modification = $3, profil = $4, WHERE id = $5',
+      'UPDATE files SET statut = $1, agent_id = $2, date_modification = $3, profil = $4 WHERE id = $5',
       [statut, assignedTo, date_modification, profil, id]
     );
 

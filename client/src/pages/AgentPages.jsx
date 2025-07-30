@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import Sidebar from '../components/Sidebar.jsx';
 import DashboardHeader from '../components/dashbords/DashbordHeader.jsx';
 import StatGroup from '../components/cards/StatGroup.js';
@@ -8,12 +8,15 @@ import AgentInfoPanel from '../components/componentsdesonglets/AgentInfoPanel.js
 import VentesInfoPanel from '../components/componentsdesonglets/VentesInfoPanel.jsx';
 import FichesInfoPanel from '../components/componentsdesfiches/FichesInfoPanel.tsx';
 import axios from 'axios';
+import { AuthContext } from './AuthContext.jsx';
 
 const AgentDashboard = () => {
+  const [currentAgent, setCurrentAgent] = useState(null);
+  const { user, setUser } = useContext(AuthContext);
   const [activeItem, setActiveItem] = useState('dashboard');
   const [fiches, setFiches] = useState([]);
-  const [currentAgent, setCurrentAgent] = useState(1); // ID de l’agent connecté (à remplacer dynamiquement si besoin)
 
+  // 📦 Charger les fiches au chargement de l’agent
   const fetchFiches = async () => {
     try {
       const response = await fetch('http://localhost:5000/api/files');
@@ -24,20 +27,27 @@ const AgentDashboard = () => {
     }
   };
 
-  useEffect(() => {
+useEffect(() => {
+  if (user?.id) {
     fetchFiches();
-  }, []);
+    setCurrentAgent(user.id); // ✅ met à jour l’agent connecté
+  }
+}, [user]);
 
+  // 🚪 Déconnexion
   const handleLogout = () => {
-    localStorage.removeItem('token');
+    localStorage.clear();
+    setFiches([]);
+    setUser(null);
     window.location.href = '/';
   };
 
+  // ⚙️ Prise en charge fiche
   const handleTraitement = async (ficheId) => {
     try {
       await axios.put(`http://localhost:5000/api/files/${ficheId}/traiter`, {
         statut: 'en_traitement',
-        assignedTo: currentAgent,
+        assignedTo: user.id,
         date_modification: new Date(),
       });
       fetchFiches();
@@ -46,7 +56,7 @@ const AgentDashboard = () => {
     }
   };
 
-
+  // 🔄 Annuler la prise en charge
   const onCancelFiche = async (id) => {
     try {
       await fetch(`http://localhost:5000/api/fiches/${id}/statut`, {
@@ -60,9 +70,7 @@ const AgentDashboard = () => {
     }
   };
 
-
-
-
+  // ✅ Clôturer fiche
   const handleCloture = async (ficheId, { tag, commentaire }) => {
     try {
       await axios.put(`http://localhost:5000/api/files/${ficheId}/cloturer`, {
@@ -77,6 +85,7 @@ const AgentDashboard = () => {
     }
   };
 
+  // 📅 Programmer RDV
   const handleProgramRdv = async (ficheId) => {
     try {
       await axios.put(`http://localhost:5000/api/files/${ficheId}/rdv`, {
@@ -118,12 +127,13 @@ const AgentDashboard = () => {
 
           {activeItem === 'files' && (
             <FichesInfoPanel
-    fiches={fiches}
-    onTraiter={handleTraitement}
-    onCloturer={handleCloture}
-    onProgramRdv={handleProgramRdv}
-    onCancelFiche={onCancelFiche}
-  />
+              fiches={fiches}
+              currentAgent={user?.univers || ''}
+              onTreatFiche={handleTraitement}
+              onCloturer={handleCloture}
+              onProgramRdv={handleProgramRdv}
+              onCancelFiche={onCancelFiche}
+            />
           )}
 
           {activeItem === 'appointments' && <p>Voir les rendez-vous programmés...</p>}

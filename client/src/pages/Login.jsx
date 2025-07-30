@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { Eye, EyeOff, User, Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { AuthContext } from './AuthContext';
 
 const Login = ({ onLogin }) => {
+  const { setUser } = useContext(AuthContext);
   const navigate = useNavigate();
+
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -28,25 +31,29 @@ const Login = ({ onLogin }) => {
         email: formData.email,
         password: formData.password
       });
-localStorage.setItem('user', JSON.stringify(response.data.user));
 
       const { user, token } = response.data;
 
+      // Stockage local
       localStorage.setItem('token', token);
       localStorage.setItem('role', user.role);
+      localStorage.setItem('univers', user.profil);
       localStorage.setItem('connectedAgent', JSON.stringify(user));
 
+      // Mise à jour du contexte
+      setUser(user);
       if (onLogin) onLogin();
 
+      // Redirection selon rôle (avec reload forcé pour déclencher useEffect dans Dashboard)
       switch (user.role) {
         case 'Agent':
-          navigate('/agent');
+          window.location.href = '/agent';
           break;
         case 'Manager':
-          navigate('/admin');
+          window.location.href = '/admin';
           break;
         case 'Admin':
-          navigate('/admin-plus');
+          window.location.href = '/admin-plus';
           break;
         default:
           setError("Rôle utilisateur inconnu.");
@@ -58,8 +65,6 @@ localStorage.setItem('user', JSON.stringify(response.data.user));
       setIsLoading(false);
     }
   };
-
-
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex items-center justify-center p-4">

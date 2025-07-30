@@ -113,7 +113,10 @@ const DashboardHeader = ({ activePage }) => {
                 <strong>Prénom :</strong> {connectedAgent.lastname}
               </p>
               <p>
-                <strong>Profil :</strong> {connectedAgent.profil}
+                <strong>Profil :</strong> {connectedAgent.univers}
+              </p>
+              <p>
+                <strong>Role :</strong> {connectedAgent.role}
               </p>
             </div>
           )}

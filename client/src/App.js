@@ -4,12 +4,15 @@ import Login from './pages/Login';
 import AgentDashboard from './pages/AgentPages';
 import AdminPages from './pages/AdminPages';
 import NotFoundPages from './pages/NotFoundPages';
+import { AuthProvider } from './pages/AuthContext';
 
 function AppWrapper() {
   return (
-    <Router>
-      <App />
-    </Router>
+    <AuthProvider>
+      <Router>
+        <App />
+      </Router>
+    </AuthProvider>
   );
 }
 

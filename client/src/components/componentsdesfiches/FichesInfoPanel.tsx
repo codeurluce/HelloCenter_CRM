@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { FileText, Clock, CheckCircle, Filter } from 'lucide-react';
 import { Fiche, ClotureData } from './types/fiche';
 import FicheCard from './FicheCard.tsx';
@@ -13,7 +13,7 @@ interface FichesInfoPanelProps {
   onCancelFiche: (ficheId: number) => void;
 }
 
-type FilterType = 'nouvelle' | 'en_traitement' | 'cloturee' | 'toutes' ;
+type FilterType = 'nouvelle' | 'en_traitement' | 'cloturee' | 'toutes';
 
 const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
   fiches = [],
@@ -24,27 +24,34 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
   onCancelFiche
 }) => {
   const [activeFilter, setActiveFilter] = useState<FilterType>('nouvelle');
-  const [clotureModal, setClotureModal] = useState<{
-    isOpen: boolean;
-    ficheId: number | null;
-    clientName: string;
-  }>({
+  const [agentUnivers, setAgentUnivers] = useState(currentAgent);
+  const [clotureModal, setClotureModal] = useState({
     isOpen: false,
-    ficheId: null,
+    ficheId: null as number | null,
     clientName: ''
   });
 
+  // 🔄 Sync local currentAgent state with prop
+  useEffect(() => {
+    setAgentUnivers(currentAgent);
+  }, [currentAgent]);
+
+  const fichesFiltreesParUnivers = useMemo(() => {
+    if (!agentUnivers) return [];
+    return fiches.filter(fiche => fiche.univers === agentUnivers);
+  }, [fiches, agentUnivers]);
+
   const counters = useMemo(() => ({
-    nouvelle: fiches.filter(f => f.statut === 'nouvelle').length,
-    en_traitement: fiches.filter(f => f.statut === 'en_traitement').length,
-    cloturee: fiches.filter(f => f.statut === 'cloturee').length,
-    toutes: fiches.length
-  }), [fiches]);
+    nouvelle: fichesFiltreesParUnivers.filter(f => f.statut === 'nouvelle').length,
+    en_traitement: fichesFiltreesParUnivers.filter(f => f.statut === 'en_traitement').length,
+    cloturee: fichesFiltreesParUnivers.filter(f => f.statut === 'cloturee').length,
+    toutes: fichesFiltreesParUnivers.length
+  }), [fichesFiltreesParUnivers]);
 
   const filteredFiches = useMemo(() => {
-    if (activeFilter === 'toutes') return fiches;
-    return fiches.filter(f => f.statut === activeFilter);
-  }, [fiches, activeFilter]);
+    if (activeFilter === 'toutes') return fichesFiltreesParUnivers;
+    return fichesFiltreesParUnivers.filter(f => f.statut === activeFilter);
+  }, [fichesFiltreesParUnivers, activeFilter]);
 
   const handleCloseFiche = (ficheId: number) => {
     const fiche = fiches.find(f => f.id === ficheId);
@@ -65,8 +72,8 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
   };
 
   const getFilterClass = (filter: FilterType) => {
-    const baseClass = "flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 ";
-    return baseClass + (activeFilter === filter
+    const base = "flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 ";
+    return base + (activeFilter === filter
       ? 'bg-blue-600 text-white shadow-md'
       : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 hover:border-gray-300'
     );
@@ -74,45 +81,32 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
 
   const getFilterIcon = (filter: FilterType) => {
     switch (filter) {
-      case 'nouvelle':
-        return <FileText size={16} />;
-      case 'en_traitement':
-        return <Clock size={16} />;
-      case 'cloturee':
-        return <CheckCircle size={16} />;
-      default:
-        return <Filter size={16} />;
+      case 'nouvelle': return <FileText size={16} />;
+      case 'en_traitement': return <Clock size={16} />;
+      case 'cloturee': return <CheckCircle size={16} />;
+      default: return <Filter size={16} />;
     }
   };
 
   const getFilterLabel = (filter: FilterType) => {
     switch (filter) {
-      case 'nouvelle':
-        return 'Nouvelles';
-      case 'en_traitement':
-        return 'En cours';
-      case 'cloturee':
-        return 'Clôturées';
-      default:
-        return 'Toutes';
+      case 'nouvelle': return 'Nouvelles';
+      case 'en_traitement': return 'En cours';
+      case 'cloturee': return 'Clôturées';
+      default: return 'Toutes';
     }
   };
-console.log('Fiches reçues:', fiches);
-console.log('Tous les ids:', fiches.map(f => f.id));
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            Gestion des Fiches
-          </h1>
-          <p className="text-gray-600">
-            Gérez et suivez l'état de vos fiches clients
-          </p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Gestion des Fiches</h1>
+          <p className="text-gray-600">Gérez et suivez l'état de vos fiches clients</p>
         </div>
 
-        {/* Filtres avec compteurs */}
+        {/* Filtres */}
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
           <div className="flex flex-wrap gap-3">
             {(['nouvelle', 'en_traitement', 'cloturee', 'toutes'] as FilterType[]).map(filter => (
@@ -135,7 +129,7 @@ console.log('Tous les ids:', fiches.map(f => f.id));
           </div>
         </div>
 
-        {/* Résultats */}
+        {/* Liste fiches */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200">
           <div className="p-6 border-b border-gray-200 flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-900">
@@ -148,16 +142,13 @@ console.log('Tous les ids:', fiches.map(f => f.id));
             )}
           </div>
 
-          {/* Liste des fiches */}
           <div className="p-6">
             {filteredFiches.length === 0 ? (
               <div className="text-center py-12">
                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   {getFilterIcon(activeFilter)}
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  Aucune fiche trouvée
-                </h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Aucune fiche trouvée</h3>
                 <p className="text-gray-500">
                   Il n'y a aucune fiche avec le statut "{getFilterLabel(activeFilter).toLowerCase()}" pour le moment.
                 </p>
@@ -168,7 +159,7 @@ console.log('Tous les ids:', fiches.map(f => f.id));
                   <FicheCard
                     key={fiche.id}
                     fiche={fiche}
-                    currentAgent={currentAgent}
+                    currentAgent={agentUnivers}
                     onTreatFiche={onTreatFiche}
                     onCloseFiche={handleCloseFiche}
                     onProgramRdv={onProgramRdv}
