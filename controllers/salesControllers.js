@@ -23,9 +23,7 @@ exports.getTodaySummary = async (req, res) => {
         COUNT(*) AS total_files_today
       FROM files
       WHERE statut = 'nouvelle'
-        AND DATE(date_creation) = CURRENT_DATE
     `);
-
 console.log('Résultat fichiers du jour:', filesTotal.rows[0]);
     res.json({
       total_sales_today: result.rows[0].total,
