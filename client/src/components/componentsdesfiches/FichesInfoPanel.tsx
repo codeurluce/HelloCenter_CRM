@@ -1,5 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { useContext } from 'react';
+import React, { useState, useMemo, useEffect, useContext } from 'react';
 import { FileText, Clock, CheckCircle, Filter } from 'lucide-react';
 import { Fiche, ClotureData } from './types/fiche';
 import FicheCard from './FicheCard.tsx';
@@ -14,6 +13,8 @@ interface FichesInfoPanelProps {
 type FilterType = 'nouvelle' | 'en_traitement' | 'cloturee' | 'toutes';
 
 const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({ fiches: initialFiches, currentAgent }) => {
+  const { user } = useContext(AuthContext);
+
   const [fiches, setFiches] = useState<Fiche[]>(initialFiches);
   const [activeFilter, setActiveFilter] = useState<FilterType>('nouvelle');
   const [agentUnivers, setAgentUnivers] = useState(currentAgent);
@@ -23,10 +24,12 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({ fiches: initialFiches
     clientName: ''
   });
 
+  // Sync currentAgent prop to local state
   useEffect(() => {
     setAgentUnivers(currentAgent);
   }, [currentAgent]);
 
+  // Mise à jour locale des fiches
   const updateFiche = (ficheId: number, updates: Partial<Fiche>) => {
     setFiches(prev =>
       prev.map(fiche =>
@@ -34,21 +37,28 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({ fiches: initialFiches
       )
     );
   };
-const { user } = useContext(AuthContext);
 
+  // Action "Prendre en charge"
   const onTreatFiche = (ficheId: number) => {
-    if (!user) return; // sécurité si user est null
-  updateFiche(ficheId, {
-    statut: 'en_traitement',
-    assignedTo: user.id.toString(), // ou user.email, selon ce que tu utilises
-     assignedToName: `${user.firstname} ${user.lastname}`
-  });
-};
-
-  const onCancelFiche = (ficheId: number) => {
-    updateFiche(ficheId, { statut: 'nouvelle', assignedTo: undefined, assignedToName: undefined });
+    if (!user) return;
+    updateFiche(ficheId, {
+      statut: 'en_traitement',
+      assignedTo: user.id.toString(),
+      assignedToName: `${user.firstname} ${user.lastname}`
+    });
   };
 
+  // Action "Annuler"
+  const onCancelFiche = (ficheId: number) => {
+    if (!user) return;
+    updateFiche(ficheId, {
+      statut: 'nouvelle',
+      assignedTo: undefined,
+      assignedToName: undefined
+    });
+  };
+
+  // Action "Clôturer"
   const onCloseFiche = (ficheId: number, data: ClotureData) => {
     updateFiche(ficheId, {
       statut: 'cloturee',
@@ -57,15 +67,18 @@ const { user } = useContext(AuthContext);
     });
   };
 
+  // Action "Programmer RDV" (à compléter plus tard)
   const onProgramRdv = (ficheId: number) => {
     alert(`RDV programmé pour fiche ID ${ficheId}`);
   };
 
+  // Filtrage par univers (agent)
   const fichesFiltreesParUnivers = useMemo(() => {
     if (!agentUnivers) return [];
     return fiches.filter(fiche => fiche.univers === agentUnivers);
   }, [fiches, agentUnivers]);
 
+  // Compteurs pour chaque filtre
   const counters = useMemo(() => ({
     nouvelle: fichesFiltreesParUnivers.filter(f => f.statut === 'nouvelle').length,
     en_traitement: fichesFiltreesParUnivers.filter(f => f.statut === 'en_traitement').length,
@@ -73,11 +86,13 @@ const { user } = useContext(AuthContext);
     toutes: fichesFiltreesParUnivers.length
   }), [fichesFiltreesParUnivers]);
 
+  // Fiches filtrées selon filtre actif
   const filteredFiches = useMemo(() => {
     if (activeFilter === 'toutes') return fichesFiltreesParUnivers;
     return fichesFiltreesParUnivers.filter(f => f.statut === activeFilter);
   }, [fichesFiltreesParUnivers, activeFilter]);
 
+  // Ouverture modal clôture
   const handleCloseFiche = (ficheId: number) => {
     const fiche = fiches.find(f => f.id === ficheId);
     if (fiche) {
@@ -89,6 +104,7 @@ const { user } = useContext(AuthContext);
     }
   };
 
+  // Soumission modal clôture
   const handleClotureSubmit = (data: ClotureData) => {
     if (clotureModal.ficheId) {
       onCloseFiche(clotureModal.ficheId, data);
@@ -96,6 +112,7 @@ const { user } = useContext(AuthContext);
     }
   };
 
+  // Styles boutons filtres
   const getFilterClass = (filter: FilterType) => {
     const base = "flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 ";
     return base + (activeFilter === filter
@@ -104,6 +121,7 @@ const { user } = useContext(AuthContext);
     );
   };
 
+  // Icônes filtres
   const getFilterIcon = (filter: FilterType) => {
     switch (filter) {
       case 'nouvelle': return <FileText size={16} />;
@@ -113,6 +131,7 @@ const { user } = useContext(AuthContext);
     }
   };
 
+  // Labels filtres
   const getFilterLabel = (filter: FilterType) => {
     switch (filter) {
       case 'nouvelle': return 'Nouvelles';
@@ -168,7 +187,7 @@ const { user } = useContext(AuthContext);
                       <FicheCard
                         key={fiche.id}
                         fiche={fiche}
-                        currentAgent={agentUnivers}
+                        currentAgent={user?.id.toString() || ''}
                         onTreatFiche={onTreatFiche}
                         onCloseFiche={handleCloseFiche}
                         onProgramRdv={onProgramRdv}

@@ -60,7 +60,8 @@ const FicheCard: React.FC<FicheCardProps> = ({
     if (parts.length === 1) return parts[0][0].toUpperCase();
     return parts[0][0].toUpperCase() + parts[1][0].toUpperCase();
   };
-
+console.log('🎯 Agent connecté dans FicheCard :', currentAgent);
+console.log('📋 Fiche assignée à :', fiche.assignedTo);
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-all duration-300">
       {/* En-tête */}
@@ -182,19 +183,19 @@ const FicheCard: React.FC<FicheCardProps> = ({
         {fiche.statut === 'en_traitement' &&
           fiche.assignedTo === currentAgent && (
             <>
-              <button
-                onClick={() => onProgramRdv(fiche.id)}
-                className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors font-medium shadow-sm"
-              >
-                <CalendarPlus size={16} />
-                Programmer RDV
-              </button>
-              <button
+            <button
                 onClick={() => onCloseFiche(fiche.id)}
                 className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium shadow-sm"
               >
                 <Check size={16} />
                 Clôturer
+              </button>
+              <button
+                onClick={() => onProgramRdv(fiche.id)}
+                className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors font-medium shadow-sm"
+              >
+                <CalendarPlus size={16} />
+                Rendez-vous
               </button>
               <button
                 onClick={() => onCancelFiche(fiche.id)}
