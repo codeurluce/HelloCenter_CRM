@@ -60,8 +60,8 @@ const FicheCard: React.FC<FicheCardProps> = ({
     if (parts.length === 1) return parts[0][0].toUpperCase();
     return parts[0][0].toUpperCase() + parts[1][0].toUpperCase();
   };
-console.log('🎯 Agent connecté dans FicheCard :', currentAgent);
-console.log('📋 Fiche assignée à :', fiche.assignedTo);
+// console.log('🎯 Agent connecté dans FicheCard :', currentAgent);
+// console.log('📋 Fiche assignée à :', fiche.assignedTo);
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-all duration-300">
       {/* En-tête */}
