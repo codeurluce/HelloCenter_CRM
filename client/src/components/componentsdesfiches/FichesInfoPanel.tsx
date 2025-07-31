@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useContext } from 'react';
+import React, { useState, useMemo, useContext } from 'react';
 import { FileText, Clock, CheckCircle, Filter } from 'lucide-react';
 import { Fiche, ClotureData } from './types/fiche';
 import FicheCard from './FicheCard.tsx';
@@ -7,29 +7,20 @@ import { AuthContext } from '../../pages/AuthContext.jsx';
 
 interface FichesInfoPanelProps {
   fiches: Fiche[];
-  currentAgent: string;
 }
 
 type FilterType = 'nouvelle' | 'en_traitement' | 'cloturee' | 'toutes';
 
-const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({ fiches: initialFiches, currentAgent }) => {
+const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({ fiches: initialFiches }) => {
   const { user } = useContext(AuthContext);
-
   const [fiches, setFiches] = useState<Fiche[]>(initialFiches);
   const [activeFilter, setActiveFilter] = useState<FilterType>('nouvelle');
-  const [agentUnivers, setAgentUnivers] = useState(currentAgent);
   const [clotureModal, setClotureModal] = useState({
     isOpen: false,
     ficheId: null as number | null,
     clientName: ''
   });
-
-  // Sync currentAgent prop to local state
-  useEffect(() => {
-    setAgentUnivers(currentAgent);
-  }, [currentAgent]);
-
-  // Mise à jour locale des fiches
+console.log('User dans FichesInfoPanel:', user);
   const updateFiche = (ficheId: number, updates: Partial<Fiche>) => {
     setFiches(prev =>
       prev.map(fiche =>
@@ -38,7 +29,6 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({ fiches: initialFiches
     );
   };
 
-  // Action "Prendre en charge"
   const onTreatFiche = (ficheId: number) => {
     if (!user) return;
     updateFiche(ficheId, {
@@ -48,9 +38,7 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({ fiches: initialFiches
     });
   };
 
-  // Action "Annuler"
   const onCancelFiche = (ficheId: number) => {
-    if (!user) return;
     updateFiche(ficheId, {
       statut: 'nouvelle',
       assignedTo: undefined,
@@ -58,7 +46,6 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({ fiches: initialFiches
     });
   };
 
-  // Action "Clôturer"
   const onCloseFiche = (ficheId: number, data: ClotureData) => {
     updateFiche(ficheId, {
       statut: 'cloturee',
@@ -67,32 +54,37 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({ fiches: initialFiches
     });
   };
 
-  // Action "Programmer RDV" (à compléter plus tard)
   const onProgramRdv = (ficheId: number) => {
     alert(`RDV programmé pour fiche ID ${ficheId}`);
   };
 
-  // Filtrage par univers (agent)
-  const fichesFiltreesParUnivers = useMemo(() => {
-    if (!agentUnivers) return [];
-    return fiches.filter(fiche => fiche.univers === agentUnivers);
-  }, [fiches, agentUnivers]);
+  // Filtrage selon rôle utilisateur
+  const fichesFiltreesParRole = useMemo(() => {
+    if (!user) return [];
 
-  // Compteurs pour chaque filtre
+    if (user.role === 'Manager') {
+      console.log('Manager voit toutes les fiches:', fiches);
+    return fiches;
+  }
+
+    // Agent voit seulement ses fiches
+    const filtered = fiches.filter(f => f.agent_id?.toString() === user.id.toString());
+  console.log('Agent voit fiches assignées:', filtered);
+  return filtered;
+}, [fiches, user]);
+
   const counters = useMemo(() => ({
-    nouvelle: fichesFiltreesParUnivers.filter(f => f.statut === 'nouvelle').length,
-    en_traitement: fichesFiltreesParUnivers.filter(f => f.statut === 'en_traitement').length,
-    cloturee: fichesFiltreesParUnivers.filter(f => f.statut === 'cloturee').length,
-    toutes: fichesFiltreesParUnivers.length
-  }), [fichesFiltreesParUnivers]);
+    nouvelle: fichesFiltreesParRole.filter(f => f.statut === 'nouvelle').length,
+    en_traitement: fichesFiltreesParRole.filter(f => f.statut === 'en_traitement').length,
+    cloturee: fichesFiltreesParRole.filter(f => f.statut === 'cloturee').length,
+    toutes: fichesFiltreesParRole.length
+  }), [fichesFiltreesParRole]);
 
-  // Fiches filtrées selon filtre actif
   const filteredFiches = useMemo(() => {
-    if (activeFilter === 'toutes') return fichesFiltreesParUnivers;
-    return fichesFiltreesParUnivers.filter(f => f.statut === activeFilter);
-  }, [fichesFiltreesParUnivers, activeFilter]);
+    if (activeFilter === 'toutes') return fichesFiltreesParRole;
+    return fichesFiltreesParRole.filter(f => f.statut === activeFilter);
+  }, [fichesFiltreesParRole, activeFilter]);
 
-  // Ouverture modal clôture
   const handleCloseFiche = (ficheId: number) => {
     const fiche = fiches.find(f => f.id === ficheId);
     if (fiche) {
@@ -104,7 +96,6 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({ fiches: initialFiches
     }
   };
 
-  // Soumission modal clôture
   const handleClotureSubmit = (data: ClotureData) => {
     if (clotureModal.ficheId) {
       onCloseFiche(clotureModal.ficheId, data);
@@ -112,7 +103,6 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({ fiches: initialFiches
     }
   };
 
-  // Styles boutons filtres
   const getFilterClass = (filter: FilterType) => {
     const base = "flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 ";
     return base + (activeFilter === filter
@@ -121,7 +111,6 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({ fiches: initialFiches
     );
   };
 
-  // Icônes filtres
   const getFilterIcon = (filter: FilterType) => {
     switch (filter) {
       case 'nouvelle': return <FileText size={16} />;
@@ -131,7 +120,6 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({ fiches: initialFiches
     }
   };
 
-  // Labels filtres
   const getFilterLabel = (filter: FilterType) => {
     switch (filter) {
       case 'nouvelle': return 'Nouvelles';
@@ -140,13 +128,13 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({ fiches: initialFiches
       default: return 'Toutes';
     }
   };
-
+console.log('Exemple fiche:', fiches[0]);
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Gestion des Fiches</h1>
-          <p className="text-gray-600">Gérez et suivez l'état de vos fiches clients</p>
+          <p className="text-gray-600">Suivez vos fiches clients</p>
 
           <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200 mt-6">
             <div className="flex flex-wrap gap-3 mb-6">
@@ -178,7 +166,7 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({ fiches: initialFiches
                     </div>
                     <h3 className="text-lg font-medium text-gray-900 mb-2">Aucune fiche trouvée</h3>
                     <p className="text-gray-500">
-                      Il n'y a aucune fiche avec le statut "{getFilterLabel(activeFilter).toLowerCase()}" pour le moment.
+                      Il n'y a aucune fiche avec le statut "{getFilterLabel(activeFilter).toLowerCase()}".
                     </p>
                   </div>
                 ) : (
@@ -187,7 +175,7 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({ fiches: initialFiches
                       <FicheCard
                         key={fiche.id}
                         fiche={fiche}
-                        currentAgent={user?.id.toString() || ''}
+                        currentAgent={user?.id.toString()}
                         onTreatFiche={onTreatFiche}
                         onCloseFiche={handleCloseFiche}
                         onProgramRdv={onProgramRdv}
