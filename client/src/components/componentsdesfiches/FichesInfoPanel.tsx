@@ -4,6 +4,8 @@ import { Fiche, ClotureData } from './types/fiche';
 import FicheCard from './FicheCard.tsx';
 import ClotureModal from './ClotureModal.tsx';
 import { AuthContext } from '../../pages/AuthContext.jsx';
+import { logHistorique } from '../../api/historiqueFiles.ts';
+
 
 interface FichesInfoPanelProps {
   fiches: Fiche[];
@@ -29,34 +31,84 @@ console.log('User dans FichesInfoPanel:', user);
     );
   };
 
-  const onTreatFiche = (ficheId: number) => {
-    if (!user) return;
-    updateFiche(ficheId, {
-      statut: 'en_traitement',
-      assignedTo: user.id.toString(),
-      assignedToName: `${user.firstname} ${user.lastname}`
-    });
-  };
+  // Fonction pour traiter une fiche et sauvegarder l'historique
+const onTreatFiche = async (ficheId: number) => {
+  if (!user) return;
 
-  const onCancelFiche = (ficheId: number) => {
+  updateFiche(ficheId, {
+    statut: 'en_traitement',
+    assignedTo: user.id.toString(),
+    assignedToName: `${user.firstname} ${user.lastname}`
+  });
+  try {
+    await logHistorique({
+      ficheId,
+      action: 'PRISE_EN_CHARGE',
+      actorId: user.id,
+      actorName: `${user.firstname} ${user.lastname}`,
+      commentaire: 'Fiche prise en charge'
+    });
+  } catch (err) {
+    console.error('Erreur de log historique (PRISE_EN_CHARGE) :', err);
+  }
+};
+
+
+// Fonction pour annuler une fiche et sauvegarder l'historique
+  const onCancelFiche = async (ficheId: number) => {
     updateFiche(ficheId, {
       statut: 'nouvelle',
       assignedTo: undefined,
       assignedToName: undefined
     });
-  };
+   try {
+    await logHistorique({
+    ficheId,
+    action: 'ANNULATION',
+    actorId: user.id,
+    actorName: `${user.firstname} ${user.lastname}`,
+    commentaire: 'Traitement annulé, fiche remise à "nouvelle"'
+});
+  } catch (err) {
+    console.error('Erreur de log historique (ANNULATION) :', err);
+  }
+};
+  
 
-  const onCloseFiche = (ficheId: number, data: ClotureData) => {
+  const onCloseFiche = async (ficheId: number, data: ClotureData) => {
     updateFiche(ficheId, {
       statut: 'cloturee',
       tag: data.tag,
       commentaire: data.commentaire
     });
-  };
-
-  const onProgramRdv = (ficheId: number) => {
+    try {
+    await logHistorique({
+    ficheId,
+    action: 'CLOTURE',
+    actorId: user.id,
+    actorName: `${user.firstname} ${user.lastname}`,
+    commentaire: data.commentaire || 'Fiche clôturée',
+    metadata: { tag: data.tag }
+});
+  } catch (err) {
+    console.error('Erreur de log historique (CLOTURE) :', err);
+  }
+};
+  
+  const onProgramRdv = async (ficheId: number) => {
     alert(`RDV programmé pour fiche ID ${ficheId}`);
-  };
+try {
+    await logHistorique({
+    ficheId,
+    action: 'RDV_PROGRAMME',
+    actorId: user.id,
+    actorName: `${user.firstname} ${user.lastname}`,
+    commentaire: 'RDV programmé pour ce client'
+});
+  } catch (err) {
+    console.error('Erreur de log historique (RDV_PROGRAMME) :', err);
+  }
+};
 
   // Filtrage selon rôle utilisateur
   const fichesFiltreesParRole = useMemo(() => {
