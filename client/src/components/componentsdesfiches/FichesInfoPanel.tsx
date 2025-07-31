@@ -1,8 +1,10 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useContext } from 'react';
 import { FileText, Clock, CheckCircle, Filter } from 'lucide-react';
 import { Fiche, ClotureData } from './types/fiche';
 import FicheCard from './FicheCard.tsx';
 import ClotureModal from './ClotureModal.tsx';
+import { AuthContext } from '../../pages/AuthContext.jsx';
 
 interface FichesInfoPanelProps {
   fiches: Fiche[];
@@ -32,13 +34,19 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({ fiches: initialFiches
       )
     );
   };
+const { user } = useContext(AuthContext);
 
   const onTreatFiche = (ficheId: number) => {
-    updateFiche(ficheId, { statut: 'en_traitement', assignedTo: currentAgent, assignedToName: 'Alice Durand' });
-  };
+    if (!user) return; // sécurité si user est null
+  updateFiche(ficheId, {
+    statut: 'en_traitement',
+    assignedTo: user.id.toString(), // ou user.email, selon ce que tu utilises
+     assignedToName: `${user.firstname} ${user.lastname}`
+  });
+};
 
   const onCancelFiche = (ficheId: number) => {
-    updateFiche(ficheId, { statut: 'nouvelle', assignedTo: null, assignedToName: null });
+    updateFiche(ficheId, { statut: 'nouvelle', assignedTo: undefined, assignedToName: undefined });
   };
 
   const onCloseFiche = (ficheId: number, data: ClotureData) => {

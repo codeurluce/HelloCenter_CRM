@@ -86,7 +86,7 @@ const FicheCard: React.FC<FicheCardProps> = ({
           {/* Affiche le badge avec initiales si la fiche est en traitement */}
           {fiche.statut === 'en_traitement' && fiche.assignedToName && (
             <div
-              className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold shadow"
+              className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold shadow" translate="no"
               title={fiche.assignedToName}
             >
               {getInitials(fiche.assignedToName)}
@@ -134,7 +134,7 @@ const FicheCard: React.FC<FicheCardProps> = ({
               <User size={16} className="text-gray-400" />
               <span>
                 Assignée à:{' '}
-                <span className="font-medium">{fiche.assignedToName}</span>
+                <span className="font-medium" translate="no">{fiche.assignedToName}</span>
               </span>
             </div>
           )}
