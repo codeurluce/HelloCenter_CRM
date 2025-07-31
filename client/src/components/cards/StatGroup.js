@@ -6,57 +6,37 @@ const StatGroup = ({ setActiveItem }) => {
   const [statsData, setStatsData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function fetchStats() {
-      try {
-        const response = await fetch('http://localhost:5000/api/sales/today-summary', {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-          },
-        });
-        const data = await response.json();
-
-        setStatsData({
-        //   fichesDisponibles: parseInt(data.total_files_today) || 0,
-          totalTransactions: parseInt(data.total_sales_today) || 0,
-          ventesEnAttente: parseInt(data.pending_sales_today) || 0,
-          ventesValidees: parseInt(data.validated_sales_today) || 0,
-          ventesAnnulees: parseInt(data.cancelled_sales_today) || 0,
-        });
-      } catch (error) {
-        console.error('Erreur fetch stats:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchStats();
-  }, []);
-
-
-// useFfect pour aficher la liste total
 useEffect(() => {
-  async function fetchFilesStats() {
+  async function fetchAllStats() {
     try {
-      const response = await fetch('http://localhost:5000/api/files/today-summary', {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
+      const [salesRes, filesRes] = await Promise.all([
+        fetch('http://localhost:5000/api/sales/today-summary', {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        }),
+        fetch('http://localhost:5000/api/files/today-summary', {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        }),
+      ]);
+
+      const salesData = await salesRes.json();
+      const filesData = await filesRes.json();
+
+      setStatsData({
+        totalTransactions: parseInt(salesData.total_sales_today) || 0,
+        ventesEnAttente: parseInt(salesData.pending_sales_today) || 0,
+        ventesValidees: parseInt(salesData.validated_sales_today) || 0,
+        ventesAnnulees: parseInt(salesData.cancelled_sales_today) || 0,
+        fichesDisponibles: parseInt(filesData.total_files_today) || 0,
       });
 
-      const data = await response.json();
-      console.log('✅ Fiches nouvelles du jour:', data);
-
-      setStatsData(prev => ({
-        ...prev,
-        fichesDisponibles: parseInt(data.total_files_today) || 0
-      }));
     } catch (error) {
-      console.error('Erreur lors du fetch des fiches du jour:', error);
+      console.error('Erreur lors du fetch des statistiques :', error);
+    } finally {
+      setLoading(false);
     }
   }
 
-  fetchFilesStats();
+  fetchAllStats();
 }, []);
 
 
