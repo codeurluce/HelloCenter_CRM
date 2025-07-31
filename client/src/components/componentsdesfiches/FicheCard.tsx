@@ -1,6 +1,15 @@
-// component/componentsdesfiches/FichesCard.tsx
 import React from 'react';
-import { Play, CalendarPlus, Check, Phone, Mail, MapPin, Hash, User, Clock } from 'lucide-react';
+import {
+  Play,
+  CalendarPlus,
+  Check,
+  Phone,
+  Mail,
+  MapPin,
+  Hash,
+  User,
+  Clock,
+} from 'lucide-react';
 import { Fiche } from './types/fiche.ts';
 
 interface FicheCardProps {
@@ -18,7 +27,7 @@ const FicheCard: React.FC<FicheCardProps> = ({
   onTreatFiche,
   onCloseFiche,
   onProgramRdv,
-  onCancelFiche
+  onCancelFiche,
 }) => {
   const getStatusColor = (statut: string) => {
     switch (statut) {
@@ -46,9 +55,15 @@ const FicheCard: React.FC<FicheCardProps> = ({
     }
   };
 
+  const getInitials = (name: string) => {
+    const parts = name.trim().split(' ');
+    if (parts.length === 1) return parts[0][0].toUpperCase();
+    return parts[0][0].toUpperCase() + parts[1][0].toUpperCase();
+  };
+
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-all duration-300">
-      {/* En-tête avec statut */}
+      {/* En-tête */}
       <div className="flex justify-between items-start mb-4">
         <div>
           <h3 className="text-xl font-bold text-gray-900 mb-1">
@@ -59,12 +74,28 @@ const FicheCard: React.FC<FicheCardProps> = ({
             <span>ID: {fiche.id}</span>
           </div>
         </div>
-        <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(fiche.statut)}`}>
-          {getStatusLabel(fiche.statut)}
-        </span>
+        <div className="flex items-center gap-2">
+          <span
+            className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(
+              fiche.statut
+            )}`}
+          >
+            {getStatusLabel(fiche.statut)}
+          </span>
+
+          {/* Affiche le badge avec initiales si la fiche est en traitement */}
+          {fiche.statut === 'en_traitement' && fiche.assignedToName && (
+            <div
+              className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold shadow"
+              title={fiche.assignedToName}
+            >
+              {getInitials(fiche.assignedToName)}
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Informations client */}
+      {/* Infos client */}
       <div className="space-y-3 mb-4">
         <div className="grid grid-cols-1 gap-3">
           {fiche.adresse_client && (
@@ -101,13 +132,19 @@ const FicheCard: React.FC<FicheCardProps> = ({
           {fiche.assignedToName && (
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <User size={16} className="text-gray-400" />
-              <span>Assignée à: <span className="font-medium">{fiche.assignedToName}</span></span>
+              <span>
+                Assignée à:{' '}
+                <span className="font-medium">{fiche.assignedToName}</span>
+              </span>
             </div>
           )}
 
           <div className="flex items-center gap-2 text-xs text-gray-500 mt-2">
             <Clock size={12} className="text-gray-400" />
-            <span>Créée le {new Date(fiche.date_creation).toLocaleDateString('fr-FR')}</span>
+            <span>
+              Créée le{' '}
+              {new Date(fiche.date_creation).toLocaleDateString('fr-FR')}
+            </span>
           </div>
         </div>
 
@@ -130,7 +167,7 @@ const FicheCard: React.FC<FicheCardProps> = ({
 
       {/* Actions */}
       <div className="flex gap-2 flex-wrap">
-        {/* Bouton Prendre en charge - visible seulement pour les fiches nouvelles */}
+        {/* Prendre en charge */}
         {fiche.statut === 'nouvelle' && (
           <button
             onClick={() => onTreatFiche(fiche.id)}
@@ -141,32 +178,32 @@ const FicheCard: React.FC<FicheCardProps> = ({
           </button>
         )}
 
-        {/* Actions pour les fiches en traitement par l'agent courant */}
-        {fiche.statut === 'en_traitement' && fiche.assignedTo === currentAgent && (
-          <>
-            <button
-              onClick={() => onProgramRdv(fiche.id)}
-              className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors font-medium shadow-sm"
-            >
-              <CalendarPlus size={16} />
-              Programmer RDV
-            </button>
-            <button
-              onClick={() => onCloseFiche(fiche.id)}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium shadow-sm"
-            >
-              <Check size={16} />
-              Clôturer
-            </button>
-            <button
-              onClick={() => onCancelFiche(fiche.id)}
-              className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium shadow-sm"
-            >
-              Annuler
-            </button>
-
-          </>
-        )}
+        {/* Actions fiche en traitement par l’agent courant */}
+        {fiche.statut === 'en_traitement' &&
+          fiche.assignedTo === currentAgent && (
+            <>
+              <button
+                onClick={() => onProgramRdv(fiche.id)}
+                className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors font-medium shadow-sm"
+              >
+                <CalendarPlus size={16} />
+                Programmer RDV
+              </button>
+              <button
+                onClick={() => onCloseFiche(fiche.id)}
+                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium shadow-sm"
+              >
+                <Check size={16} />
+                Clôturer
+              </button>
+              <button
+                onClick={() => onCancelFiche(fiche.id)}
+                className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium shadow-sm"
+              >
+                Annuler
+              </button>
+            </>
+          )}
       </div>
     </div>
   );

@@ -7,22 +7,12 @@ import ClotureModal from './ClotureModal.tsx';
 interface FichesInfoPanelProps {
   fiches: Fiche[];
   currentAgent: string;
-  onTreatFiche: (ficheId: number) => void;
-  onCloseFiche: (ficheId: number, data: ClotureData) => void;
-  onProgramRdv: (ficheId: number) => void;
-  onCancelFiche: (ficheId: number) => void;
 }
 
 type FilterType = 'nouvelle' | 'en_traitement' | 'cloturee' | 'toutes';
 
-const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
-  fiches = [],
-  currentAgent,
-  onTreatFiche,
-  onCloseFiche,
-  onProgramRdv,
-  onCancelFiche
-}) => {
+const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({ fiches: initialFiches, currentAgent }) => {
+  const [fiches, setFiches] = useState<Fiche[]>(initialFiches);
   const [activeFilter, setActiveFilter] = useState<FilterType>('nouvelle');
   const [agentUnivers, setAgentUnivers] = useState(currentAgent);
   const [clotureModal, setClotureModal] = useState({
@@ -31,10 +21,37 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
     clientName: ''
   });
 
-  // 🔄 Sync local currentAgent state with prop
   useEffect(() => {
     setAgentUnivers(currentAgent);
   }, [currentAgent]);
+
+  const updateFiche = (ficheId: number, updates: Partial<Fiche>) => {
+    setFiches(prev =>
+      prev.map(fiche =>
+        fiche.id === ficheId ? { ...fiche, ...updates } : fiche
+      )
+    );
+  };
+
+  const onTreatFiche = (ficheId: number) => {
+    updateFiche(ficheId, { statut: 'en_traitement', assignedTo: currentAgent, assignedToName: 'Alice Durand' });
+  };
+
+  const onCancelFiche = (ficheId: number) => {
+    updateFiche(ficheId, { statut: 'nouvelle', assignedTo: null, assignedToName: null });
+  };
+
+  const onCloseFiche = (ficheId: number, data: ClotureData) => {
+    updateFiche(ficheId, {
+      statut: 'cloturee',
+      tag: data.tag,
+      commentaire: data.commentaire
+    });
+  };
+
+  const onProgramRdv = (ficheId: number) => {
+    alert(`RDV programmé pour fiche ID ${ficheId}`);
+  };
 
   const fichesFiltreesParUnivers = useMemo(() => {
     if (!agentUnivers) return [];
@@ -100,69 +117,62 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Gestion des Fiches</h1>
           <p className="text-gray-600">Gérez et suivez l'état de vos fiches clients</p>
 
+          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200 mt-6">
+            <div className="flex flex-wrap gap-3 mb-6">
+              {(['nouvelle', 'en_traitement', 'cloturee', 'toutes'] as FilterType[]).map(filter => (
+                <button
+                  key={filter}
+                  onClick={() => setActiveFilter(filter)}
+                  className={getFilterClass(filter)}
+                >
+                  {getFilterIcon(filter)}
+                  <span>{getFilterLabel(filter)}</span>
+                  <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                    activeFilter === filter
+                      ? 'bg-white/20 text-white'
+                      : 'bg-blue-100 text-blue-600'
+                  }`}>
+                    {counters[filter]}
+                  </span>
+                </button>
+              ))}
+            </div>
 
-{/* Filtres */}
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200 mt-6">
-          <div className="flex flex-wrap gap-3 mb-6">
-            {(['nouvelle', 'en_traitement', 'cloturee', 'toutes'] as FilterType[]).map(filter => (
-              <button
-                key={filter}
-                onClick={() => setActiveFilter(filter)}
-                className={getFilterClass(filter)}
-              >
-                {getFilterIcon(filter)}
-                <span>{getFilterLabel(filter)}</span>
-                <span className={`px-2 py-1 rounded-full text-xs font-bold ${
-                  activeFilter === filter
-                    ? 'bg-white/20 text-white'
-                    : 'bg-blue-100 text-blue-600'
-                }`}>
-                  {counters[filter]}
-                </span>
-              </button>
-            ))}
-          </div>
-
-{/* Liste fiches */}
-        <div className="bg-white rounded-xl shadow-sm">
-            <div className="p-6">
-            {filteredFiches.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  {getFilterIcon(activeFilter)}
-                </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Aucune fiche trouvée</h3>
-                <p className="text-gray-500">
-                  Il n'y a aucune fiche avec le statut "{getFilterLabel(activeFilter).toLowerCase()}" pour le moment.
-                </p>
+            <div className="bg-white rounded-xl shadow-sm">
+              <div className="p-6">
+                {filteredFiches.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      {getFilterIcon(activeFilter)}
+                    </div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Aucune fiche trouvée</h3>
+                    <p className="text-gray-500">
+                      Il n'y a aucune fiche avec le statut "{getFilterLabel(activeFilter).toLowerCase()}" pour le moment.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {filteredFiches.map(fiche => (
+                      <FicheCard
+                        key={fiche.id}
+                        fiche={fiche}
+                        currentAgent={agentUnivers}
+                        onTreatFiche={onTreatFiche}
+                        onCloseFiche={handleCloseFiche}
+                        onProgramRdv={onProgramRdv}
+                        onCancelFiche={onCancelFiche}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
-            ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                {filteredFiches.map(fiche => (
-                  <FicheCard
-                    key={fiche.id}
-                    fiche={fiche}
-                    currentAgent={agentUnivers}
-                    onTreatFiche={onTreatFiche}
-                    onCloseFiche={handleCloseFiche}
-                    onProgramRdv={onProgramRdv}
-                    onCancelFiche={onCancelFiche}
-                  />
-                ))}
-              </div>
-            )}
+            </div>
           </div>
         </div>
-
-        </div>
-
-
-        </div>        
       </div>
 
       <ClotureModal

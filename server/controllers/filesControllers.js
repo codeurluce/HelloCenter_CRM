@@ -13,7 +13,6 @@ exports.getTodayNewFilesByUniverse = async (req, res) => {
       FROM files
       WHERE statut = 'nouvelle'
         AND univers = $1
-        AND DATE(date_creation) = CURRENT_DATE
     `, [agentUniverse]);
                             
     res.json({ total_files_today: result.rows[0].total_files_today });
