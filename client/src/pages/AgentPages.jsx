@@ -7,8 +7,8 @@ import TodayRecap from '../components/cards/TodayRecap.jsx';
 import AgentInfoPanel from '../components/componentsdesonglets/AgentInfoPanel.jsx';
 import VentesInfoPanel from '../components/componentsdesonglets/VentesInfoPanel.jsx';
 import FichesInfoPanel from '../components/componentsdesfiches/FichesInfoPanel.tsx';
-import axios from 'axios';
 import { AuthContext } from './AuthContext.jsx';
+import {fetchFiches, handleTraitement, onCancelFiche, handleCloture, handleProgramRdv } from '../api/filesActions.js';
 
 const AgentDashboard = () => {
   const [currentAgent, setCurrentAgent] = useState(null);
@@ -16,23 +16,18 @@ const AgentDashboard = () => {
   const [activeItem, setActiveItem] = useState('dashboard');
   const [fiches, setFiches] = useState([]);
 
-  // 📦 Charger les fiches au chargement de l’agent
-  const fetchFiches = async () => {
-    try {
-      const response = await fetch('http://localhost:5000/api/files');
-      const data = await response.json();
-      setFiches(data);
-    } catch (error) {
-      console.error('Erreur lors du chargement des fiches :', error);
-    }
-  };
+const loadFiches = async () => {
+  if (!user?.id) return;
+  const allFiches = await fetchFiches();
+  const filtered = allFiches.filter((fiche) => fiche.agent_id?.toString() === user.id?.toString());
+  setFiches(filtered);
+  setCurrentAgent(user.id);
+};
 
 useEffect(() => {
-  if (user?.id) {
-    fetchFiches();
-    setCurrentAgent(user.id); // ✅ met à jour l’agent connecté
-  }
+  loadFiches();
 }, [user]);
+
 
   // 🚪 Déconnexion
   const handleLogout = () => {
@@ -40,62 +35,6 @@ useEffect(() => {
     setFiches([]);
     setUser(null);
     window.location.href = '/';
-  };
-
-  // ⚙️ Prise en charge fiche
-  const handleTraitement = async (ficheId) => {
-    try {
-      await axios.put(`http://localhost:5000/api/files/${ficheId}/traiter`, {
-        statut: 'en_traitement',
-        assignedTo: user.id,
-        date_modification: new Date(),
-      });
-      fetchFiches();
-    } catch (err) {
-      console.error('Erreur lors de la prise en charge de la fiche :', err);
-    }
-  };
-
-  // 🔄 Annuler la prise en charge
-  const onCancelFiche = async (id) => {
-    try {
-      await fetch(`http://localhost:5000/api/fiches/${id}/statut`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ statut: 'nouvelle', assignedTo: null }),
-      });
-      fetchFiches();
-    } catch (error) {
-      console.error("Erreur lors de l'annulation de la prise en charge :", error);
-    }
-  };
-
-  // ✅ Clôturer fiche
-  const handleCloture = async (ficheId, { tag, commentaire }) => {
-    try {
-      await axios.put(`http://localhost:5000/api/files/${ficheId}/cloturer`, {
-        statut: 'cloturé',
-        tag,
-        commentaire,
-        date_modification: new Date(),
-      });
-      fetchFiches();
-    } catch (err) {
-      console.error('Erreur lors de la clôture de la fiche :', err);
-    }
-  };
-
-  // 📅 Programmer RDV
-  const handleProgramRdv = async (ficheId) => {
-    try {
-      await axios.put(`http://localhost:5000/api/files/${ficheId}/rdv`, {
-        statut: 'en_traitement',
-        rendezVous: true,
-      });
-      fetchFiches();
-    } catch (err) {
-      console.error('Erreur lors de la programmation du RDV :', err);
-    }
   };
 
   return (
@@ -128,11 +67,11 @@ useEffect(() => {
           {activeItem === 'files' && (
             <FichesInfoPanel
               fiches={fiches}
-              currentAgent={user?.univers || ''}
-              onTreatFiche={handleTraitement}
-              onCloturer={handleCloture}
-              onProgramRdv={handleProgramRdv}
-              onCancelFiche={onCancelFiche}
+  currentAgent={user?.univers || ''}
+  onTreatFiche={(id) => handleTraitement(id, user.id, loadFiches)}
+  onCloturer={(id, data) => handleCloture(id, data, loadFiches)}
+  onProgramRdv={(id) => handleProgramRdv(id, loadFiches)}
+  onCancelFiche={(id) => onCancelFiche(id, loadFiches)}
             />
           )}
 

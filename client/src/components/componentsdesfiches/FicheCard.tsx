@@ -10,13 +10,13 @@ import {
   User,
   Clock,
 } from 'lucide-react';
-import { Fiche } from './types/fiche.ts';
+import { Fiche, ClotureData } from './types/fiche.ts';
 
 interface FicheCardProps {
   fiche: Fiche;
   currentAgent: string;
   onTreatFiche: (id: number) => void;
-  onCloseFiche: (id: number) => void;
+  onOpenClotureModal: (id: number) => void;
   onProgramRdv: (id: number) => void;
   onCancelFiche: (id: number) => void;
 }
@@ -25,7 +25,7 @@ const FicheCard: React.FC<FicheCardProps> = ({
   fiche,
   currentAgent,
   onTreatFiche,
-  onCloseFiche,
+  onOpenClotureModal,
   onProgramRdv,
   onCancelFiche,
 }) => {
@@ -60,8 +60,7 @@ const FicheCard: React.FC<FicheCardProps> = ({
     if (parts.length === 1) return parts[0][0].toUpperCase();
     return parts[0][0].toUpperCase() + parts[1][0].toUpperCase();
   };
-// console.log('🎯 Agent connecté dans FicheCard :', currentAgent);
-// console.log('📋 Fiche assignée à :', fiche.assignedTo);
+  console.log('🧪 fiche.id', fiche.id, 'statut:', fiche.statut, 'assignedTo:', fiche.assigned_to, 'currentAgent:', currentAgent);
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-all duration-300">
       {/* En-tête */}
@@ -84,11 +83,12 @@ const FicheCard: React.FC<FicheCardProps> = ({
             {getStatusLabel(fiche.statut)}
           </span>
 
-          {/* Affiche le badge avec initiales si la fiche est en traitement */}
+          {/* Badge initiales si en traitement */}
           {fiche.statut === 'en_traitement' && fiche.assignedToName && (
             <div
-              className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold shadow" translate="no"
+              className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold shadow"
               title={fiche.assignedToName}
+              translate="no"
             >
               {getInitials(fiche.assignedToName)}
             </div>
@@ -135,7 +135,9 @@ const FicheCard: React.FC<FicheCardProps> = ({
               <User size={16} className="text-gray-400" />
               <span>
                 Assignée à:{' '}
-                <span className="font-medium" translate="no">{fiche.assignedToName}</span>
+                <span className="font-medium" translate="no">
+                  {fiche.assignedToName}
+                </span>
               </span>
             </div>
           )}
@@ -171,7 +173,7 @@ const FicheCard: React.FC<FicheCardProps> = ({
         {/* Prendre en charge */}
         {fiche.statut === 'nouvelle' && (
           <button
-            onClick={() => onTreatFiche(fiche.id)}
+            onClick={() => { console.log('🛠️ Traitement demandé pour fiche ID:', fiche.id); onTreatFiche(fiche.id) }}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm"
           >
             <Play size={16} />
@@ -179,12 +181,12 @@ const FicheCard: React.FC<FicheCardProps> = ({
           </button>
         )}
 
-        {/* Actions fiche en traitement par l’agent courant */}
+        {/* Actions fiche en traitement par agent courant */}
         {fiche.statut === 'en_traitement' &&
-          fiche.assignedTo === currentAgent && (
+          Number(fiche.assigned_to) === Number(currentAgent) && (
             <>
-            <button
-                onClick={() => onCloseFiche(fiche.id)}
+              <button
+                onClick={() => onOpenClotureModal(fiche.id)}
                 className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium shadow-sm"
               >
                 <Check size={16} />
@@ -197,12 +199,15 @@ const FicheCard: React.FC<FicheCardProps> = ({
                 <CalendarPlus size={16} />
                 Rendez-vous
               </button>
-              <button
-                onClick={() => onCancelFiche(fiche.id)}
+              {/* <button
+                onClick={() => {
+                  console.log("🧪 Bouton Annuler cliqué pour la fiche ID :", fiche.id)
+                  onCancelFiche(fiche.id);
+                }}
                 className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium shadow-sm"
               >
                 Annuler
-              </button>
+              </button> */}
             </>
           )}
       </div>

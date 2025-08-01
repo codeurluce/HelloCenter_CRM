@@ -6,7 +6,7 @@ const auth = require('../middlewares/authMiddleware')
 
 
 // Récupérer toutes les fiches
-router.get('/', async (req, res) => {
+router.get('/', async (req, res) => { // => GET    /api/files
   try {
     const result = await db.query('SELECT * FROM files ORDER BY id DESC');
     res.json(result.rows);
@@ -16,9 +16,11 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Autres routes PUT ici...
-router.put('/:id/traiter', filesControllers.traiterFiche);
-router.put('/:id/annuler', filesControllers.annulerFiche);
+// Point d’entrée logique : /api/files
+
+router.put('/:id/traiter', filesControllers.traiterFiche); // => PUT    /api/files/:id/traiter
+router.put('/:id/annuler', filesControllers.annulerFiche); // => PUT    /api/files/:id/annuler
+router.put('/:id/cloturer', filesControllers.cloturerFiche); // => PUT    /api/files/:id/cloturer
 router.get('/today-summary', auth, filesControllers.getTodayNewFilesByUniverse);
 
 module.exports = router;

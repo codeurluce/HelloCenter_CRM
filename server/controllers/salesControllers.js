@@ -17,12 +17,13 @@ exports.getTodaySummary = async (req, res) => {
         AND agent_id = $1
     `, [agentId]);
 
-    // ✅ Récupérer le nombre de fiches "nouvelle" créées aujourd'hui
+    // ✅ Récupérer le nombre de fiches "nouvelle" attribuées à l'agent
     const filesTotal = await db.query(`
       SELECT 
         COUNT(*) AS total_files_today
       FROM files
       WHERE statut = 'nouvelle'
+        AND agent_id = $1
     `);
 console.log('Résultat fichiers du jour:', filesTotal.rows[0]);
     res.json({

@@ -1,19 +1,18 @@
 const db = require('../db');
 
-
 // Obtenir les nouvelles fiches par univers
 exports.getTodayNewFilesByUniverse = async (req, res) => {
-  console.log('👤 Univers de l’utilisateur :', req.user);
+  console.log('👤 Agent connectee :', req.user);
 
   try {
-    const agentUniverse = req.user.univers; // exemple: 'Energie' ou 'OffreMobile'
+    const agentFiles = req.user.id; // exemple: 'Energie' ou 'OffreMobile'
     
     const result = await db.query(`
       SELECT COUNT(*) AS total_files_today
       FROM files
       WHERE statut = 'nouvelle'
-        AND univers = $1
-    `, [agentUniverse]);
+        AND agent_id = $1
+    `, [agentFiles]);
                             
     res.json({ total_files_today: result.rows[0].total_files_today });
   } catch (error) {
@@ -22,21 +21,36 @@ exports.getTodayNewFilesByUniverse = async (req, res) => {
   }
 };
 
-
 // export pour traiter une fiche
 exports.traiterFiche = async (req, res) => {
   const { id } = req.params;
-  const { statut, assignedTo, date_modification, profil } = req.body;
+  const { statut, assigned_to, date_modification } = req.body;
 
   try {
-    console.log('🔧 Reçu pour traitement :', { id, statut, assignedTo, date_modification, profil });
+    console.log('🔧 Reçu pour traitement :', { id, statut, assigned_to, date_modification });
 
-    await db.query(
-      'UPDATE files SET statut = $1, agent_id = $2, date_modification = $3, profil = $4 WHERE id = $5',
-      [statut, assignedTo, date_modification, profil, id]
+     // Mise à jour + on récupère la fiche mise à jour
+    const result = await db.query(
+      `UPDATE files 
+       SET statut = $1, assigned_to = $2, date_modification = $3 
+       WHERE id = $4
+       RETURNING *`,
+      [statut, assigned_to, date_modification, id]
     );
+ const updatedFiche = result.rows[0];
 
-    res.status(200).json({ message: 'Fiche mise à jour avec succès' });
+ // Récupérer nom complet de l'agent
+    const agentResult = await db.query(
+      `SELECT lastname, firstname FROM users WHERE id = $1`,
+      [assigned_to]
+    );
+    const user = agentResult.rows[0];
+    const assigned_to_name = user ? `${user.lastname} ${user.firstname}` : null;
+
+    res.status(200).json({
+      ...updatedFiche,
+      assigned_to_name,
+    });
   } catch (error) {
     console.error('❌ Erreur serveur lors de la mise à jour de la fiche :', error);
     res.status(500).json({ error: 'Erreur serveur' });
@@ -45,13 +59,40 @@ exports.traiterFiche = async (req, res) => {
 
 // export pour annuler une fiche
 exports.annulerFiche = async (req, res) => {
-
   const { id } = req.params;
+
   try {
-    await db.query('UPDATE fiches SET statut = $1, agent_id = NULL, date_modification = NOW() WHERE id = $2', ['nouvelle', id]);
+    // On ne touche pas à agent_id : on le garde
+    await db.query(
+      'UPDATE files SET statut = $1, date_modification = NOW() WHERE id = $2',
+      ['nouvelle', id]
+    );
+
     res.sendStatus(200);
   } catch (err) {
     console.error(err);
+    res.sendStatus(500);
+  }
+};
+
+
+
+// export pour clôturer une fiche
+exports.cloturerFiche = async (req, res) => {
+  const { id } = req.params;
+  const { tag, commentaire, date_modification } = req.body;
+
+  try {
+    await db.query(
+      `UPDATE files 
+       SET statut = 'cloturee', tag = $1, commentaire = $2, date_modification = $3 
+       WHERE id = $4`,
+      [tag, commentaire, date_modification, id]
+    );
+
+    res.status(200).json({ message: 'Fiche clôturée avec succès' });
+  } catch (err) {
+    console.error('Erreur clôture fiche :', err);
     res.sendStatus(500);
   }
 };
