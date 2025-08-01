@@ -1,6 +1,7 @@
 // type/fiche.ts
 
 export interface Fiche {
+  assigned_to: string;
   id: number;
   univers: string;
   nom_client: string;

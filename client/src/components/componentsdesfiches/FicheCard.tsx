@@ -60,7 +60,7 @@ const FicheCard: React.FC<FicheCardProps> = ({
     if (parts.length === 1) return parts[0][0].toUpperCase();
     return parts[0][0].toUpperCase() + parts[1][0].toUpperCase();
   };
-  console.log('🧪 fiche.id', fiche.id, 'statut:', fiche.statut, 'assignedTo:', fiche.assigned_to, 'currentAgent:', currentAgent);
+  console.log('🧪 fiche.id', fiche.id, 'statut:', fiche.statut, 'assigned_to:', fiche.assigned_to, 'currentAgent:', currentAgent);
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-all duration-300">
       {/* En-tête */}
@@ -199,7 +199,7 @@ const FicheCard: React.FC<FicheCardProps> = ({
                 <CalendarPlus size={16} />
                 Rendez-vous
               </button>
-              {/* <button
+              <button
                 onClick={() => {
                   console.log("🧪 Bouton Annuler cliqué pour la fiche ID :", fiche.id)
                   onCancelFiche(fiche.id);
@@ -207,7 +207,7 @@ const FicheCard: React.FC<FicheCardProps> = ({
                 className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium shadow-sm"
               >
                 Annuler
-              </button> */}
+              </button>
             </>
           )}
       </div>
