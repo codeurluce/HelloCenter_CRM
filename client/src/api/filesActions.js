@@ -133,8 +133,8 @@ export const handleProgramRdv = async (ficheId, rdvDate, commentaire, fetchFiche
   try {
     await axiosInstance.put(`/files/${ficheId}/programmer-rdv`, {
       statut: 'rendez_vous',
-      rdv_date: rdvDate,
-      commentaire: fullCommentaire,
+      rendez_vous_date: rdvDate,
+      rendez_vous_commentaire: fullCommentaire,
     });
 
     await logHistorique({

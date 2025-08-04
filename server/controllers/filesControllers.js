@@ -6,14 +6,14 @@ exports.getTodayNewFilesByUniverse = async (req, res) => {
 
   try {
     const agentFiles = req.user.id; // exemple: 'Energie' ou 'OffreMobile'
-    
+
     const result = await db.query(`
       SELECT COUNT(*) AS total_files_today
       FROM files
       WHERE statut = 'nouvelle'
         AND assigned_to = $1
     `, [agentFiles]);
-                            
+
     res.json({ total_files_today: result.rows[0].total_files_today });
   } catch (error) {
     console.error('Erreur getTodayNewFilesByUniverse:', error);
@@ -29,7 +29,7 @@ exports.traiterFiche = async (req, res) => {
   try {
     console.log('🔧 Reçu pour traitement :', { id, statut, assigned_to, date_modification });
 
-     // Mise à jour + on récupère la fiche mise à jour
+    // Mise à jour + on récupère la fiche mise à jour
     const result = await db.query(
       `UPDATE files 
        SET statut = $1, assigned_to = $2, date_modification = $3 
@@ -37,9 +37,9 @@ exports.traiterFiche = async (req, res) => {
        RETURNING *`,
       [statut, assigned_to, date_modification, id]
     );
- const updatedFiche = result.rows[0];
+    const updatedFiche = result.rows[0];
 
- // Récupérer nom complet de l'agent
+    // Récupérer nom complet de l'agent
     const agentResult = await db.query(
       `SELECT lastname, firstname FROM users WHERE id = $1`,
       [assigned_to]
@@ -80,7 +80,7 @@ exports.annulerFiche = async (req, res) => {
 // export pour clôturer une fiche
 exports.cloturerFiche = async (req, res) => {
   const { id } = req.params;
-  const { tag, commentaire, date_modification} = req.body;
+  const { tag, commentaire, date_modification } = req.body;
 
   try {
     await db.query(
@@ -99,12 +99,17 @@ exports.cloturerFiche = async (req, res) => {
 
 // Export pour prendre un rendez-vous
 exports.programRdv = async (req, res) => {
-    const { id } = req.params;
+  const { id } = req.params;
   const { rendez_vous_date, rendez_vous_commentaire } = req.body;
 
   try {
     await db.query(
-      'UPDATE files SET rendez_vous_date = $1, rendez_vous_commentaire = $2 WHERE id = $3',
+      `UPDATE files 
+   SET rendez_vous_date = $1, 
+       rendez_vous_commentaire = $2,
+       statut = 'rendez_vous',
+       date_modification = NOW()
+   WHERE id = $3`,
       [rendez_vous_date, rendez_vous_commentaire, id]
     );
     res.sendStatus(200);
@@ -119,8 +124,8 @@ exports.getFilesToRDV = async (req, res) => {
   try {
     const result = await db.query(
       `SELECT * FROM files 
-        WHERE rendez_vous_date IS NOT NULL
-      ORDER BY rendez_vous_date ASC`
+        WHERE statut = 'rendez_vous'
+       ORDER BY rendez_vous_date ASC`
     );
     res.json(result.rows);
   } catch (err) {
