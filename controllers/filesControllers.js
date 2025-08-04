@@ -89,13 +89,42 @@ exports.cloturerFiche = async (req, res) => {
        WHERE id = $4`,
       [tag, commentaire, date_modification, id]
     );
-
-    // const { rows } = await db.query('SELECT * FROM files WHERE id = $1', [id]);
-    // res.json(rows[0]);
-
     res.status(200).json({ message: 'Fiche clôturée avec succès' });
   } catch (err) {
     console.error('Erreur clôture fiche :', err);
     res.sendStatus(500);
   }
 };
+
+
+// Export pour prendre un rendez-vous
+exports.programRdv = async (req, res) => {
+    const { id } = req.params;
+  const { rendez_vous_date, rendez_vous_commentaire } = req.body;
+
+  try {
+    await db.query(
+      'UPDATE files SET rendez_vous_date = $1, rendez_vous_commentaire = $2 WHERE id = $3',
+      [rendez_vous_date, rendez_vous_commentaire, id]
+    );
+    res.sendStatus(200);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Erreur lors de la mise à jour du rendez-vous');
+  }
+};
+
+//  Export pour recuperer toutes les fiches en RDV 
+exports.getFilesToRDV = async (req, res) => {
+  try {
+    const result = await db.query(
+      `SELECT * FROM files 
+        WHERE rendez_vous_date IS NOT NULL
+      ORDER BY rendez_vous_date ASC`
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Erreur lors de la récupération des fiches en RDV :', err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+}
