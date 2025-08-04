@@ -19,6 +19,8 @@ export interface Fiche {
   tag?: string;
   assignedTo?: string;
   assignedToName?: string;
+   rendez_vous_date?: string;
+  rendez_vous_commentaire?: string;
 }
 
 export interface ClotureData {

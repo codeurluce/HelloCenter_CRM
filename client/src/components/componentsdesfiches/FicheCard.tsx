@@ -9,6 +9,7 @@ import {
   Hash,
   User,
   Clock,
+  Eye,
 } from 'lucide-react';
 import { Fiche, ClotureData } from './types/fiche.ts';
 
@@ -19,6 +20,7 @@ interface FicheCardProps {
   onOpenClotureModal: (id: number) => void;
   onProgramRdv: (id: number) => void;
   onCancelFiche: (id: number) => void;
+  onVoirRdvDetails?: (fiche: Fiche) => void; // Optionnel pour voir les détails du rendez-vous
 }
 
 const FicheCard: React.FC<FicheCardProps> = ({
@@ -28,8 +30,9 @@ const FicheCard: React.FC<FicheCardProps> = ({
   onOpenClotureModal,
   onProgramRdv,
   onCancelFiche,
+  onVoirRdvDetails = () => { }, // Fonction par défaut vide si non fourni
 }) => {
-  
+
   const getStatusColor = (statut: string) => {
     switch (statut) {
       case 'nouvelle':
@@ -52,7 +55,7 @@ const FicheCard: React.FC<FicheCardProps> = ({
       case 'en_traitement':
         return 'En traitement';
       case 'rendez_vous':
-        return 'Rendez vous';  
+        return 'Rendez vous';
       case 'cloturee':
         return 'Clôturée';
       default:
@@ -66,7 +69,7 @@ const FicheCard: React.FC<FicheCardProps> = ({
     return parts[0][0].toUpperCase() + parts[1][0].toUpperCase();
   };
   console.log('🧪 fiche.id', fiche.id, 'statut:', fiche.statut, 'assigned_to:', fiche.assigned_to, 'currentAgent:', currentAgent);
-  
+
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-all duration-300">
       {/* En-tête */}
@@ -185,6 +188,27 @@ const FicheCard: React.FC<FicheCardProps> = ({
             <Play size={16} />
             Prendre en charge
           </button>
+        )}
+
+        {/* Voir les détails du rendez-vous */}
+        {fiche.statut === 'rendez_vous' && (
+
+          <>
+            <button
+              onClick={() => { console.log('🛠️ Traitement demandé pour fiche ID:', fiche.id); onTreatFiche(fiche.id) }}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm"
+            >
+              <Play size={16} />
+              Prendre en charge
+            </button>
+            <button
+              className="flex items-center gap-2 px-4 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+              onClick={() => onVoirRdvDetails?.(fiche)} // ✅ Sécurisé avec "?."
+            >
+              <Eye size={16} />
+              Voir détails
+            </button>
+          </>
         )}
 
         {/* Actions fiche en traitement par agent courant */}

@@ -23,8 +23,6 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
   onCloseFiche,
   onProgramRdv,
 }) => {
-  console.log("🔁 fiches après traitement (dans FichesInfoPanel) :", fiches);
-// console.log("🧑 currentAgent :", currentAgent);
   const { user } = useContext(AuthContext);
   const [activeFilter, setActiveFilter] = useState<FilterType>('nouvelle');
   const [clotureModal, setClotureModal] = useState<{
@@ -36,6 +34,10 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
     ficheId: null,
     clientName: '',
   });
+
+  const [showRdvModal, setShowRdvModal] = useState(false);
+  const [selectedFiche, setSelectedFiche] = useState<Fiche | null>(null);
+  const [showRdvDetailsModal, setShowRdvDetailsModal] = useState(false);
 
   // Filtrage selon rôle utilisateur
   const fichesFiltreesParRole = useMemo(() => {
@@ -68,16 +70,14 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
     return fichesFiltreesParRole.filter((f) => f.statut === activeFilter);
   }, [fichesFiltreesParRole, activeFilter]);
 
-const [showRdvModal, setShowRdvModal] = useState(false);
-const [selectedFiche, setSelectedFiche] = useState<Fiche | null>(null);
-// Ouvre la modal RDV pour programmer un rendez-vous
-const handleOpenRdvModal = (ficheId: number) => {
-  const fiche = fiches.find(f => f.id === ficheId);
-  if (fiche) {
-    setSelectedFiche(fiche);
-    setShowRdvModal(true);
-  }
-};
+  // Ouvre la modal RDV pour programmer un rendez-vous
+  const handleOpenRdvModal = (ficheId: number) => {
+    const fiche = fiches.find(f => f.id === ficheId);
+    if (fiche) {
+      setSelectedFiche(fiche);
+      setShowRdvModal(true);
+    }
+  };
 
   // Ouvre la modal clôture pour cloturer une fiche
   const handleOpenClotureModal = (ficheId: number) => {
@@ -90,6 +90,12 @@ const handleOpenRdvModal = (ficheId: number) => {
       });
     }
   };
+
+
+const handleVoirRdvDetails = (fiche: Fiche) => {
+  setSelectedFiche(fiche);
+  setShowRdvDetailsModal(true);
+};
 
   // Soumet la clôture depuis la modal
   const handleClotureSubmit = (data: ClotureData) => {
@@ -140,7 +146,56 @@ const handleOpenRdvModal = (ficheId: number) => {
         return 'Toutes';
     }
   };
-console.log("🔁 fiches après traitement :", fiches);
+
+  // Modal pour voir détails RDV
+  const RdvDetailsModal = ({
+    fiche,
+    isOpen,
+    onClose,
+  }: {
+    fiche: Fiche | null;
+    isOpen: boolean;
+    onClose: () => void;
+  }) => {
+    if (!isOpen || !fiche) return null;
+
+    return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-xl relative animate-fade-in">
+        {/* Bouton de fermeture */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl"
+          aria-label="Fermer"
+        >
+          &times;
+        </button>
+
+        <h2 className="text-2xl font-semibold mb-6 text-center">
+          Détails du Rendez-vous
+        </h2>
+
+        <div className="space-y-4">
+          <div>
+            <span className="font-medium text-gray-700">Date prévue :</span>{' '}
+            <span className="text-gray-900">
+              {fiche.rendez_vous_date
+                ? new Date(fiche.rendez_vous_date).toLocaleString()
+                : 'Non définie'}
+            </span>
+          </div>
+
+          <div>
+            <span className="font-medium text-gray-700">Commentaire :</span>
+            <div className="mt-1 p-3 bg-gray-100 rounded-lg text-gray-800">
+              {fiche.rendez_vous_commentaire || 'Aucun commentaire'}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
@@ -194,15 +249,18 @@ console.log("🔁 fiches après traitement :", fiches);
                 ) : (
                   <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                     {filteredFiches.map((fiche) => (
-                      <FicheCard
-                        key={fiche.id}
-                        fiche={fiche}
-                        currentAgent={user?.id.toString() || ''}
-                        onTreatFiche={() => onTreatFiche(fiche.id)}
-                        onCancelFiche={() => onCancelFiche(fiche.id)}
-                        onOpenClotureModal={() => handleOpenClotureModal(fiche.id)}
-                        onProgramRdv={() => handleOpenRdvModal(fiche.id)}
-                      />
+                      <div key={fiche.id} className="relative">
+                        <FicheCard
+                          fiche={fiche}
+                          currentAgent={user?.id.toString() || ''}
+                          onTreatFiche={() => onTreatFiche(fiche.id)}
+                          onCancelFiche={() => onCancelFiche(fiche.id)}
+                          onOpenClotureModal={() => handleOpenClotureModal(fiche.id)}
+                          onProgramRdv={() => handleOpenRdvModal(fiche.id)}
+                          onVoirRdvDetails={() => handleVoirRdvDetails(fiche)} 
+                        />
+
+                      </div>
                     ))}
                   </div>
                 )}
@@ -221,22 +279,21 @@ console.log("🔁 fiches après traitement :", fiches);
       />
 
       <RendezVousModal
-  isOpen={showRdvModal}
-  onClose={() => setShowRdvModal(false)}
-  onConfirm={({ date, commentaire }) => {
-    if (selectedFiche) {
-      // Appelle ton handler de RDV avec fiche.id + infos
-      onProgramRdv(selectedFiche.id, date, commentaire);
+        isOpen={showRdvModal}
+        onClose={() => setShowRdvModal(false)}
+        onConfirm={({ date, commentaire }) => {
+          if (selectedFiche) {
+            onProgramRdv(selectedFiche.id, date, commentaire);
+            setShowRdvModal(false);
+          }
+        }}
+      />
 
-      // Optionnel : tu peux aussi log les infos du RDV ici
-      console.log("📅 RDV pour fiche ID:", selectedFiche.id);
-      console.log("🕒 Date:", date);
-      console.log("📝 Commentaire:", commentaire);
-    }
-    setShowRdvModal(false);
-  }}
-/>
-
+      <RdvDetailsModal
+        fiche={selectedFiche}
+        isOpen={showRdvDetailsModal}
+        onClose={() => setShowRdvDetailsModal(false)}
+      />
     </div>
   );
 };
