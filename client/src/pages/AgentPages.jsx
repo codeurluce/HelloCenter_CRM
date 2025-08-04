@@ -8,7 +8,7 @@ import AgentInfoPanel from '../components/componentsdesonglets/AgentInfoPanel.js
 import VentesInfoPanel from '../components/componentsdesonglets/VentesInfoPanel.jsx';
 import FichesInfoPanel from '../components/componentsdesfiches/FichesInfoPanel.tsx';
 import { AuthContext } from './AuthContext.jsx';
-import {fetchFiches, handleTraitement, onCancelFiche, handleCloture, handleProgramRdv } from '../api/filesActions.js';
+import { fetchFiches, handleTraitement, onCancelFiche, handleCloture, handleProgramRdv } from '../api/filesActions.js';
 
 const AgentDashboard = () => {
   const [currentAgent, setCurrentAgent] = useState(null);
@@ -16,17 +16,19 @@ const AgentDashboard = () => {
   const [activeItem, setActiveItem] = useState('dashboard');
   const [fiches, setFiches] = useState([]);
 
-const loadFiches = async () => {
-  if (!user?.id) return;
-  const allFiches = await fetchFiches();
-  const filtered = allFiches.filter((fiche) => fiche.agent_id?.toString() === user.id?.toString());
-  setFiches(filtered);
-  setCurrentAgent(user.id);
-};
+  const loadFiches = async () => {
+    if (!user?.id) return;
+    const allFiches = await fetchFiches();
+    console.log("📦 Fiches récupérées depuis fetchFiches :", allFiches);
+    // const filtered = allFiches.filter((fiche) => fiche.assigned_to === user.id);
+    setFiches(allFiches);
+    console.log("📊 Fiches stockées dans le state :", allFiches);
+    setCurrentAgent(user.id);
+  };
 
-useEffect(() => {
-  loadFiches();
-}, [user]);
+  useEffect(() => {
+    loadFiches();
+  }, [user]);
 
 
   // 🚪 Déconnexion
@@ -67,11 +69,15 @@ useEffect(() => {
           {activeItem === 'files' && (
             <FichesInfoPanel
               fiches={fiches}
-  currentAgent={user?.univers || ''}
-  onTreatFiche={(id) => handleTraitement(id, user.id, loadFiches)}
-  onCloturer={(id, data) => handleCloture(id, data, loadFiches)}
-  onProgramRdv={(id) => handleProgramRdv(id, loadFiches)}
-  onCancelFiche={(id) => onCancelFiche(id, loadFiches)}
+              currentAgent={user?.id?.toString() || ''}
+              onTreatFiche={(id) => {
+                handleTraitement(id, user, setFiches).then(() => {
+                  loadFiches(); // <- Ajoute cette ligne pour rafraîchir
+                });
+              }}
+              onCloturer={(id, data) => handleCloture(id, data, loadFiches)}
+              onProgramRdv={(id) => handleProgramRdv(id, loadFiches)}
+              onCancelFiche={(id) => onCancelFiche(id, loadFiches)}
             />
           )}
 

@@ -7,7 +7,7 @@ export const AuthProvider = ({ children }) => {
 
   // ⬅️ Restaurer le user depuis localStorage au chargement
   useEffect(() => {
-    const storedUser = localStorage.getItem('connectedAgent');
+    const storedUser = localStorage.getItem('user');
     if (storedUser) {
       setUser(JSON.parse(storedUser));
     }
@@ -15,7 +15,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     localStorage.removeItem('token');
-    localStorage.removeItem('connectedAgent');
+    localStorage.removeItem('user');
     localStorage.removeItem('role');
     localStorage.removeItem('univers');
     setUser(null);

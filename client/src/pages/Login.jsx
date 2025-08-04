@@ -33,12 +33,12 @@ const Login = ({ onLogin }) => {
       });
 
       const { user, token } = response.data;
-
+console.log("Utilisateur connecté :", user);
       // Stockage local
       localStorage.setItem('token', token);
       localStorage.setItem('role', user.role);
       localStorage.setItem('univers', user.profil);
-      localStorage.setItem('connectedAgent', JSON.stringify(user));
+      localStorage.setItem('user', JSON.stringify(user));
 
       // Mise à jour du contexte
       setUser(user);

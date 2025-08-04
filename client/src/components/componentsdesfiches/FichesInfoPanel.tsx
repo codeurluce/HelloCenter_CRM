@@ -22,6 +22,8 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
   onCloseFiche,
   onProgramRdv,
 }) => {
+  console.log("🔁 fiches après traitement (dans FichesInfoPanel) :", fiches);
+// console.log("🧑 currentAgent :", currentAgent);
   const { user } = useContext(AuthContext);
   const [activeFilter, setActiveFilter] = useState<FilterType>('nouvelle');
   const [clotureModal, setClotureModal] = useState<{
@@ -43,7 +45,7 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
     }
     // Agent voit seulement ses fiches
     return fiches.filter(
-      (f) => f.agent_id?.toString() === user.id.toString()
+      (f) => f.assigned_to?.toString() === user.id.toString()
     );
   }, [fiches, user]);
 
@@ -126,6 +128,7 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
     }
   };
 console.log("🔁 fiches après traitement :", fiches);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
       <div className="max-w-7xl mx-auto space-y-6">

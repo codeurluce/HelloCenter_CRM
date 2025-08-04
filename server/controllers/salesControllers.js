@@ -23,7 +23,7 @@ exports.getTodaySummary = async (req, res) => {
         COUNT(*) AS total_files_today
       FROM files
       WHERE statut = 'nouvelle'
-        AND agent_id = $1
+        AND assigned_to = $1
     `);
 console.log('Résultat fichiers du jour:', filesTotal.rows[0]);
     res.json({

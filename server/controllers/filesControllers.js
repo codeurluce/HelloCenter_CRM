@@ -1,6 +1,6 @@
 const db = require('../db');
 
-// Obtenir les nouvelles fiches par univers
+// Obtenir les nouvelles fiches par
 exports.getTodayNewFilesByUniverse = async (req, res) => {
   console.log('👤 Agent connectee :', req.user);
 
@@ -11,7 +11,7 @@ exports.getTodayNewFilesByUniverse = async (req, res) => {
       SELECT COUNT(*) AS total_files_today
       FROM files
       WHERE statut = 'nouvelle'
-        AND agent_id = $1
+        AND assigned_to = $1
     `, [agentFiles]);
                             
     res.json({ total_files_today: result.rows[0].total_files_today });

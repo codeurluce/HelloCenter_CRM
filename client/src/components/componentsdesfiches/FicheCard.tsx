@@ -29,6 +29,7 @@ const FicheCard: React.FC<FicheCardProps> = ({
   onProgramRdv,
   onCancelFiche,
 }) => {
+  
   const getStatusColor = (statut: string) => {
     switch (statut) {
       case 'nouvelle':
@@ -61,6 +62,7 @@ const FicheCard: React.FC<FicheCardProps> = ({
     return parts[0][0].toUpperCase() + parts[1][0].toUpperCase();
   };
   console.log('🧪 fiche.id', fiche.id, 'statut:', fiche.statut, 'assigned_to:', fiche.assigned_to, 'currentAgent:', currentAgent);
+  
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-all duration-300">
       {/* En-tête */}
@@ -84,7 +86,7 @@ const FicheCard: React.FC<FicheCardProps> = ({
           </span>
 
           {/* Badge initiales si en traitement */}
-          {fiche.statut === 'en_traitement' && fiche.assignedToName && (
+          {/* {fiche.statut === 'en_traitement' && fiche.assignedToName && (
             <div
               className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold shadow"
               title={fiche.assignedToName}
@@ -92,7 +94,7 @@ const FicheCard: React.FC<FicheCardProps> = ({
             >
               {getInitials(fiche.assignedToName)}
             </div>
-          )}
+          )} */}
         </div>
       </div>
 
