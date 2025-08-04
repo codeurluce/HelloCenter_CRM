@@ -1,9 +1,11 @@
 // src/api/filesActions.js
 // Actions pour la gestion des fichiers dans le CRM
 
-
 import axiosInstance from './axiosInstance';
 import { logHistorique } from './historiqueFiles.ts';
+import dayjs from 'dayjs'; 
+import { toast } from 'react-toastify';
+
 
 // 📦 Charger les fiches
 export const fetchFiches = async () => {
@@ -115,18 +117,24 @@ export const handleCloture = async (ficheId, data, user, fetchFiches) => {
   }
 };
 
-// 📅 Programmer RDV
-export const handleProgramRdv = async (ficheId, fetchFiches) => {
+// 📅 Programmer RDV + sauvegarde dans la bd
+export const handleProgramRdv = async (ficheId, rdvDate, commentaire, fetchFiches) => {
   const user = JSON.parse(localStorage.getItem('user'));
   if (!user) {
     console.error('Utilisateur non connecté.');
     return;
   }
 
+  const formattedDate = dayjs(rdvDate).format('DD/MM/YYYY à HH:mm');
+  const fullCommentaire = commentaire
+    ? `${commentaire} (RDV prévu le ${formattedDate})`
+    : `Rendez-vous programmé le ${formattedDate}`;
+
   try {
-    await axiosInstance.put(`/files/${ficheId}/rdv`, {
-      statut: 'en_traitement',
-      rendezVous: true,
+    await axiosInstance.put(`/files/${ficheId}/programmer-rdv`, {
+      statut: 'rendez_vous',
+      rdv_date: rdvDate,
+      commentaire: fullCommentaire,
     });
 
     await logHistorique({
@@ -134,11 +142,13 @@ export const handleProgramRdv = async (ficheId, fetchFiches) => {
       action: 'PROGRAMMATION_RDV',
       actorId: user.id,
       actorName: `${user.firstname} ${user.lastname}`,
-      commentaire: 'Rendez-vous programmé',
+      commentaire: fullCommentaire,
     });
 
-    fetchFiches();
+    if (fetchFiches) fetchFiches(); // ✅ rafraîchir uniquement si la fonction est passée
+    toast.success('📅 RDV programmé avec succès');
   } catch (err) {
     console.error('Erreur lors de la programmation du RDV :', err);
+    toast.error("❌ Une erreur s'est produite lors de la prise de rendez-vous.");
   }
 };

@@ -10,7 +10,7 @@ export interface Fiche {
   code_postal?: string;
   mail_client?: string;
   numero_mobile?: string;
-  statut: 'nouvelle' | 'en_traitement' | 'cloturee';
+  statut: 'nouvelle' | 'en_traitement' | 'rendez_vous' | 'cloturee';
   commentaire?: string;
   agent_id: number;
   date_creation: string;

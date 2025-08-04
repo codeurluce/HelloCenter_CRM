@@ -1,19 +1,20 @@
 import React, { useState, useMemo, useContext } from 'react';
-import { FileText, Clock, CheckCircle, Filter } from 'lucide-react';
+import { FileText, Clock, CheckCircle, CalendarClock, Filter } from 'lucide-react';
 import { Fiche, ClotureData } from './types/fiche';
 import FicheCard from './FicheCard.tsx';
 import ClotureModal from './ClotureModal.tsx';
 import { AuthContext } from '../../pages/AuthContext.jsx';
+import RendezVousModal from './RendezVousModal.jsx';
 
 interface FichesInfoPanelProps {
   fiches: Fiche[];
   onTreatFiche: (id: number) => void;
   onCancelFiche: (id: number) => void;
   onCloseFiche: (id: number, data: ClotureData) => void;
-  onProgramRdv: (id: number) => void;
+  onProgramRdv: (id: number, date: string, commentaire: string) => void;
 }
 
-type FilterType = 'nouvelle' | 'en_traitement' | 'cloturee' | 'toutes';
+type FilterType = 'nouvelle' | 'en_traitement' | 'rendez_vous' | 'cloturee' | 'toutes';
 
 const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
   fiches,
@@ -52,13 +53,10 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
   // Compteurs par statut
   const counters = useMemo(
     () => ({
-      nouvelle: fichesFiltreesParRole.filter((f) => f.statut === 'nouvelle')
-        .length,
-      en_traitement: fichesFiltreesParRole.filter(
-        (f) => f.statut === 'en_traitement'
-      ).length,
-      cloturee: fichesFiltreesParRole.filter((f) => f.statut === 'cloturee')
-        .length,
+      nouvelle: fichesFiltreesParRole.filter((f) => f.statut === 'nouvelle').length,
+      en_traitement: fichesFiltreesParRole.filter((f) => f.statut === 'en_traitement').length,
+      rendez_vous: fichesFiltreesParRole.filter((f) => f.statut === 'rendez_vous').length,
+      cloturee: fichesFiltreesParRole.filter((f) => f.statut === 'cloturee').length,
       toutes: fichesFiltreesParRole.length,
     }),
     [fichesFiltreesParRole]
@@ -70,7 +68,18 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
     return fichesFiltreesParRole.filter((f) => f.statut === activeFilter);
   }, [fichesFiltreesParRole, activeFilter]);
 
-  // Ouvre la modal clôture
+const [showRdvModal, setShowRdvModal] = useState(false);
+const [selectedFiche, setSelectedFiche] = useState<Fiche | null>(null);
+// Ouvre la modal RDV pour programmer un rendez-vous
+const handleOpenRdvModal = (ficheId: number) => {
+  const fiche = fiches.find(f => f.id === ficheId);
+  if (fiche) {
+    setSelectedFiche(fiche);
+    setShowRdvModal(true);
+  }
+};
+
+  // Ouvre la modal clôture pour cloturer une fiche
   const handleOpenClotureModal = (ficheId: number) => {
     const fiche = fiches.find((f) => f.id === ficheId);
     if (fiche) {
@@ -108,6 +117,8 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
         return <FileText size={16} />;
       case 'en_traitement':
         return <Clock size={16} />;
+      case 'rendez_vous':
+        return <CalendarClock size={16} />;
       case 'cloturee':
         return <CheckCircle size={16} />;
       default:
@@ -121,6 +132,8 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
         return 'Nouvelles';
       case 'en_traitement':
         return 'En cours';
+      case 'rendez_vous':
+        return 'Rendez vous';
       case 'cloturee':
         return 'Clôturées';
       default:
@@ -140,7 +153,7 @@ console.log("🔁 fiches après traitement :", fiches);
 
           <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200 mt-6">
             <div className="flex flex-wrap gap-3 mb-6">
-              {(['nouvelle', 'en_traitement', 'cloturee', 'toutes'] as FilterType[]).map(
+              {(['nouvelle', 'en_traitement', 'rendez_vous', 'cloturee', 'toutes'] as FilterType[]).map(
                 (filter) => (
                   <button
                     key={filter}
@@ -188,7 +201,7 @@ console.log("🔁 fiches après traitement :", fiches);
                         onTreatFiche={() => onTreatFiche(fiche.id)}
                         onCancelFiche={() => onCancelFiche(fiche.id)}
                         onOpenClotureModal={() => handleOpenClotureModal(fiche.id)}
-                        onProgramRdv={() => onProgramRdv(fiche.id)}
+                        onProgramRdv={() => handleOpenRdvModal(fiche.id)}
                       />
                     ))}
                   </div>
@@ -206,6 +219,24 @@ console.log("🔁 fiches après traitement :", fiches);
         ficheId={clotureModal.ficheId || 0}
         clientName={clotureModal.clientName}
       />
+
+      <RendezVousModal
+  isOpen={showRdvModal}
+  onClose={() => setShowRdvModal(false)}
+  onConfirm={({ date, commentaire }) => {
+    if (selectedFiche) {
+      // Appelle ton handler de RDV avec fiche.id + infos
+      onProgramRdv(selectedFiche.id, date, commentaire);
+
+      // Optionnel : tu peux aussi log les infos du RDV ici
+      console.log("📅 RDV pour fiche ID:", selectedFiche.id);
+      console.log("🕒 Date:", date);
+      console.log("📝 Commentaire:", commentaire);
+    }
+    setShowRdvModal(false);
+  }}
+/>
+
     </div>
   );
 };

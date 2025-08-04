@@ -5,12 +5,14 @@ import AgentDashboard from './pages/AgentPages';
 import AdminPages from './pages/AdminPages';
 import NotFoundPages from './pages/NotFoundPages';
 import { AuthProvider } from './pages/AuthContext';
+import { ToastContainer } from 'react-toastify';
 
 function AppWrapper() {
   return (
     <AuthProvider>
       <Router>
         <App />
+        <ToastContainer position="top-right" autoClose={3000} />
       </Router>
     </AuthProvider>
   );

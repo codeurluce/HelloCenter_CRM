@@ -36,6 +36,8 @@ const FicheCard: React.FC<FicheCardProps> = ({
         return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'en_traitement':
         return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'rendez_vous':
+        return 'bg-amber-100 text-amber-800 border-amber-200';
       case 'cloturee':
         return 'bg-green-100 text-green-800 border-green-200';
       default:
@@ -49,6 +51,8 @@ const FicheCard: React.FC<FicheCardProps> = ({
         return 'Nouvelle';
       case 'en_traitement':
         return 'En traitement';
+      case 'rendez_vous':
+        return 'Rendez vous';  
       case 'cloturee':
         return 'Clôturée';
       default:

@@ -7,6 +7,7 @@ import TodayRecap from '../components/cards/TodayRecap.jsx';
 import AgentInfoPanel from '../components/componentsdesonglets/AgentInfoPanel.jsx';
 import VentesInfoPanel from '../components/componentsdesonglets/VentesInfoPanel.jsx';
 import FichesInfoPanel from '../components/componentsdesfiches/FichesInfoPanel.tsx';
+// import RendezVousPage from '../components/componentsdesonglets/RendezVousPage.jsx';
 import { AuthContext } from './AuthContext.jsx';
 import { fetchFiches, handleTraitement, onCancelFiche, handleCloture, handleProgramRdv } from '../api/filesActions.js';
 
@@ -27,8 +28,10 @@ const AgentDashboard = () => {
   };
 
   useEffect(() => {
+    if (user?.id) {
     loadFiches();
-  }, [user]);
+  }
+}, [user]);
 
 
   // 🚪 Déconnexion
@@ -39,6 +42,14 @@ const AgentDashboard = () => {
     window.location.href = '/';
   };
 
+
+  const onCloseFiche = (id, data) => {  handleCloture(id, data, user, loadFiches);
+};
+
+const handleProgramRdvWrapper = (ficheId, rdvDate, commentaire) => {
+  handleProgramRdv(ficheId, rdvDate, commentaire, loadFiches);
+};
+
   return (
     <div className="flex h-screen">
       <Sidebar
@@ -46,8 +57,7 @@ const AgentDashboard = () => {
         setActiveItem={setActiveItem}
         onLogout={handleLogout}
       />
-
-      <div className="flex-1 flex flex-col overflow-hidden">
+    <div className="flex-1 flex flex-col overflow-hidden">
         <DashboardHeader activePage={activeItem} />
 
         <main className="flex-1 p-6 bg-gray-100 overflow-auto">
@@ -62,26 +72,20 @@ const AgentDashboard = () => {
               </div>
             </>
           )}
-
           {activeItem === 'agents' && <AgentInfoPanel setActiveItem={setActiveItem} />}
           {activeItem === 'sales' && <VentesInfoPanel setActiveItem={setActiveItem} />}
-
           {activeItem === 'files' && (
             <FichesInfoPanel
               fiches={fiches}
               currentAgent={user?.id?.toString() || ''}
-              onTreatFiche={(id) => {
-                handleTraitement(id, user, setFiches).then(() => {
-                  loadFiches(); // <- Ajoute cette ligne pour rafraîchir
-                });
-              }}
-              onCloseFiche={(id, data) => handleCloture(id, data, user, loadFiches)}
-              onProgramRdv={(id) => handleProgramRdv(id, loadFiches)}
+              onTreatFiche={(id) => {handleTraitement(id, user, setFiches).then(() => {loadFiches(); }); }}
+              onCloseFiche={onCloseFiche}
+              onProgramRdv={handleProgramRdvWrapper}
               onCancelFiche={(id) => onCancelFiche(id, loadFiches)}
             />
           )}
 
-          {activeItem === 'appointments' && <p>Voir les rendez-vous programmés...</p>}
+          {/* {activeItem === 'appointments' && <RendezVousPage /> } */}
           {activeItem === 'settings' && <p>Paramètres de l'application...</p>}
         </main>
       </div>

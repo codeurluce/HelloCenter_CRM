@@ -9,7 +9,7 @@ const Sidebar = ({ activeItem, setActiveItem, onLogout }) => {
         { id: 'dashboard', label: 'Tableau de bord', icon: LayoutDashboard },
         { id: 'sales', label: 'Ventes', icon: ShoppingCart },
         { id: 'files', label: 'Fichiers', icon: Folder },
-        { id: 'appointments', label: 'Rendez-vous', icon: Calendar },
+        // { id: 'appointments', label: 'Rendez-vous', icon: Calendar },
         { id: 'agents', label: 'Agent', icon: CircleUser },
     ];
 
