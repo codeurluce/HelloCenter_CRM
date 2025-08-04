@@ -80,7 +80,7 @@ exports.annulerFiche = async (req, res) => {
 // export pour clôturer une fiche
 exports.cloturerFiche = async (req, res) => {
   const { id } = req.params;
-  const { tag, commentaire, date_modification } = req.body;
+  const { tag, commentaire, date_modification} = req.body;
 
   try {
     await db.query(
@@ -89,6 +89,9 @@ exports.cloturerFiche = async (req, res) => {
        WHERE id = $4`,
       [tag, commentaire, date_modification, id]
     );
+
+    // const { rows } = await db.query('SELECT * FROM files WHERE id = $1', [id]);
+    // res.json(rows[0]);
 
     res.status(200).json({ message: 'Fiche clôturée avec succès' });
   } catch (err) {

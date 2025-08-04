@@ -85,9 +85,8 @@ export const onCancelFiche = async (ficheId, fetchFiches) => {
 };
 
 // ✅ Clôturer fiche
-export const handleCloture = async (ficheId, data, fetchFiches) => {
-  const user = JSON.parse(localStorage.getItem('user'));
-  if (!user) {
+export const handleCloture = async (ficheId, data, user, fetchFiches) => {
+   if (!user) {
     console.error('Utilisateur non connecté.');
     return;
   }
@@ -97,6 +96,8 @@ export const handleCloture = async (ficheId, data, fetchFiches) => {
       statut: 'cloturee',
       tag: data.tag,
       commentaire: data.commentaire,
+      assigned_to: user.id,
+      assigned_to_name: `${user.firstname} ${user.lastname}`,
       date_modification: new Date(),
     });
 

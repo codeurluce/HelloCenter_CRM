@@ -75,7 +75,7 @@ const AgentDashboard = () => {
                   loadFiches(); // <- Ajoute cette ligne pour rafraîchir
                 });
               }}
-              onCloturer={(id, data) => handleCloture(id, data, loadFiches)}
+              onCloseFiche={(id, data) => handleCloture(id, data, user, loadFiches)}
               onProgramRdv={(id) => handleProgramRdv(id, loadFiches)}
               onCancelFiche={(id) => onCancelFiche(id, loadFiches)}
             />
