@@ -133,3 +133,26 @@ exports.getFilesToRDV = async (req, res) => {
     res.status(500).json({ error: 'Erreur serveur' });
   }
 }
+
+
+// GET /api/rendezvous/upcoming/:agentId
+exports.getUpcomingRendezVous = async (req, res) => {
+  const { agentId } = req.params;
+  const now = new Date();
+  const oneHourLater = new Date(now.getTime() + 2 * 60 * 1000);
+
+  try {
+    const result = await db.query(
+      `SELECT id, nom_client, prenom_client, rendez_vous_date 
+       FROM files 
+       WHERE assigned_to = $1 
+         AND statut = 'rendez_vous' 
+         AND rendez_vous_date BETWEEN $2 AND $3`,
+      [agentId, now.toISOString(), oneHourLater.toISOString()]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Erreur lors de la récupération des rendez-vous');
+  }
+};

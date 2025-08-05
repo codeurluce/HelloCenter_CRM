@@ -199,14 +199,13 @@ const FicheCard: React.FC<FicheCardProps> = ({
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm"
             >
               <Play size={16} />
-              Prendre en charge
+              Poursuivre
             </button>
             <button
               className="flex items-center gap-2 px-4 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
               onClick={() => onVoirRdvDetails?.(fiche)} // ✅ Sécurisé avec "?."
             >
               <Eye size={16} />
-              Voir détails
             </button>
           </>
         )}
