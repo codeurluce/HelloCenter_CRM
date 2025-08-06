@@ -1,6 +1,17 @@
+// components/dashbords/SimpleTimer.jsx
 import React, { useState, useEffect, useRef } from 'react';
+import { Coffee, Utensils, BookOpenCheck, UserCheck, UserX, Clock5 } from 'lucide-react';
 import { saveSessionToDB } from '../../api/saveSessionToDB';
-import socket from '../../socket'; // ✅ on importe le client socket
+import socket from '../../socket';
+
+const STATUS_ICONS = {
+  disponible: { icon: UserCheck, label: 'Disponible', color: 'text-green-600' },
+  pause_autre: { icon: Clock5, label: 'Pause', color: 'text-gray-500' },
+  pause_cafe: { icon: Coffee, label: 'Pause Café', color: 'text-orange-500' },
+  pause_repas: { icon: Utensils, label: 'Pause Repas', color: 'text-yellow-500' },
+  pause_formation: { icon: BookOpenCheck, label: 'Pause Formation', color: 'text-blue-500' },
+  indisponible: { icon: UserX, label: 'Indisponible', color: 'text-red-500' },
+};
 
 const SimpleTimer = () => {
   const storedUser = JSON.parse(localStorage.getItem('user'));
@@ -11,19 +22,17 @@ const SimpleTimer = () => {
   const [sessionTime, setSessionTime] = useState(0);
   const [pauseTime, setPauseTime] = useState(0);
   const [startTime, setStartTime] = useState(null);
+  const [pauseType, setPauseType] = useState(null);
 
-  // 🔄 Connexion Socket.IO dès que le composant se monte
   useEffect(() => {
     if (userId) {
-      socket.emit('agent_connected', { userId }); // 👋 annonce la connexion
+      socket.emit('agent_connected', { userId });
     }
-
     return () => {
-      socket.emit('agent_disconnected', { userId }); // 🚪 annonce la déconnexion
+      socket.emit('agent_disconnected', { userId });
     };
   }, [userId]);
 
-  // 🧠 Initialisation avec vérification d'inactivité
   useEffect(() => {
     if (!userId) return;
 
@@ -50,7 +59,6 @@ const SimpleTimer = () => {
     }
   }, [userId]);
 
-  // ⏱ Timer selon statut
   useEffect(() => {
     clearInterval(timerRef.current);
 
@@ -63,7 +71,7 @@ const SimpleTimer = () => {
           return updated;
         });
       }, 1000);
-    } else if (status === 'pause') {
+    } else if (status.startsWith('pause')) {
       timerRef.current = setInterval(() => {
         setPauseTime((prev) => {
           const updated = prev + 1;
@@ -77,8 +85,7 @@ const SimpleTimer = () => {
     return () => clearInterval(timerRef.current);
   }, [status]);
 
-  // ⛔ Changement de statut avec socket + DB
-  const handleStatusChange = async (newStatus) => {
+  const handleStatusChange = async (newStatus, pause = null) => {
     const now = new Date().toISOString();
 
     if (userId && startTime && status !== 'indisponible') {
@@ -87,6 +94,7 @@ const SimpleTimer = () => {
           user_id: userId,
           status,
           startTime,
+          pause_type: pauseType,
           endTime: now,
         });
       } catch (error) {
@@ -95,9 +103,9 @@ const SimpleTimer = () => {
     }
 
     if (newStatus === 'indisponible') {
-      localStorage.clear();
-      setSessionTime(0);
-      setPauseTime(0);
+      localStorage.setItem('agentStatus', newStatus);
+      localStorage.setItem('lastActive', Date.now().toString());
+      setPauseType(null);
       setStartTime(null);
     } else {
       const newStart = new Date().toISOString();
@@ -105,11 +113,16 @@ const SimpleTimer = () => {
       localStorage.setItem('lastActive', Date.now().toString());
       localStorage.setItem('startTime', newStart);
       setStartTime(newStart);
+
+      if (newStatus.startsWith('pause')) {
+        setPauseType(pause);
+      } else {
+        setPauseType(null);
+      }
     }
 
     setStatus(newStatus);
 
-    // 🚀 Émission socket en temps réel
     socket.emit('agent_status_update', {
       userId,
       status: newStatus,
@@ -117,13 +130,13 @@ const SimpleTimer = () => {
     });
   };
 
-  // 💾 Sauvegarde à la fermeture
   useEffect(() => {
     const handleUnload = () => {
       if (userId && startTime && status !== 'indisponible') {
         saveSessionToDB({
           user_id: userId,
           status,
+          pause_type: pauseType,
           startTime,
           endTime: new Date().toISOString(),
         });
@@ -142,26 +155,25 @@ const SimpleTimer = () => {
   };
 
   return (
-    <div className="flex flex-col items-start gap-2 text-sm">
-      <div className="flex gap-2">
-        <button
-          className={`px-3 py-1 rounded ${status === 'disponible' ? 'bg-green-600 text-white' : 'bg-gray-200'}`}
-          onClick={() => handleStatusChange('disponible')}
-        >
-          Disponible
-        </button>
-        <button
-          className={`px-3 py-1 rounded ${status === 'pause' ? 'bg-yellow-500 text-white' : 'bg-gray-200'}`}
-          onClick={() => handleStatusChange('pause')}
-        >
-          Pause
-        </button>
-        <button
-          className={`px-3 py-1 rounded ${status === 'indisponible' ? 'bg-red-500 text-white' : 'bg-gray-200'}`}
-          onClick={() => handleStatusChange('indisponible')}
-        >
-          Indisponible
-        </button>
+    <div className="flex flex-col items-start gap-4 text-sm">
+      <div className="flex items-center gap-4">
+        {Object.entries(STATUS_ICONS).map(([key, { icon: Icon, label, color }]) => {
+          const isActive = status === key;
+          return (
+            <div
+              key={key}
+              className="group relative cursor-pointer p-2 rounded hover:bg-gray-100 transition"
+              onClick={() =>
+                handleStatusChange(key, key.startsWith('pause') ? key.split('_')[1] : null)
+              }
+            >
+              <Icon className={`text-xl transition-all ${isActive ? color : 'text-gray-400'} ${isActive ? 'scale-125' : 'opacity-70'}`} />
+              <div className="absolute left-1/2 -translate-x-1/2 mt-8 bg-black text-white text-sm px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-all z-10">
+                {label}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       <div>
@@ -169,7 +181,7 @@ const SimpleTimer = () => {
       </div>
       {pauseTime > 0 && (
         <div>
-          💤 Pause : <strong>{formatTime(pauseTime)}</strong>
+          💤 Pause totale : <strong>{formatTime(pauseTime)}</strong>
         </div>
       )}
     </div>

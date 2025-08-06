@@ -10,6 +10,9 @@ import FichesInfoPanel from '../components/componentsdesfiches/FichesInfoPanel.t
 // import RendezVousPage from '../components/componentsdesonglets/RendezVousPage.jsx';
 import { AuthContext } from './AuthContext.jsx';
 import { fetchFiches, handleTraitement, onCancelFiche, handleCloture, handleProgramRdv } from '../api/filesActions.js';
+import { AgentStatusProvider } from '../components/componentsAgents/AgentStatusContext.jsx';
+
+
 
 const AgentDashboard = () => {
   const [currentAgent, setCurrentAgent] = useState(null);
@@ -51,6 +54,7 @@ const handleProgramRdvWrapper = (ficheId, rdvDate, commentaire) => {
 };
 
   return (
+    <AgentStatusProvider>
     <div className="flex h-screen">
       <Sidebar
         activeItem={activeItem}
@@ -90,6 +94,7 @@ const handleProgramRdvWrapper = (ficheId, rdvDate, commentaire) => {
         </main>
       </div>
     </div>
+    </AgentStatusProvider>
   );
 };
 
