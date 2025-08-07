@@ -1,7 +1,9 @@
 // components/componentsdesonglets/AgentInfoPanel.jsx
 import React, { useEffect, useRef } from "react";
 import { Coffee, Utensils, BookOpenCheck, UserCheck, UserX, Clock5 } from 'lucide-react';
+import { startSession, closeSession } from '../../api/saveSessionToDB';
 
+// États disponibles et pauses
 const STATES = {
   DISPO: "Disponible",
   INDISPO: "Indisponible",
@@ -13,12 +15,14 @@ const STATES = {
 
 const PAUSES = [STATES.CAFE, STATES.DEJEUNER, STATES.FORMATION, STATES.AUTRE];
 
+// Formatage du temps en hh:mm:ss
 const formatTime = (sec) => {
   if (typeof sec !== 'number' || isNaN(sec) || sec < 0) return "00:00:00";
   return new Date(sec * 1000).toISOString().substr(11, 8);
 };
 
 export default function AgentInfoPanel({
+  userId,
   etat,
   setEtat,
   timers,
@@ -48,8 +52,10 @@ export default function AgentInfoPanel({
     return () => clearInterval(intervalRef.current);
   }, [etat, lastChange, setElapsed]);
 
+
+
   useEffect(() => {
-    // Sauvegarde dans localStorage (optionnel)
+    // Sauvegarde dans localStorage à chaque changement important
     try {
       localStorage.setItem("timers", JSON.stringify({
         etat,
@@ -61,17 +67,59 @@ export default function AgentInfoPanel({
     }
   }, [etat, timers, lastChange]);
 
-  const handleClick = (newEtat) => {
+
+  const getPauseType = (etat) => {
+    switch (etat) {
+      case STATES.CAFE: return "pause_cafe";
+      case STATES.DEJEUNER: return "pause_repas";
+      case STATES.FORMATION: return "pause_formation";
+      case STATES.AUTRE: return "pause_autre";
+      default: return null;
+    }
+  };
+
+  const handleClick = async (newEtat) => {
+
+    if (!userId) {
+      console.error("User ID manquant, impossible d'enregistrer la session");
+      return;
+    }
+
     if (etat && lastChange && !isNaN(new Date(lastChange).getTime())) {
+      // Ajout durée passée sur l'état précédent dans timers
       const duree = Math.floor((Date.now() - new Date(lastChange).getTime()) / 1000);
       if (timers[etat] !== undefined && duree > 0) {
         timers[etat] += duree;
       }
     }
-    setEtat(newEtat);
-    setLastChange(new Date());
-    setElapsed(0);
-    setTimers({ ...timers }); // trigger rerender
+
+    try {
+      // Fermer la session précédente (active)
+      await closeSession(userId);
+    } catch (error) {
+      // Ignore 404 "Aucune session active trouvée"
+      if (!error.message.includes('Aucune session active trouvée')) {
+        console.error('Erreur fermeture session:', error);
+        return;
+      }
+    }
+
+    try {
+      // Démarrer la nouvelle session avec le nouveau statut
+      await startSession({
+        userId,
+        status: newEtat,
+        pauseType: getPauseType(newEtat),
+      });
+
+      setEtat(newEtat);
+      setLastChange(new Date());
+      setElapsed(0);
+      setTimers({ ...timers }); // trigger rerender
+    } catch (error) {
+      console.error('Erreur démarrage session:', error);
+      // optionnel: afficher notification utilisateur
+    }
   };
 
   const totalPause = PAUSES.reduce(

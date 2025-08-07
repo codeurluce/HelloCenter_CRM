@@ -50,6 +50,7 @@ const AgentDashboard = () => {
   const [currentAgent, setCurrentAgent] = useState(null);
   const [activeItem, setActiveItem] = useState('dashboard');
   const [fiches, setFiches] = useState([]);
+  const userId = JSON.parse(localStorage.getItem('user'))?.id;
 
   // Incrément elapsed chaque seconde pour l'état courant, calculé selon lastChange
   useEffect(() => {
@@ -151,6 +152,7 @@ const AgentDashboard = () => {
 
             {activeItem === 'agents' && (
               <AgentInfoPanel
+              userId={userId} 
                 setActiveItem={setActiveItem}
                 etat={etat}
                 setEtat={setEtat}
