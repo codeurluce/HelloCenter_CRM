@@ -35,3 +35,35 @@ exports.createSession = async (req, res) => {
         res.status(500).json({ message: 'Erreur serveur' });
     }
 };
+
+// Fermer la session active 
+exports.closeCurrentSession = async (req, res) => {
+  try {
+    const { user_id } = req.body;
+    if (!user_id) {
+      return res.status(400).json({ message: "user_id est requis" });
+    }
+
+    // Met à jour la session active (end_time NULL) pour l'utilisateur
+    const now = new Date();
+
+    const result = await db.query(
+      `UPDATE session_agents
+       SET end_time = $1,
+           duration = EXTRACT(EPOCH FROM ($1 - start_time))
+       WHERE user_id = $2
+         AND end_time IS NULL
+       RETURNING id`,
+      [now, user_id]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ message: "Aucune session active trouvée" });
+    }
+
+    res.status(200).json({ message: "Session fermée avec succès", session_id: result.rows[0].id });
+  } catch (error) {
+    console.error('Erreur fermeture session :', error);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+};

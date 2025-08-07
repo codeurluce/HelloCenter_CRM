@@ -1,35 +1,65 @@
-export const saveSessionToDB = async ({ status, startTime, endTime, user_id }) => {
-  const userId = user_id || JSON.parse(localStorage.getItem('user'))?.id;
+// api/sessionAPI.js
 
-  if (!userId) {
-    console.error("Utilisateur non connecté");
+
+//  API pour demarrer une session agent
+// Utilise l'API Fetch pour interagir avec le backend
+export const startSession = async ({ status, pause_type = null, user_id }) => {
+  const userId = user_id || JSON.parse(localStorage.getItem('user'))?.id;
+  if (!userId || !status) {
+    console.error("Utilisateur ou status manquant");
     return;
   }
 
-  const durationCalc = Math.floor((new Date(endTime) - new Date(startTime)) / 1000);
-  const duration = durationCalc > 0 ? durationCalc : null;
-
   try {
-    const response = await fetch('http://localhost:5000/api/sessions', {
+    const response = await fetch('http://localhost:5000/api/session_agents/start', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         user_id: userId,
         status,
-        start_time: new Date(startTime).toISOString(),
-        end_time: new Date(endTime).toISOString(),
-        duration
+        pause_type,
+        start_time: new Date().toISOString(),
       }),
     });
 
     if (!response.ok) {
       const data = await response.json();
-      throw new Error(data.message || 'Erreur serveur');
+      throw new Error(data.message || 'Erreur serveur au démarrage de session');
     }
 
-    const savedSession = await response.json();
-    console.log('✅ Session enregistrée :', savedSession);
+    const data = await response.json();
+    console.log('✅ Session démarrée:', data);
+    return data;
   } catch (error) {
-    console.error('❌ Erreur enregistrement session :', error.message);
+    console.error('❌ Erreur lors du démarrage de session :', error.message);
+  }
+};
+
+// API pour fermer la session agent
+// Utilise l'API Fetch pour interagir avec le backend
+export const closeSession = async ({ user_id }) => {
+  const userId = user_id || JSON.parse(localStorage.getItem('user'))?.id;
+  if (!userId) {
+    console.error("Utilisateur manquant");
+    return;
+  }
+
+  try {
+    const response = await fetch('http://localhost:5000/api/session_agents/close', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId }),
+    });
+
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.message || 'Erreur serveur à la fermeture de session');
+    }
+
+    const data = await response.json();
+    console.log('✅ Session fermée:', data);
+    return data;
+  } catch (error) {
+    console.error('❌ Erreur lors de la fermeture de session :', error.message);
   }
 };

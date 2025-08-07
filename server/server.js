@@ -28,7 +28,7 @@ app.use(cors());
 app.use(express.json());
 app.use('/api', authRoutes); // API pour l'authentification
 app.use('/api/sales', salesRoutes); // APi pour les ventes
-app.use('/api/sessions', sessionRoutes); // API pour les sessions
+app.use('/api/session_agents', sessionRoutes); // API pour les sessions
 app.use('/api/files', filesRoutes); // API pour les fichiers
 app.use('/api/historiques', historiquesfilesRoutes); // API pour l'historique des fichiers
 
