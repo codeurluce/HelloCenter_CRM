@@ -45,7 +45,7 @@ exports.getTodaySummary = async (req, res) => {
     }
 };
 
-// ✅ Ventes hebdomadaires de l’agent connecté
+// ✅ Résumé des Ventes hebdomadaires de l’agent connecté
 exports.getWeeklySales = async (req, res) => {
     try {
         const agentId = req.user.id;
@@ -72,3 +72,17 @@ ORDER BY date;
         res.status(500).json({ error: 'Erreur serveur' });
     }
 };
+
+
+
+
+// Export pour recuperer les ventes dans la base de données de l'agent connecté
+exports.getSales = async (req, res) => {
+  try {
+    const result = await db.query('SELECT * FROM sales ORDER BY created_at DESC');
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Erreur getSales:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+}
