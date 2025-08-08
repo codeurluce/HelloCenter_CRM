@@ -7,7 +7,11 @@ const TodayRecap = () => {
   useEffect(() => {
     async function fetchTodayData() {
       try {
-        const response = await fetch('http://localhost:5000/api/sales/today-summary');
+        const response = await fetch('http://localhost:5000/api/sales/today-summary', {
+  headers: {
+    Authorization: `Bearer ${localStorage.getItem('token')}`,
+  },
+});
         const result = await response.json();
         console.log('Résultat API:', result);
 
@@ -56,12 +60,12 @@ const TodayRecap = () => {
         </div>
         <div>
           <p className="text-yellow-600 font-bold text-lg">{data.pending}</p>
-          <p className="text-sm text-gray-600">En attente</p>
+          <p className="text-sm text-gray-600">Ventes</p>
           <p className="text-xs text-gray-500">{getPercentage(data.pending)}%</p>
         </div>
         <div>
           <p className="text-green-600 font-bold text-lg">{data.validated}</p>
-          <p className="text-sm text-gray-600">Validées</p>
+          <p className="text-sm text-gray-600">Payées</p>
           <p className="text-xs text-gray-500">{getPercentage(data.validated)}%</p>
         </div>
         <div>

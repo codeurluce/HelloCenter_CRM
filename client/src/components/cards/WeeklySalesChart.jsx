@@ -41,9 +41,14 @@ useEffect(() => {
 
       console.log('Données reçues:', result);
 
-      // jours de la semaine (Dimanche = 0)
-      const daysOfWeek = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
-      const dayIndexToGetDay = [1, 2, 3, 4, 5, 6, 0];
+      // jours de la semaine (Jusqu'à Dimanche = 0)
+    //   const daysOfWeek = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+    //   const dayIndexToGetDay = [1, 2, 3, 4, 5, 6, 0];
+
+
+    // jours de la semaine (Jusqu'à Vendredi = 0)
+      const daysOfWeek = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven'];
+      const dayIndexToGetDay = [1, 2, 3, 4, 5];
 
       // on crée une base avec 0 ventes pour chaque jour
       const emptyWeekData = daysOfWeek.map((day) => ({ day, ventes: 0 }));
@@ -52,7 +57,7 @@ useEffect(() => {
       const formattedData = emptyWeekData.map((dayEntry, index) => {
         const targetDay = dayIndexToGetDay[index];
         const found = result.find(r => {
-          const date = new Date(r.day);
+          const date = new Date(r.date);
           return date.getDay() === targetDay;
         });
         return found

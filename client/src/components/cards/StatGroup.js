@@ -9,6 +9,7 @@ const StatGroup = ({ setActiveItem }) => {
 useEffect(() => {
   async function fetchAllStats() {
     try {
+        console.log(localStorage.getItem('token'));
       const [salesRes, filesRes] = await Promise.all([
         fetch('http://localhost:5000/api/sales/today-summary', {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
@@ -59,14 +60,14 @@ useEffect(() => {
       onClick: () => setActiveItem('files'),
     },
     {
-      title: 'Ventes en attente',
+      title: 'Mes Ventes',
       value: statsData.ventesEnAttente,
       icon: Clock,
       color: 'border-yellow-500 text-yellow-600',
       onClick: () => setActiveItem('sales'),
     },
     {
-      title: 'Ventes validées',
+      title: 'Ventes Payées',
       value: statsData.ventesValidees,
       icon: CheckCircle,
       color: 'border-green-500 text-green-600',
