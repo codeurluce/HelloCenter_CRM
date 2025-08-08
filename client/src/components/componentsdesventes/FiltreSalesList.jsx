@@ -12,29 +12,70 @@ const FiltreSalesList = ({
   onDeleteSale,
   getStatusText
 }) => {
-  // Filtrage simple (texte et statut)
+
+  // Filtrage par date
+  const filterByDate = (saleDate) => {
+    if (!saleDate) return false;
+    const saleTime = new Date(saleDate).setHours(0,0,0,0);
+    const now = new Date();
+    const today = new Date().setHours(0,0,0,0);
+
+    switch (dateFilter) {
+      case 'today':
+        return saleTime === today;
+      case 'week': {
+        const firstDayOfWeek = new Date(now.setDate(now.getDate() - now.getDay() + 1)).setHours(0,0,0,0);
+        const lastDayOfWeek = new Date(now.setDate(now.getDate() - now.getDay() + 7)).setHours(23,59,59,999);
+        return saleTime >= firstDayOfWeek && saleTime <= lastDayOfWeek;
+      }
+      case 'month': {
+        const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).setHours(0,0,0,0);
+        const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).setHours(23,59,59,999);
+        return saleTime >= firstDayOfMonth && saleTime <= lastDayOfMonth;
+      }
+      case 'all':
+      default:
+        return true;
+    }
+  };
+
+  // Format numéro de téléphone
+  const formatPhone = (phone) => {
+    if (!phone) return '-';
+    return phone.replace(/\D/g, '').replace(/(\d{2})(?=\d)/g, '$1 ').trim();
+  };
+
+  // Filtrage global
   const filteredSales = sales.filter(sale => {
-    const matchesSearch =
-      (sale.nomClient ? sale.nomClient.toLowerCase() : '').includes(searchTerm.toLowerCase()) ||
-      (sale.prenomClient ? sale.prenomClient.toLowerCase() : '').includes(searchTerm.toLowerCase()) ||
-      (sale.service || sale.energie || '').toLowerCase().includes(searchTerm.toLowerCase());
+    const searchFields = [
+      sale.client_name || '',
+      sale.client_firstname || '',
+      sale.ref_client || '',
+      sale.ref_contrat || '',
+      sale.client_phone || ''
+    ];
+
+    const matchesSearch = searchFields.some(field =>
+      field.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
     const matchesStatus =
-      statusFilter === 'all' || sale.status === statusFilter || sale.etatContrat === statusFilter;
+      statusFilter === 'all' || sale.status === statusFilter || sale.etat_contrat === statusFilter;
 
-    // TODO: Ajouter filtre date si besoin (dateFilter)
+    const matchesDate = filterByDate(sale.created_at);
 
-    return matchesSearch && matchesStatus;
+    return matchesSearch && matchesStatus && matchesDate;
   });
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
+      {/* Barre de filtres */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="relative">
           <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
           <input
             type="text"
-            placeholder="Rechercher client, service..."
+            placeholder="Rechercher client, réf..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -49,11 +90,10 @@ const FiltreSalesList = ({
           aria-label="Filtre statut"
         >
           <option value="all">Tous les statuts</option>
-          <option value="pending">En attente</option>
-          <option value="validated">Validées</option>
+          <option value="pending">Default</option>
+          <option value="validated">Payées</option>
           <option value="cancelled">Annulées</option>
-          <option value="CHF">CHF</option>
-          <option value="MSV">MSV</option>
+        
         </select>
 
         <select
@@ -68,25 +108,27 @@ const FiltreSalesList = ({
           <option value="month">Ce mois</option>
         </select>
 
-        <button
+        {/* <button
           className="flex items-center justify-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
           type="button"
           aria-label="Ouvrir filtres"
         >
           <Filter className="w-4 h-4" />
           <span>Filtres</span>
-        </button>
+        </button> */}
       </div>
 
+      {/* Tableau */}
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
             <tr className="border-b border-gray-200">
+              <th className="text-left py-3 px-4 font-medium text-gray-500">Réf. Client</th>
+              <th className="text-left py-3 px-4 font-medium text-gray-500">Réf. Contrat</th>
               <th className="text-left py-3 px-4 font-medium text-gray-500">Client</th>
-              <th className="text-left py-3 px-4 font-medium text-gray-500">Type</th>
-              <th className="text-left py-3 px-4 font-medium text-gray-500">Partenaire/Service</th>
-              <th className="text-left py-3 px-4 font-medium text-gray-500">Montant / Etat</th>
+              <th className="text-left py-3 px-4 font-medium text-gray-500">Téléphone</th>
               <th className="text-left py-3 px-4 font-medium text-gray-500">Date</th>
+              <th className="text-left py-3 px-4 font-medium text-gray-500">Statut</th>
               <th className="text-left py-3 px-4 font-medium text-gray-500">Actions</th>
             </tr>
           </thead>
@@ -94,19 +136,16 @@ const FiltreSalesList = ({
             {filteredSales.length > 0 ? (
               filteredSales.map(sale => (
                 <tr key={sale.id} className="border-b border-gray-100 hover:bg-gray-50">
+                  <td className="py-3 px-4 font-medium">{sale.ref_client || '-'}</td>
+                  <td className="py-3 px-4 font-medium">{sale.ref_contrat || '-'}</td>
                   <td className="py-3 px-4">
-                    <div>
-                      <p className="font-medium text-gray-900">{sale.nomClient} {sale.prenomClient || ''}</p>
-                    </div>
+                    {`${sale.civilite ? sale.civilite + ' ' : ''}${sale.client_name || ''} ${sale.client_firstname || ''}`.trim()}
                   </td>
-                  <td className="py-3 px-4 font-medium">{sale.energie ? 'Énergie' : 'Offre Mobile'}</td>
+                  <td className="py-3 px-4">{formatPhone(sale.client_phone)}</td>
                   <td className="py-3 px-4">
-                    {sale.partenaire || sale.service || '-'}
+                    {sale.created_at ? new Date(sale.created_at).toLocaleDateString('fr-FR') : '-'}
                   </td>
-                  <td className="py-3 px-4 font-medium">
-                    {sale.amount ? `${sale.amount.toLocaleString()} €` : getStatusText(sale.etatContrat || sale.status)}
-                  </td>
-                  <td className="py-3 px-4">{sale.createdAt ? new Date(sale.createdAt).toLocaleDateString() : '-'}</td>
+                  <td className="py-3 px-4">{getStatusText(sale.status)}</td>
                   <td className="py-3 px-4">
                     <div className="flex space-x-2">
                       <button className="p-1 hover:bg-gray-100 rounded transition-colors" title="Voir" type="button">
@@ -133,7 +172,7 @@ const FiltreSalesList = ({
               ))
             ) : (
               <tr>
-                <td colSpan="6" className="text-center py-12 text-gray-500">
+                <td colSpan="7" className="text-center py-12 text-gray-500">
                   Aucune vente trouvée avec ces critères
                 </td>
               </tr>

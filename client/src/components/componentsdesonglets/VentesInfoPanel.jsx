@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X, Plus } from 'lucide-react';
 import SalesFormEnergie from '../componentsdesventes/SalesFormEnergie';
 import SalesFormOffreMobile from '../componentsdesventes/SalesFormOffreMobile';
@@ -41,10 +41,29 @@ const VentesInfoPanel = () => {
     handleCloseForm();
   };
 
+
+  useEffect(() => {
+    const fetchSales = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/sales', {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`            
+          },
+        });
+        if (!response.ok) throw new Error('Erreur chargement ventes');
+        const data = await response.json();
+        setSales(data);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    fetchSales();
+  }, []);
+
   const getStatusText = (status) => {
     switch (status) {
-      case 'pending': return 'En attente';
-      case 'validated': return 'Validée';
+      case 'pending': return 'Default';
+      case 'validated': return 'Payée';
       case 'cancelled': return 'Annulée';
       case 'CHF': return 'CHF';
       case 'MSV': return 'MSV';

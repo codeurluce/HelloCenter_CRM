@@ -8,10 +8,10 @@ const TodayRecap = () => {
     async function fetchTodayData() {
       try {
         const response = await fetch('http://localhost:5000/api/sales/today-summary', {
-  headers: {
-    Authorization: `Bearer ${localStorage.getItem('token')}`,
-  },
-});
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        });
         const result = await response.json();
         console.log('Résultat API:', result);
 

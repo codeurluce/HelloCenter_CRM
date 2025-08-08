@@ -26,6 +26,7 @@ const SalesFormEnergie = ({ formData, setFormData, onSubmit, onClose }) => {
 
     if (
       !formData.partenaire ||
+      !formData.civilite ||
       !formData.nomClient ||
       !formData.prenomClient ||
       !formData.emailClient ||
@@ -66,6 +67,25 @@ const SalesFormEnergie = ({ formData, setFormData, onSubmit, onClose }) => {
             ))}
           </select>
         </div>
+
+
+<div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">civilite *</label>
+          <select
+            name="civilite"
+            value={formData.civilite || ''}
+            onChange={handleChange}
+            required
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="">Sélectionner Civilité</option>
+            <option value="Mr">Mr</option>
+            <option value="Mme">Mdme</option>
+            <option value="Mlle">Mlle</option>
+            <option value="Autre">Autre</option>
+          </select>
+        </div>
+
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Nom client *</label>
