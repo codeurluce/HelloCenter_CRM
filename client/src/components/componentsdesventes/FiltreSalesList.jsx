@@ -52,8 +52,19 @@ const FiltreSalesList = ({
       sale.client_firstname || '',
       sale.ref_client || '',
       sale.ref_contrat || '',
-      sale.client_phone || ''
-    ];
+      sale.client_phone || '',
+      sale.client_email || '',
+      sale.ville_client || '',
+      sale.adresse_client || '',
+      sale.code_postal_client || '',
+      sale.product_type || '',
+      sale.nature_offre || '',
+      sale.puissance_compteur || '',
+      sale.partenaire || '',
+      sale.etat_contrat || '',
+      sale.status || '',
+      sale.energie || ''
+      ];
 
     const matchesSearch = searchFields.some(field =>
       field.toLowerCase().includes(searchTerm.toLowerCase())

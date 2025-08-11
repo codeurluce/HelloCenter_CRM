@@ -77,8 +77,8 @@ const TodayRecap = () => {
 
       {/* Barres de progression */}
       <div className="space-y-3">
-        <ProgressBar label="En attente" color="yellow" percent={getPercentage(data.pending)} />
-        <ProgressBar label="Validées" color="green" percent={getPercentage(data.validated)} />
+        <ProgressBar label="Ventes" color="yellow" percent={getPercentage(data.pending)} />
+        <ProgressBar label="Payées" color="green" percent={getPercentage(data.validated)} />
         <ProgressBar label="Annulées" color="red" percent={getPercentage(data.cancelled)} />
       </div>
     </div>

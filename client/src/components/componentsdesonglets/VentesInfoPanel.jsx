@@ -15,11 +15,11 @@ const VentesInfoPanel = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
 
+  
   const handleOpenSelector = () => setShowSelector(true);
-
   const handleSelectFormType = (type) => {
     setFormType(type);
-    setFormData({});
+    setFormData({ product_type: type });
     setShowSelector(false);
     setShowForm(true);
   };
@@ -30,15 +30,27 @@ const VentesInfoPanel = () => {
     setFormData({});
   };
 
-  const handleSubmitSale = (data) => {
-    const newSale = {
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
-      agent: 'Marie Dupont',
-      ...data
-    };
-    setSales(prev => [newSale, ...prev]);
-    handleCloseForm();
+  const handleSubmitSale = async (data) => {
+    try {
+      // Ici tu peux faire un appel API pour enregistrer la vente dans la BDD
+      const response = await fetch('http://localhost:5000/api/sales', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify(data), // product_type envoyé aussi
+      });
+
+      if (!response.ok) throw new Error('Erreur sauvegarde vente');
+      const savedSale = await response.json();
+      setSales(prev => [savedSale, ...prev]);   // Met à jour la liste des ventes avec la vente sauvegardée côté backend
+
+      handleCloseForm(); // Ferme le formulaire après la soumission
+    } catch (error) {
+      console.error('Erreur sauvegarde vente:', error);
+      // tu peux aussi afficher une notification erreur ici
+    }
   };
 
 
@@ -47,7 +59,7 @@ const VentesInfoPanel = () => {
       try {
         const response = await fetch('http://localhost:5000/api/sales', {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`            
+            Authorization: `Bearer ${localStorage.getItem('token')}`
           },
         });
         if (!response.ok) throw new Error('Erreur chargement ventes');
@@ -67,6 +79,8 @@ const VentesInfoPanel = () => {
       case 'cancelled': return 'Annulée';
       case 'CHF': return 'CHF';
       case 'MSV': return 'MSV';
+      case 'Energie': return 'Énergie';
+      case 'Offre Mobile': return 'Offre Mobile';
       default: return status || 'Inconnu';
     }
   };

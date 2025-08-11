@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import StatCard from './StatCard';
-import { CalendarDays, PhoneOutgoing, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { CalendarDays, PhoneOutgoing, Clock, CheckCircle, XCircle, BarChart3, ReceiptCent, TrendingUp, CircleArrowOutUpRight } from 'lucide-react';
+import { Receipt } from 'lucide';
 
 const StatGroup = ({ setActiveItem }) => {
   const [statsData, setStatsData] = useState(null);
@@ -53,16 +54,16 @@ useEffect(() => {
       onClick: () => setActiveItem('files'), // correspond au key dans AgentDashboard
     },
     {
-      title: 'Total des transactions',
+      title: 'Total des ventes',
       value: statsData.totalTransactions,
-      icon: PhoneOutgoing,
+      icon: BarChart3,
       color: 'border-blue-500 text-blue-600',
       onClick: () => setActiveItem('files'),
     },
     {
       title: 'Mes Ventes',
       value: statsData.ventesEnAttente,
-      icon: Clock,
+      icon: CircleArrowOutUpRight,
       color: 'border-yellow-500 text-yellow-600',
       onClick: () => setActiveItem('sales'),
     },
