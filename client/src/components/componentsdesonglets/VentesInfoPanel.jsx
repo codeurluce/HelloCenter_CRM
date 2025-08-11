@@ -4,6 +4,7 @@ import SalesFormEnergie from '../componentsdesventes/SalesFormEnergie';
 import SalesFormOffreMobile from '../componentsdesventes/SalesFormOffreMobile';
 import FormTypeSelector from '../componentsdesventes/FormTypeSelector';
 import FiltreSalesList from '../componentsdesventes/FiltreSalesList';
+import { toast } from "react-toastify";
 
 const VentesInfoPanel = () => {
   const [sales, setSales] = useState([]);
@@ -15,7 +16,7 @@ const VentesInfoPanel = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
 
-  
+
   const handleOpenSelector = () => setShowSelector(true);
   const handleSelectFormType = (type) => {
     setFormType(type);
@@ -46,9 +47,11 @@ const VentesInfoPanel = () => {
       const savedSale = await response.json();
       setSales(prev => [savedSale, ...prev]);   // Met à jour la liste des ventes avec la vente sauvegardée côté backend
 
+      toast.success("✅ Vente enregistrée avec succès !");
       handleCloseForm(); // Ferme le formulaire après la soumission
     } catch (error) {
       console.error('Erreur sauvegarde vente:', error);
+      toast.error("❌ Une erreur s'est produite lors de l'enregistrement");
       // tu peux aussi afficher une notification erreur ici
     }
   };
