@@ -43,3 +43,14 @@ export const deleteSale = async (id) => {
     throw error;
   }
 };
+
+// 🔹 Créer une nouvelle vente
+export const createSale = async (saleData) => {
+  try {
+    const res = await axiosInstance.post("/sales", saleData);
+    return res.data;
+  } catch (error) {
+    console.error("Erreur lors de la création de la vente :", error);
+    throw error;
+  }
+};

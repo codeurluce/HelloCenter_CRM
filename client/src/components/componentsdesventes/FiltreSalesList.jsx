@@ -11,6 +11,7 @@ const FiltreSalesList = ({
   setDateFilter,
   onDeleteSale,
   onViewSale,
+  onEditSale,
   getStatusText
 }) => {
 
@@ -166,16 +167,19 @@ const FiltreSalesList = ({
                               onClick={() => onViewSale && onViewSale(sale)}>
                               <Eye className="w-4 h-4 text-gray-500" />
                       </button>
-                      <button className="p-1 hover:bg-gray-100 rounded transition-colors" title="Modifier" type="button">
-                        <Edit className="w-4 h-4 text-gray-500" />
+                      
+                      <button className="p-1 hover:bg-gray-100 rounded transition-colors" 
+                              title="Modifier" 
+                              type="button"
+                              onClick={onEditSale && (() => onEditSale(sale))}>
+                              <Edit className="w-4 h-4 text-gray-500" />
                       </button>
+
                       <button
                         className="p-1 hover:bg-gray-100 rounded transition-colors"
                         title="Supprimer"
                         type="button"
-                        onClick={() => onDeleteSale(sale.id)}
-                        
-                      >
+                        onClick={() => onDeleteSale(sale.id)}>
                         <Trash2 className="w-4 h-4 text-red-500" />
                       </button>
                     </div>

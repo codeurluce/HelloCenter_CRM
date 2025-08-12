@@ -4,7 +4,7 @@ import SalesFormEnergie from '../componentsdesventes/SalesFormEnergie';
 import SalesFormOffreMobile from '../componentsdesventes/SalesFormOffreMobile';
 import FormTypeSelector from '../componentsdesventes/FormTypeSelector';
 import FiltreSalesList from '../componentsdesventes/FiltreSalesList';
-import { deleteSale } from "../../api/salesActions";
+import { deleteSale, getSaleById, updateSale, createSale } from "../../api/salesActions";
 import { toast } from "react-toastify";
 import Swal from 'sweetalert2';
 import SaleDetailsModal from '../componentsdesventes/SaleDetailsModal'; // Assurez-vous d'avoir ce composant pour afficher les détails d'une vente
@@ -20,6 +20,7 @@ const VentesInfoPanel = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
   const [saleToView, setSaleToView] = useState(null);
+  const [saleToEdit, setSaleToEdit] = useState(null);
 
 
   const handleOpenSelector = () => setShowSelector(true);
@@ -30,30 +31,59 @@ const VentesInfoPanel = () => {
     setShowForm(true);
   };
 
+  const handleEditSale = (sale) => {
+    const mappedFormData = {
+      partenaire: sale.partenaire,
+      civilite: sale.civilite,
+      nomClient: sale.client_name || '',
+      prenomClient: sale.client_firstname || '',
+      emailClient: sale.client_email || '',
+      numMobile: sale.client_phone || '',
+      numFixe: sale.client_phone_fix || '',
+      villeClient: sale.ville_client || '',
+      adresseClient: sale.adresse_client || '',
+      codePostal: sale.code_postal_client || '',
+      refClient: sale.ref_client || '',
+      refContrat: sale.ref_contrat || '',
+      energie: sale.energie || '',
+      pdl: sale.pdl || '',
+      pce: sale.pce || '',
+      natureOffre: sale.nature_offre || '',
+      puissanceCompteur: sale.puissance_compteur || '',
+      etatContrat: sale.etat_contrat || '',
+      fichier: sale.fichier || null,
+    };
+    setSaleToEdit(sale);
+    setFormType(sale.product_type === 'energie' ? 'energie' : 'offreMobile'); // adapte selon ta logique
+    setFormData(mappedFormData);
+    setShowForm(true);
+    setSaleToView(null); // ferme la modale détail
+  };
+
   const handleCloseForm = () => {
     setShowForm(false);
     setFormType(null);
     setFormData({});
+    setSaleToEdit(null);
   };
 
   // Soumission du formulaire
   const handleSubmitSale = async (data) => {
     try {
-      // Ici tu peux faire un appel API pour enregistrer la vente dans la BDD
-      const response = await fetch('http://localhost:5000/api/sales', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify(data), // product_type envoyé aussi
-      });
+      let response;
+      if (saleToEdit) {
+        // Mise à jour via API centralisée
+        response = await updateSale(saleToEdit.id, data);
+        setSales(prev => prev.map(s => (s.id === response.id ? response : s)));
+        setSaleToEdit(null);
+        toast.success("✅ Vente modifiée avec succès !");
+      } else {
+        // Création (si tu as createSale dans tes actions API)
+        response = await createSale(data);
+        setSales(prev => [response, ...prev]);
+        toast.success("✅ Vente créée avec succès !");
+      }  // Met à jour la liste des ventes avec la vente sauvegardée côté backend
 
-      if (!response.ok) throw new Error('Erreur sauvegarde vente');
-      const savedSale = await response.json();
-      setSales(prev => [savedSale, ...prev]);   // Met à jour la liste des ventes avec la vente sauvegardée côté backend
-
-      toast.success("✅ Vente enregistrée avec succès !");
       handleCloseForm(); // Ferme le formulaire après la soumission
     } catch (error) {
       console.error('Erreur sauvegarde vente:', error);
@@ -61,40 +91,40 @@ const VentesInfoPanel = () => {
     }
   };
 
-// Suppression d'une vente
-const handleDeleteSale = async (id) => {
-  Swal.fire({
-    title: 'Supprimer la vente ?',
-    text: "Cette action est irréversible.",
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#d33',
-    cancelButtonColor: '#3085d6',
-    confirmButtonText: 'Oui, supprimer',
-    cancelButtonText: 'Annuler'
-  }).then(async (result) => {
-    if (result.isConfirmed) {
-      try {
-        await deleteSale(id); // suppression via API
-        setSales(prev => prev.filter(s => s.id !== id)); // mise à jour liste locale
-        Swal.fire({
-          icon: 'success',
-          title: 'Supprimé !',
-          text: 'La vente a été supprimée avec succès.',
-          timer: 2000,
-          showConfirmButton: false
-        });
-      } catch (error) {
-        console.error(error);
-        Swal.fire({
-          icon: 'error',
-          title: 'Erreur',
-          text: 'Impossible de supprimer la vente.'
-        });
+  // Suppression d'une vente
+  const handleDeleteSale = async (id) => {
+    Swal.fire({
+      title: 'Supprimer la vente ?',
+      text: "Cette action est irréversible.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Oui, supprimer',
+      cancelButtonText: 'Annuler'
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          await deleteSale(id); // suppression via API
+          setSales(prev => prev.filter(s => s.id !== id)); // mise à jour liste locale
+          Swal.fire({
+            icon: 'success',
+            title: 'Supprimé !',
+            text: 'La vente a été supprimée avec succès.',
+            timer: 2000,
+            showConfirmButton: false
+          });
+        } catch (error) {
+          console.error(error);
+          Swal.fire({
+            icon: 'error',
+            title: 'Erreur',
+            text: 'Impossible de supprimer la vente.'
+          });
+        }
       }
-    }
-  });
-};
+    });
+  };
 
   useEffect(() => {
     const fetchSales = async () => {
@@ -155,14 +185,15 @@ const handleDeleteSale = async (id) => {
         onDeleteSale={handleDeleteSale}
         getStatusText={getStatusText}
         onViewSale={setSaleToView}
+        onEditSale={handleEditSale}
       />
-
       {/* Détails de la vente sélectionnée */}
       <SaleDetailsModal
-      sale={saleToView}
-      onClose={() => setSaleToView(null)}
-      getStatusText={getStatusText}
-    />
+        sale={saleToView}
+        onClose={() => setSaleToView(null)}
+        onEdit={() => handleEditSale(saleToView)}
+        getStatusText={getStatusText}
+      />
 
       {/* Popup choix type */}
       {showSelector && (
