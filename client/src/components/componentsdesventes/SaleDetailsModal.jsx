@@ -77,11 +77,11 @@ const SaleDetailsModal = ({ sale, onClose, onEdit, getStatusText }) => {
                                 value={`${sale.civilite || ""} ${sale.client_name || ""} ${sale.client_firstname || ""}`.trim()}
                             />
                             <Detail label="Téléphone" value={sale.client_phone || "-"} />
-                            <Detail label="Num Fixe" value={sale.client_phone_fixe || "-"} />
-                            <Detail label="Email" value={sale.email || "-"} />
-                            <Detail label="Adresse" value={sale.client_address || "-"} />
-                            <Detail label="Code Postal" value={sale.client_zip || "-"} />
-                            <Detail label="Ville" value={sale.client_city || "-"} />
+                            <Detail label="Num Fixe" value={sale.client_phone_fix || "-"} />
+                            <Detail label="Email" value={sale.client_email || "-"} />
+                            <Detail label="Adresse" value={sale.adresse_client || "-"} />
+                            <Detail label="Code Postal" value={sale.code_postal_client || "-"} />
+                            <Detail label="Ville" value={sale.ville_client || "-"} />
                         </div>
 
                         {/* Colonne droite - Vente */}
