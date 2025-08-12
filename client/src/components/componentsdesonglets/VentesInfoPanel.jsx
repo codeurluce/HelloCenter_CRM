@@ -7,6 +7,7 @@ import FiltreSalesList from '../componentsdesventes/FiltreSalesList';
 import { deleteSale } from "../../api/salesActions";
 import { toast } from "react-toastify";
 import Swal from 'sweetalert2';
+import SaleDetailsModal from '../componentsdesventes/SaleDetailsModal'; // Assurez-vous d'avoir ce composant pour afficher les détails d'une vente
 
 
 const VentesInfoPanel = () => {
@@ -18,6 +19,7 @@ const VentesInfoPanel = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
+  const [saleToView, setSaleToView] = useState(null);
 
 
   const handleOpenSelector = () => setShowSelector(true);
@@ -152,7 +154,15 @@ const handleDeleteSale = async (id) => {
         setDateFilter={setDateFilter}
         onDeleteSale={handleDeleteSale}
         getStatusText={getStatusText}
+        onViewSale={setSaleToView}
       />
+
+      {/* Détails de la vente sélectionnée */}
+      <SaleDetailsModal
+      sale={saleToView}
+      onClose={() => setSaleToView(null)}
+      getStatusText={getStatusText}
+    />
 
       {/* Popup choix type */}
       {showSelector && (

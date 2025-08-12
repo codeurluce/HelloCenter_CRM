@@ -10,6 +10,7 @@ const FiltreSalesList = ({
   dateFilter,
   setDateFilter,
   onDeleteSale,
+  onViewSale,
   getStatusText
 }) => {
 
@@ -159,8 +160,11 @@ const FiltreSalesList = ({
                   <td className="py-3 px-4">{getStatusText(sale.status)}</td>
                   <td className="py-3 px-4">
                     <div className="flex space-x-2">
-                      <button className="p-1 hover:bg-gray-100 rounded transition-colors" title="Voir" type="button">
-                        <Eye className="w-4 h-4 text-gray-500" />
+                      <button className="p-1 hover:bg-gray-100 rounded transition-colors" 
+                              title="Voir" 
+                              type="button"  
+                              onClick={() => onViewSale && onViewSale(sale)}>
+                              <Eye className="w-4 h-4 text-gray-500" />
                       </button>
                       <button className="p-1 hover:bg-gray-100 rounded transition-colors" title="Modifier" type="button">
                         <Edit className="w-4 h-4 text-gray-500" />
