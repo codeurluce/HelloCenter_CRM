@@ -72,9 +72,6 @@ ORDER BY date;
     }
 };
 
-
-
-
 // Export pour recuperer les ventes dans la base de données de l'agent connecté
 exports.getSales = async (req, res) => {
   try {
@@ -90,8 +87,28 @@ exports.getSales = async (req, res) => {
   }
 }
 
+// Export pour recuperer une vente par son ID
+exports.getSaleById = async (req, res) => {
+  try {
+    const saleId = req.params.id;
+    const agentId = req.user.id; // Empêche de voir les ventes d’un autre agent
 
+    const result = await db.query( 'SELECT * FROM sales WHERE id = $1 AND agent_id = $2',
+      [saleId, agentId]
+    );
 
+    if (result.rowCount === 0) {
+      return res.status(404).json({ message: 'Vente introuvable' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Erreur getSaleById:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+};
+
+// pour les fichiers uploadés
 const multer = require('multer');
 const path = require('path');
 // Configuration upload fichiers
@@ -104,10 +121,8 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-
-// Export pour enregistrer une vente
+//Export pour creer et enregistrer une vente
 exports.createSale = async (req, res) => {
-  
   try {
     {
   // Simule une sauvegarde de vente
@@ -139,7 +154,6 @@ exports.createSale = async (req, res) => {
 } = req.body;
     const fichier = req.file ? req.file.filename : null;
 
-
     const result = await db.query(
       `
       INSERT INTO sales (
@@ -159,6 +173,51 @@ exports.createSale = async (req, res) => {
     res.status(201).json(result.rows[0]);
   } catch (error) {
     console.error('Erreur createSale:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+};
+
+// Export pour mettre à jour une vente
+exports.updateSale = async (req, res) => {
+  try {
+    const saleId = req.params.id;
+    const { statut, commentaire } = req.body; // ajoute les champs que tu veux mettre à jour
+
+    const result = await db.query(
+      `UPDATE sales 
+       SET statut = $1, commentaire = $2, updated_at = NOW() 
+       WHERE id = $3 
+       RETURNING *`,
+      [statut, commentaire, saleId]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ message: 'Vente introuvable' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Erreur updateSale:', error);
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+};
+
+  // Export pour supprimer une vente
+exports.deleteSale = async (req, res) => {
+  try {
+    const saleId = req.params.id;
+    const result = await db.query(
+      'DELETE FROM sales WHERE id = $1 RETURNING *',
+      [saleId]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ message: 'Vente non trouvée' });
+    }
+
+    res.json({ message: 'Vente supprimée avec succès', sale: result.rows[0] });
+  } catch (error) {
+    console.error('Erreur deleteSale:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 };

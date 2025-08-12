@@ -4,7 +4,10 @@ import SalesFormEnergie from '../componentsdesventes/SalesFormEnergie';
 import SalesFormOffreMobile from '../componentsdesventes/SalesFormOffreMobile';
 import FormTypeSelector from '../componentsdesventes/FormTypeSelector';
 import FiltreSalesList from '../componentsdesventes/FiltreSalesList';
+import { deleteSale } from "../../api/salesActions";
 import { toast } from "react-toastify";
+import Swal from 'sweetalert2';
+
 
 const VentesInfoPanel = () => {
   const [sales, setSales] = useState([]);
@@ -31,6 +34,7 @@ const VentesInfoPanel = () => {
     setFormData({});
   };
 
+  // Soumission du formulaire
   const handleSubmitSale = async (data) => {
     try {
       // Ici tu peux faire un appel API pour enregistrer la vente dans la BDD
@@ -52,10 +56,43 @@ const VentesInfoPanel = () => {
     } catch (error) {
       console.error('Erreur sauvegarde vente:', error);
       toast.error("❌ Une erreur s'est produite lors de l'enregistrement");
-      // tu peux aussi afficher une notification erreur ici
     }
   };
 
+// Suppression d'une vente
+const handleDeleteSale = async (id) => {
+  Swal.fire({
+    title: 'Supprimer la vente ?',
+    text: "Cette action est irréversible.",
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#d33',
+    cancelButtonColor: '#3085d6',
+    confirmButtonText: 'Oui, supprimer',
+    cancelButtonText: 'Annuler'
+  }).then(async (result) => {
+    if (result.isConfirmed) {
+      try {
+        await deleteSale(id); // suppression via API
+        setSales(prev => prev.filter(s => s.id !== id)); // mise à jour liste locale
+        Swal.fire({
+          icon: 'success',
+          title: 'Supprimé !',
+          text: 'La vente a été supprimée avec succès.',
+          timer: 2000,
+          showConfirmButton: false
+        });
+      } catch (error) {
+        console.error(error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Erreur',
+          text: 'Impossible de supprimer la vente.'
+        });
+      }
+    }
+  });
+};
 
   useEffect(() => {
     const fetchSales = async () => {
@@ -113,7 +150,7 @@ const VentesInfoPanel = () => {
         setStatusFilter={setStatusFilter}
         dateFilter={dateFilter}
         setDateFilter={setDateFilter}
-        onDeleteSale={id => setSales(prev => prev.filter(s => s.id !== id))}
+        onDeleteSale={handleDeleteSale}
         getStatusText={getStatusText}
       />
 

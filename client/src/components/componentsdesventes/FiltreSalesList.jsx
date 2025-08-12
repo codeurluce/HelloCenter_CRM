@@ -169,11 +169,8 @@ const FiltreSalesList = ({
                         className="p-1 hover:bg-gray-100 rounded transition-colors"
                         title="Supprimer"
                         type="button"
-                        onClick={() => {
-                          if (window.confirm('Confirmer la suppression ?')) {
-                            onDeleteSale(sale.id);
-                          }
-                        }}
+                        onClick={() => onDeleteSale(sale.id)}
+                        
                       >
                         <Trash2 className="w-4 h-4 text-red-500" />
                       </button>
