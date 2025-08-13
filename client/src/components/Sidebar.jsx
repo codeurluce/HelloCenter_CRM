@@ -14,8 +14,8 @@ const Sidebar = ({ activeItem, setActiveItem, onLogout }) => {
     ];
 
     const bottomItems = [
-        { id: 'settings', label: 'Setting', icon: Settings },
-        { id: 'logout', label: 'Log out', icon: LogOut, action: onLogout },
+        { id: 'settings', label: 'Paramètres', icon: Settings },
+        { id: 'logout', label: 'Deconnexion', icon: LogOut, action: onLogout },
     ];
 
     const MenuItem = ({ item, isBottom = false }) => (
