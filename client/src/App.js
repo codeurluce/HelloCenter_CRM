@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import Login from './pages/Login';
 import AgentDashboard from './pages/AgentPages';
-import AdminPages from './pages/AdminPages';
+import AdminDashboard from './pages/AdminPages';
+import ManagerDashboard from './pages/ManagerPages';
 import NotFoundPages from './pages/NotFoundPages';
 import { AuthProvider } from './pages/AuthContext';
 import { ToastContainer } from 'react-toastify';
@@ -45,9 +46,9 @@ function App() {
           ) : role === 'Agent' ? (
             <Navigate to="/agent" />
           ) : role === 'Manager' ? (
+            <Navigate to="/manager" />
+          ) : role === 'Admin' ? (
             <Navigate to="/admin" />
-          ) : role === 'admin+' ? (
-            <Navigate to="/admin-plus" />
           ) : (
             <NotFoundPages />
           )
@@ -66,26 +67,26 @@ function App() {
       />
 
       <Route
-        path="/admin"
+        path="/manager"
         element={
           isAuthenticated && role === 'Manager' ? (
-            <AdminPages onLogout={handleLogout} />
+            <ManagerDashboard onLogout={handleLogout} />
           ) : (
             <Navigate to="/" />
           )
         }
       />
 
-      {/* <Route
-        path="/admin-plus"
+      <Route
+        path="/admin"
         element={
-          isAuthenticated && role === 'admin+' ? (
-            <SuperAdminPages onLogout={handleLogout} />
+          isAuthenticated && role === 'Admin' ? (
+            <AdminDashboard onLogout={handleLogout} />
           ) : (
             <Navigate to="/" />
           )
         }
-      /> */}
+      />
 
       <Route path="*" element={<NotFoundPages />} />
     </Routes>

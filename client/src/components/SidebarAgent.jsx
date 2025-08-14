@@ -2,15 +2,15 @@ import React, { useState } from 'react';
 import { LayoutDashboard, CircleUser, Settings, LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ShoppingCart, Folder, Calendar } from 'react-feather';
 
-const Sidebar = ({ activeItem, setActiveItem, onLogout }) => {
+const SidebarAgent = ({ activeItem, setActiveItem, onLogout }) => {
     const [isCollapsed, setIsCollapsed] = useState(false);
 
     const menuItems = [
-        { id: 'dashboard', label: 'Tableau de bord', icon: LayoutDashboard },
+        { id: 'dashboard', label: 'Dashbord Agent', icon: LayoutDashboard },
         { id: 'sales', label: 'Ventes', icon: ShoppingCart },
         { id: 'files', label: 'Fichiers', icon: Folder },
         // { id: 'appointments', label: 'Rendez-vous', icon: Calendar },
-        { id: 'agents', label: 'Agent', icon: CircleUser },
+        { id: 'activité', label: 'Activité', icon: CircleUser },
     ];
 
     const bottomItems = [
@@ -70,4 +70,4 @@ const Sidebar = ({ activeItem, setActiveItem, onLogout }) => {
     );
 };
 
-export default Sidebar;
+export default SidebarAgent;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import Sidebar from '../components/Sidebar.jsx';
+import SidebarAgent from '../components/SidebarAgent.jsx';
 import DashboardHeader from '../components/dashbords/DashbordHeader.jsx';
 import StatGroup from '../components/cards/StatGroup.js';
 import WeeklySalesChart from '../components/cards/WeeklySalesChart.jsx';
@@ -126,7 +126,7 @@ const AgentDashboard = () => {
   return (
     <AgentStatusProvider>
       <div className="flex h-screen">
-        <Sidebar activeItem={activeItem} setActiveItem={setActiveItem} onLogout={handleLogout} />
+        <SidebarAgent activeItem={activeItem} setActiveItem={setActiveItem} onLogout={handleLogout} />
         <div className="flex-1 flex flex-col overflow-hidden">
           <DashboardHeader
             activePage={activeItem}
@@ -150,7 +150,7 @@ const AgentDashboard = () => {
               </>
             )}
 
-            {activeItem === 'agents' && (
+            {activeItem === 'activité' && (
               <AgentInfoPanel
               userId={userId} 
                 setActiveItem={setActiveItem}

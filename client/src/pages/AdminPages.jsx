@@ -1,7 +1,12 @@
 import React, { useState } from 'react';
 import SidebarAdmin from '../components/SidebarAdmin.jsx';
+import DashboardHeader from '../components/dashbords/DashbordHeader.jsx';
+import { AgentStatusProvider } from '../api/AgentStatusContext.jsx';
+import { AuthContext } from './AuthContext.jsx';
+import { useContext } from 'react';
 
-const AgentDashboard = () => {
+
+const AdminDashboard = () => {
   const [activeItem, setActiveItem] = useState('dashboard');
 
   const handleLogout = () => {
@@ -10,17 +15,17 @@ const AgentDashboard = () => {
   };
 
   return (
-    <div className="flex h-screen">
-      <SidebarAdmin activeItem={activeItem} setActiveItem={setActiveItem} onLogout={handleLogout} />
-      
-      <main className="flex-1 p-6 bg-gray-100 overflow-auto">
-        {activeItem === 'dashboard' && <h1 className="text-xl font-bold">Tableau de bord</h1>}
-        {activeItem === 'leaderboard' && <h1>Leaderboard</h1>}
-        {activeItem === 'shipment' && <h1>Shipments</h1>}
-        {/* Ajoute plus de composants ici selon le menu */}
-      </main>
-    </div>
+    <AgentStatusProvider>
+      <div className="flex h-screen">
+        <SidebarAdmin activeItem={activeItem} setActiveItem={setActiveItem} onLogout={handleLogout} />
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <DashboardHeader          />
+
+          
+        </div>
+      </div>
+    </AgentStatusProvider>
   );
 };
 
-export default AgentDashboard;
+export default AdminDashboard;

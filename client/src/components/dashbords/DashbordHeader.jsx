@@ -135,7 +135,7 @@ const DashboardHeader = ({
     files: 'Fichiers',
     sales: 'Ventes',
     appointments: 'Rendez-vous',
-    agents: 'Espace Agent',
+    activité: 'Mon Activité',
     settings: 'Paramètres',
   };
 

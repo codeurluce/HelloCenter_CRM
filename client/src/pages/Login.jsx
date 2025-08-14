@@ -50,10 +50,10 @@ console.log("Utilisateur connecté :", user);
           window.location.href = '/agent';
           break;
         case 'Manager':
-          window.location.href = '/admin';
+          window.location.href = '/manager';
           break;
         case 'Admin':
-          window.location.href = '/admin-plus';
+          window.location.href = '/admin';
           break;
         default:
           setError("Rôle utilisateur inconnu.");
