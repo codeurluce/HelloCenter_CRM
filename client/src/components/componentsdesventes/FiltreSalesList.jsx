@@ -18,21 +18,27 @@ const FiltreSalesList = ({
   // Filtrage par date
   const filterByDate = (saleDate) => {
     if (!saleDate) return false;
-    const saleTime = new Date(saleDate).setHours(0,0,0,0);
+    const saleTime = new Date(saleDate).setHours(0, 0, 0, 0);
     const now = new Date();
-    const today = new Date().setHours(0,0,0,0);
+    const today = new Date().setHours(0, 0, 0, 0);
 
     switch (dateFilter) {
       case 'today':
         return saleTime === today;
       case 'week': {
-        const firstDayOfWeek = new Date(now.setDate(now.getDate() - now.getDay() + 1)).setHours(0,0,0,0);
-        const lastDayOfWeek = new Date(now.setDate(now.getDate() - now.getDay() + 7)).setHours(23,59,59,999);
-        return saleTime >= firstDayOfWeek && saleTime <= lastDayOfWeek;
+        const firstDayOfWeek = new Date(now);
+        firstDayOfWeek.setDate(now.getDate() - now.getDay() + 1); // Lundi
+        firstDayOfWeek.setHours(0, 0, 0, 0);
+
+        const lastDayOfWeek = new Date(firstDayOfWeek);
+        lastDayOfWeek.setDate(firstDayOfWeek.getDate() + 6); // Dimanche
+        lastDayOfWeek.setHours(23, 59, 59, 999);
+
+        return saleTime >= firstDayOfWeek.getTime() && saleTime <= lastDayOfWeek.getTime();
       }
       case 'month': {
-        const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).setHours(0,0,0,0);
-        const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).setHours(23,59,59,999);
+        const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).setHours(0, 0, 0, 0);
+        const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).setHours(23, 59, 59, 999);
         return saleTime >= firstDayOfMonth && saleTime <= lastDayOfMonth;
       }
       case 'all':
@@ -66,7 +72,7 @@ const FiltreSalesList = ({
       sale.etat_contrat || '',
       sale.status || '',
       sale.energie || ''
-      ];
+    ];
 
     const matchesSearch = searchFields.some(field =>
       field.toLowerCase().includes(searchTerm.toLowerCase())
@@ -106,7 +112,7 @@ const FiltreSalesList = ({
           <option value="pending">Default</option>
           <option value="validated">Payées</option>
           <option value="cancelled">Annulées</option>
-        
+
         </select>
 
         <select
@@ -161,18 +167,18 @@ const FiltreSalesList = ({
                   <td className="py-3 px-4">{getStatusText(sale.status)}</td>
                   <td className="py-3 px-4">
                     <div className="flex space-x-2">
-                      <button className="p-1 hover:bg-gray-100 rounded transition-colors" 
-                              title="Voir" 
-                              type="button"  
-                              onClick={() => onViewSale && onViewSale(sale)}>
-                              <Eye className="w-4 h-4 text-gray-500" />
+                      <button className="p-1 hover:bg-gray-100 rounded transition-colors"
+                        title="Voir"
+                        type="button"
+                        onClick={() => onViewSale && onViewSale(sale)}>
+                        <Eye className="w-4 h-4 text-gray-500" />
                       </button>
-                      
-                      <button className="p-1 hover:bg-gray-100 rounded transition-colors" 
-                              title="Modifier" 
-                              type="button"
-                              onClick={onEditSale && (() => onEditSale(sale))}>
-                              <Edit className="w-4 h-4 text-gray-500" />
+
+                      <button className="p-1 hover:bg-gray-100 rounded transition-colors"
+                        title="Modifier"
+                        type="button"
+                        onClick={onEditSale && (() => onEditSale(sale))}>
+                        <Edit className="w-4 h-4 text-gray-500" />
                       </button>
 
                       <button

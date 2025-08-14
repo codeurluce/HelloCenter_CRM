@@ -51,7 +51,7 @@ const SaleDetailsModal = ({ sale, onClose, onEdit, getStatusText }) => {
                 >
                     <div className="flex items-center gap-2">
                         <FileText size={22} />
-                        <h3 className="text-lg font-bold">Détails de la vente</h3>
+                        <h3 className="text-lg font-bold">Détails de la vente N° : {sale.id} </h3>
                     </div>
                     <button
                         onClick={onClose}
@@ -126,7 +126,7 @@ const SaleDetailsModal = ({ sale, onClose, onEdit, getStatusText }) => {
                                         : "-"
                                 }
                             />
-                            <Detail label="ID Vente" value={sale.id} />
+                            {/* <Detail label="ID Vente" value={sale.id} /> */}
                             <Detail
                                 label="Statut"
                                 value={
