@@ -144,7 +144,7 @@ export default function AgentInfoPanel({
         overflowY: "auto",
       }}
     >
-      <h2 style={{ textAlign: "center", marginBottom: 12 }}>⏱ Suivi Temps Agent</h2>
+      <h2 style={{ textAlign: "center", marginBottom: 12 }}>⏱ Vue globale de mon Pointage</h2>
       <p style={{ textAlign: "center", marginBottom: 24 }}>
         État actuel : <strong>{etat || "Aucun"}</strong>
       </p>

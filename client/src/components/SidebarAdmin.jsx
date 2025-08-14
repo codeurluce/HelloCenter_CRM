@@ -14,7 +14,7 @@ const SidebarAdmin = ({ activeItem, setActiveItem, onLogout }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const menuItems = [
-    { id: 'dashboardManager', label: 'Dashboard Admin', icon: LayoutDashboard },
+    { id: 'dashboard', label: 'Dashboard Admin', icon: LayoutDashboard },
     { id: 'files', label: 'fichiers', icon: Folder },
     { id: 'sales', label: 'Ventes', icon: ShoppingCart },
     { id: 'sessions', label: 'Sessions', icon: Clock },

@@ -8,7 +8,6 @@ import AgentInfoPanel from '../components/componentsdesonglets/AgentInfoPanel.js
 import VentesInfoPanel from '../components/componentsdesonglets/VentesInfoPanel.jsx';
 import FichesInfoPanel from '../components/componentsdesfiches/FichesInfoPanel.tsx';
 import { AuthContext } from './AuthContext.jsx';
-import { fetchFiches, handleTraitement, onCancelFiche, handleCloture, handleProgramRdv } from '../api/filesActions.js';
 import { AgentStatusProvider } from '../api/AgentStatusContext.jsx';
 import  useTimers  from '../api/useTimers.js';
 import  useAgentFiches  from '../api/useAgentFiches.js';

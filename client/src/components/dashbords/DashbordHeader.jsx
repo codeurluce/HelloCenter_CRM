@@ -137,6 +137,8 @@ const DashboardHeader = ({
     appointments: 'Rendez-vous',
     activité: 'Mon Activité',
     settings: 'Paramètres',
+    sessions: 'Suivi des Agents',
+    administration: 'administration'
   };
 
   const displayTitle = pageTitles[activePage] || 'Page';
