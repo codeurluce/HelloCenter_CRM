@@ -141,3 +141,25 @@ router.get('/me', verifyToken, async (req, res) => {
 });
 
 module.exports = router;
+
+
+// Route GET /api/users - Récupérer tous les utilisateurs (réservé admin)
+router.get('/users', verifyToken, async (req, res) => {
+  try {
+    // Optionnel : vérifier que seul un admin peut voir tous les utilisateurs
+    if (req.user.role !== 'Admin') {
+      return res.status(403).json({ message: 'Accès refusé' });
+    }
+
+    const result = await db.query(
+      `SELECT id, lastname, firstname, email, role, profil 
+       FROM users
+       ORDER BY lastname ASC`
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Erreur lors de la récupération des utilisateurs:', error);
+    res.status(500).json({ message: 'Erreur serveur lors de la récupération des utilisateurs' });
+  }
+});

@@ -14,7 +14,7 @@ const SidebarAgent = ({ activeItem, setActiveItem, onLogout }) => {
     ];
 
     const bottomItems = [
-        { id: 'settings', label: 'Paramètres', icon: Settings },
+        // { id: 'settings', label: 'Paramètres', icon: Settings },
         { id: 'logout', label: 'Deconnexion', icon: LogOut, action: onLogout },
     ];
 

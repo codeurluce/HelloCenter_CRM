@@ -5,7 +5,8 @@ import { AgentStatusProvider } from '../api/AgentStatusContext.jsx';
 import { AuthContext } from './AuthContext.jsx';
 import { useContext } from 'react';
 import useTimers from '../api/useTimers.js';
-import AgentInfoPanel from '../components/componentsdesonglets/AgentInfoPanel.jsx';
+import AgentInfoPanel from '../components/componentsdesongletsAgents/AgentInfoPanel.jsx';
+import AdministrationUsers from '../components/componentsdesongletsAdmins/AdministrationUsers.jsx';
 
 
 
@@ -31,7 +32,7 @@ const AdminDashboard = () => {
             {activeItem === 'sales' && <p> doit contenir les ventes de tous les agents </p>}
             {activeItem === 'files' && <p> doit contenir les fichiers des agnets</p>}
             {activeItem === 'sessions' && <p> doit contenir les sessions de tous les agents</p>}
-            {activeItem === 'administration' && <p> doit contenir les paramètres d'administration</p>}
+            {activeItem === 'administration' && <AdministrationUsers />}
             {activeItem === 'settings' && <p> doit contenir les paramètres de l'administrateur</p>}
           </main>          
         </div>
