@@ -45,6 +45,16 @@ export default function SearchFilterBar({
         ))}
       </select>
 
+      {/* <select
+        value={filters.status}
+        onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+        className="border rounded p-2"
+      >
+        <option value="all">Tous</option>
+        <option value="active">Actifs</option>
+        <option value="inactive">Inactifs</option>
+      </select> */}
+
       {/* Rafraîchir */}
       <button
         onClick={onRefresh}
