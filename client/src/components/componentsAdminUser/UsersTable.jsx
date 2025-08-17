@@ -1,8 +1,6 @@
 // src/components/admin/UsersTable.jsx
 import React from "react";
 import {
-  CheckCircle2,
-  XCircle,
   Shield,
   Mail,
   Briefcase,
@@ -97,13 +95,11 @@ export default function UsersTable({
                     {u.is_active ? (
                       <Badge className="bg-gray-100 text-gray-700 bg-green-100 flex items-center gap-2">
                         <span className="w-2.5 h-2.5 rounded-full bg-green-600 inline-block" />
-                        
                         Actif
                       </Badge>
                     ) : (
                       <Badge className="bg-gray-100 text-gray-700 bg-gray-100 flex items-center gap-2">
                         <span className="w-2.5 h-2.5 rounded-full bg-gray-600 inline-block" />
-                        
                         Desactivé
                       </Badge>
                     )}
@@ -138,11 +134,11 @@ export default function UsersTable({
                       <div className="relative group">
                         <button
                           onClick={() => toggleActive(u)}
-                          aria-pressed={u.active}
-                          title={u.active ? "Désactiver" : "Activer"}
-                          className={`px-3 py-1.5 rounded-lg border transition-transform transform focus:outline-none focus:ring-2 focus:ring-offset-1 ${u.active
-                              ? "text-red-600 border-red-100 hover:bg-red-50 hover:scale-105"
-                              : "text-emerald-700 border-emerald-100 hover:bg-emerald-50 hover:scale-105"
+                          aria-pressed={u.is_active}
+                          title={u.is_active ? "Désactiver" : "Activer"}
+                          className={`px-3 py-1.5 rounded-lg border transition-transform transform focus:outline-none focus:ring-2 focus:ring-offset-1 ${u.is_active
+                              ? "text-red-600   border-red-100   hover:bg-red-600   hover:text-white hover:scale-105"
+                              : "text-green-600 border-green-100 hover:bg-green-600 hover:text-white hover:scale-105"
                             }`}
                         >
                           <Power className="w-4 h-4" />
@@ -153,7 +149,7 @@ export default function UsersTable({
                           className={`pointer-events-none absolute -top-9 right-0 hidden group-hover:block text-xs whitespace-nowrap px-2 py-1 rounded shadow-lg ${u.active ? "bg-red-600 text-white" : "bg-emerald-600 text-white"
                             }`}
                         >
-                          {u.active ? "Désactiver le compte" : "Activer le compte"}
+                          {u.is_active ? "Désactiver le compte" : "Activer le compte"}
                         </span>
                       </div>
 

@@ -178,6 +178,42 @@ const getAllUsers = async (req, res) => {
   }
 };
 
+// Activer/Désactiver un user
+const toggleActiveUser =  async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Récupérer l’état actuel
+    const userResult = await db.query(
+      'SELECT is_active FROM users WHERE id = $1',
+      [id]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ message: 'Utilisateur non trouvé' });
+    }
+
+    const currentStatus = userResult.rows[0].is_active;
+
+    // Inverser l’état (toggle)
+    const updated = await db.query(
+      `UPDATE users 
+        SET is_active = $1 
+        WHERE id = $2 
+        RETURNING id, firstname, lastname, email, role, profil, is_active`,
+      [!currentStatus, id]
+    );
+
+    res.json({
+      message: `Utilisateur ${!currentStatus ? 'activé' : 'désactivé'} avec succès`,
+      user: updated.rows[0],
+    });
+  } catch (error) {
+    console.error('Erreur toggle user :', error);
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+};
+
 
 module.exports = {
   createUser,
@@ -187,4 +223,5 @@ module.exports = {
   getMe,
   getAllUsers,
   changePasswordFirstLogin,
+toggleActiveUser,
 };

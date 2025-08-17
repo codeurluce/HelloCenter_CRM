@@ -84,15 +84,42 @@ export default function AdministrationUsers() {
     }
   };
 
-  const toggleActive = async (user) => {
-    try {
-      await axios.patch(`/users/${user.id}`, { active: !user.active });
+const toggleActive = async (user) => {
+  try {
+    const result = await Swal.fire({
+      title: `${user.is_active ? "Désactiver" : "Activer"} l'agent ?`,
+      text: `Êtes-vous sûr de vouloir ${user.is_active ? "désactiver" : "activer"} ${user.firstname} ${user.lastname} ?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: user.is_active ? '#d33' : '#28a745', // rouge si désactiver, vert si activer
+      cancelButtonColor: '#6c757d', // neutre gris
+      confirmButtonText: user.is_active ? 'Désactiver' : 'Activer',
+      cancelButtonText: 'Annuler',
+      reverseButtons: true,
+    });
+
+    if (result.isConfirmed) {
+      const res = await axios.put(`/users/${user.id}/toggle-active`);
+      Swal.fire({
+        icon: 'success',
+        title: 'Succès',
+        text: res.data.message,
+        timer: 2000,
+        showConfirmButton: false
+      });
       fetchUsers();
-    } catch (err) {
-      console.error(err);
-      toast.error("Erreur lors de la mise à jour du statut actif");
     }
-  };
+  } catch (err) {
+    console.error(err);
+    Swal.fire({
+      icon: 'error',
+      title: 'Erreur',
+      text: "Erreur lors de la mise à jour de l'état de l'utilisateur",
+    });
+  }
+};
+
+
 
   const resetPassword = async (user) => {
     if (!window.confirm(`Réinitialiser le mot de passe de ${user.firstname} ${user.lastname} ?`))
@@ -141,7 +168,7 @@ export default function AdministrationUsers() {
         openEdit={openEdit}
         resetPassword={resetPassword}
       />
-
+                                    
       <UserFormModal
         show={showModal}
         setShow={setShowModal}
