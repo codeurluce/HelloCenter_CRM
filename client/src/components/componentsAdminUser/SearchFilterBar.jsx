@@ -8,6 +8,9 @@ export default function SearchFilterBar({
   roleFilter,
   setRoleFilter,
   rolesOptions,
+  profilFilter,
+  setProfilFilter,
+  profilsOptions,
   onRefresh,
   onCreate,         
   onResetPage,       
@@ -45,15 +48,22 @@ export default function SearchFilterBar({
         ))}
       </select>
 
-      {/* <select
-        value={filters.status}
-        onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-        className="border rounded p-2"
+      {/* Filtre profil */}
+      <select
+        value={profilFilter}
+        onChange={(e) => {
+          setProfilFilter(e.target.value);
+          onResetPage?.();
+        }}
+        className="px-3 py-2 rounded-lg border border-gray-200 focus:outline-none"
       >
-        <option value="all">Tous</option>
-        <option value="active">Actifs</option>
-        <option value="inactive">Inactifs</option>
-      </select> */}
+        <option value="">Tous les profils</option>
+        {profilsOptions.map((p) => (
+          <option key={p.value} value={p.value}>
+            {p.label}
+          </option>
+        ))}
+      </select>
 
       {/* Rafraîchir */}
       <button
@@ -65,7 +75,7 @@ export default function SearchFilterBar({
         Rafraîchir
       </button>
 
-      {/* Bouton créer aligné à droite, même ligne */}
+      {/* Bouton créer aligné à droite */}
       <div className="ml-auto">
         <button
           onClick={onCreate}

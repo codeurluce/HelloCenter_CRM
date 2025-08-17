@@ -43,7 +43,7 @@ export default function UsersTable({
               <th className="text-left px-4 py-3 font-medium">Email</th>
               <th className="text-left px-4 py-3 font-medium">Rôle</th>
               <th className="text-left px-4 py-3 font-medium">Univers</th>
-              <th className="text-left px-4 py-3 font-medium">Statut</th>
+              {/* <th className="text-left px-4 py-3 font-medium">Statut</th> */}
               <th className="text-right px-4 py-3 font-medium">Actions</th>
             </tr>
           </thead>
@@ -94,7 +94,7 @@ export default function UsersTable({
                     <Briefcase className="w-4 h-4 text-gray-400" />
                     {u.profil || "—"}
                   </td>
-                  <td className="px-4 py-3">
+                  {/* <td className="px-4 py-3">
                     {u.active ? (
                       <Badge className="bg-green-100 text-green-700">
                         <CheckCircle2 className="w-3 h-3 mr-1" />
@@ -106,7 +106,7 @@ export default function UsersTable({
                         Inactif
                       </Badge>
                     )}
-                  </td>
+                  </td> */}
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-2">
                       <button className="px-3 py-1.5 rounded-lg border hover:bg-gray-50" onClick={() => openEdit(u)} title="Modifier">

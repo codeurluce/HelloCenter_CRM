@@ -7,12 +7,14 @@ import UserFormModal from "../componentsAdminUser/UserFormModal";
 import axios from "../../api/axiosInstance";
 import { toast } from "react-toastify";
 
+// Options de filtres
 const rolesOptions = [
   { value: "Agent", label: "Agent" },
   { value: "Manager", label: "Manager" },
   { value: "Admin", label: "Admin" },
 ];
-const universOptions = [
+
+const profilsOptions = [
   { value: "Energie", label: "Energie" },
   { value: "OffreMobile", label: "Offre Mobile" },
   { value: "Hybride", label: "Hybride" },
@@ -23,27 +25,30 @@ export default function AdministrationUsers() {
   const [limit, setLimit] = useState(10);
   const [q, setQ] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
+  const [profilFilter, setProfilFilter] = useState(""); // <-- Ajout
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [saving, setSaving] = useState(false);
 
+  // Hook pour récupérer les users
   const { users, filteredUsers, total, loading, error, fetchUsers } = useUsers({
     page,
     limit,
     roleFilter,
+    profilFilter, // <-- Ajouté ici pour filtrage backend
     q,
   });
 
   const totalPages = Math.max(
     1,
-    Math.ceil((roleFilter || q ? filteredUsers.length : total) / limit)
+    Math.ceil((roleFilter || profilFilter || q ? filteredUsers.length : total) / limit)
   );
 
   const pageData = useMemo(() => {
-    const source = roleFilter || q ? filteredUsers : users;
+    const source = roleFilter || profilFilter || q ? filteredUsers : users;
     const start = (page - 1) * limit;
     return source.slice(start, start + limit);
-  }, [users, filteredUsers, roleFilter, q, page, limit]);
+  }, [users, filteredUsers, roleFilter, profilFilter, q, page, limit]);
 
   const openCreate = () => {
     setEditingUser(null);
@@ -59,19 +64,19 @@ export default function AdministrationUsers() {
     try {
       setSaving(true);
       if (editingUser) {
-        // Édition existante
+        // Modification utilisateur existant
         await axios.put(`/users/${editingUser.id}`, form);
-        toast.success("✅ Agent modifiée avec succès !");
+        toast.success("✅ Agent modifié avec succès !");
       } else {
         // Création nouvel utilisateur
         await axios.post("/users/register", form);
-        toast.success("✅ Agent créée avec succès !");
+        toast.success("✅ Agent créé avec succès !");
       }
       setShowModal(false);
       fetchUsers();
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.message || "Erreur lors de l'enregistrement");
+      toast.error(err.response?.data?.message || "Erreur lors de l'enregistrement");
     } finally {
       setSaving(false);
     }
@@ -83,7 +88,7 @@ export default function AdministrationUsers() {
       fetchUsers();
     } catch (err) {
       console.error(err);
-      alert("Erreur lors de la mise à jour du statut actif");
+      toast.error("Erreur lors de la mise à jour du statut actif");
     }
   };
 
@@ -92,10 +97,10 @@ export default function AdministrationUsers() {
       return;
     try {
       await axios.post(`/users/${user.id}/reset-password`);
-      alert("Mot de passe réinitialisé !");
+      toast.success("Mot de passe réinitialisé !");
     } catch (err) {
       console.error(err);
-      alert("Erreur lors de la réinitialisation du mot de passe");
+      toast.error("Erreur lors de la réinitialisation du mot de passe");
     }
   };
 
@@ -111,6 +116,9 @@ export default function AdministrationUsers() {
         roleFilter={roleFilter}
         setRoleFilter={setRoleFilter}
         rolesOptions={rolesOptions}
+        profilFilter={profilFilter}          // <-- Ajout
+        setProfilFilter={setProfilFilter}    // <-- Ajout
+        profilsOptions={profilsOptions}      // <-- Ajout
         onRefresh={fetchUsers}
         onCreate={openCreate}
         onResetPage={() => setPage(1)}
