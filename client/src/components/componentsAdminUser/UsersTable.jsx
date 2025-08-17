@@ -10,8 +10,7 @@ import {
   Power,
   RefreshCw,
   Loader2,
-  Trash,
-  Trash2,     // 👈 important
+  Eye,
 } from "lucide-react";
 
 export default function UsersTable({
@@ -43,7 +42,7 @@ export default function UsersTable({
               <th className="text-left px-4 py-3 font-medium">Email</th>
               <th className="text-left px-4 py-3 font-medium">Rôle</th>
               <th className="text-left px-4 py-3 font-medium">Univers</th>
-              {/* <th className="text-left px-4 py-3 font-medium">Statut</th> */}
+              <th className="text-left px-4 py-3 font-medium">Statut Compte</th>
               <th className="text-right px-4 py-3 font-medium">Actions</th>
             </tr>
           </thead>
@@ -83,8 +82,8 @@ export default function UsersTable({
                         u.role === "Admin"
                           ? "bg-red-100 text-red-700"
                           : u.role === "Manager"
-                          ? "bg-purple-100 text-purple-700"
-                          : "bg-blue-100 text-blue-700"
+                            ? "bg-purple-100 text-purple-700"
+                            : "bg-blue-100 text-blue-700"
                       }
                     >
                       {u.role}
@@ -94,46 +93,71 @@ export default function UsersTable({
                     <Briefcase className="w-4 h-4 text-gray-400" />
                     {u.profil || "—"}
                   </td>
-                  {/* <td className="px-4 py-3">
-                    {u.active ? (
-                      <Badge className="bg-green-100 text-green-700">
-                        <CheckCircle2 className="w-3 h-3 mr-1" />
+                  <td className="px-4 py-3">
+                    {u.is_active ? (
+                      <Badge className="bg-gray-100 text-gray-700 bg-green-100 flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-green-600 inline-block" />
+                        
                         Actif
                       </Badge>
                     ) : (
-                      <Badge className="bg-gray-200 text-gray-700">
-                        <XCircle className="w-3 h-3 mr-1" />
-                        Inactif
+                      <Badge className="bg-gray-100 text-gray-700 bg-gray-100 flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-gray-600 inline-block" />
+                        
+                        Desactivé
                       </Badge>
                     )}
-                  </td> */}
+                  </td>
                   <td className="px-4 py-3">
-                    <div className="flex justify-end gap-2">
-                      <button className="px-3 py-1.5 rounded-lg border hover:bg-gray-50" onClick={() => openEdit(u)} title="Modifier">
+                    <div className="flex justify-end gap-2 items-center">
+                      <button
+                        className="px-3 py-1.5 rounded-lg border hover:bg-gray-50 text-blue-600"
+                        onClick={() => openEdit(u)}
+                        title="Consulter"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+
+                      <button
+                        className="px-3 py-1.5 rounded-lg border hover:bg-gray-50 text-green-600"
+                        onClick={() => openEdit(u)}
+                        title="Modifier"
+                      >
                         <Pencil className="w-4 h-4" />
                       </button>
+
                       <button
-                        className={`px-3 py-1.5 rounded-lg border hover:bg-gray-50 ${u.active ? "text-amber-700" : "text-green-700"}`}
-                        onClick={() => toggleActive(u)}
-                        title={u.active ? "Désactiver" : "Activer"}
-                      >
-                        <Power className="w-4 h-4" />
-                      </button>
-                      <button
-                        className="px-3 py-1.5 rounded-lg border hover:bg-gray-50 text-blue-700"
+                        className="px-3 py-1.5 rounded-lg border hover:bg-gray-50 text-yellow-600"
                         onClick={() => resetPassword(u)}
                         title="Réinitialiser le mot de passe"
                       >
                         <RefreshCw className="w-4 h-4" />
                       </button>
-                      {/* bouton supprimer */}
-                      <button
-                        className="px-3 py-1.5 rounded-lg border hover:bg-gray-50 text-red-700"
-                        onClick={() => resetPassword(u)}
-                        title="Supprimer"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+
+                      {/* wrapper pour tooltip */}
+                      <div className="relative group">
+                        <button
+                          onClick={() => toggleActive(u)}
+                          aria-pressed={u.active}
+                          title={u.active ? "Désactiver" : "Activer"}
+                          className={`px-3 py-1.5 rounded-lg border transition-transform transform focus:outline-none focus:ring-2 focus:ring-offset-1 ${u.active
+                              ? "text-red-600 border-red-100 hover:bg-red-50 hover:scale-105"
+                              : "text-emerald-700 border-emerald-100 hover:bg-emerald-50 hover:scale-105"
+                            }`}
+                        >
+                          <Power className="w-4 h-4" />
+                        </button>
+
+                        {/* tooltip */}
+                        <span
+                          className={`pointer-events-none absolute -top-9 right-0 hidden group-hover:block text-xs whitespace-nowrap px-2 py-1 rounded shadow-lg ${u.active ? "bg-red-600 text-white" : "bg-emerald-600 text-white"
+                            }`}
+                        >
+                          {u.active ? "Désactiver le compte" : "Activer le compte"}
+                        </span>
+                      </div>
+
+                      {/* si tu veux ré-activer le bouton supprimer plus tard, il reste après */}
                     </div>
                   </td>
                 </tr>

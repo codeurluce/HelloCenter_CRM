@@ -60,6 +60,11 @@ const loginUser = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(401).json({ message: 'Mot de passe invalide' });
 
+    // Vérifier si le compte est désactivé
+     if (!user.is_active) {
+      return res.status(403).json({ message: 'Compte désactivé, connexion impossible' });
+    }
+
     // Vérification de l'expiration du mot de passe (90 jours)
     // const THREE_MONTHS_MS = 90 * 24 * 60 * 60 * 1000; // 90 jours en ms
     // const now = Date.now();
@@ -85,7 +90,8 @@ const loginUser = async (req, res) => {
         role: user.role,
         email: user.email,
         univers: user.profil,
-        mustChangePassword: user.is_first_login || isPasswordExpired
+        mustChangePassword: user.is_first_login || isPasswordExpired,
+        etatCompte: user.is_active
       },
       JWT_SECRET,
       { expiresIn: '3d' }
@@ -93,6 +99,7 @@ const loginUser = async (req, res) => {
 
     res.status(200).json({
       token,
+      mustChangePassword: user.is_first_login || isPasswordExpired,
       user: {
         id: user.id,
         role: user.role,
@@ -100,7 +107,7 @@ const loginUser = async (req, res) => {
         firstname: user.firstname,
         lastname: user.lastname,
         univers: user.profil,
-        mustChangePassword: user.is_first_login || isPasswordExpired
+        etatCompte: user.is_active
       },
     });
   } catch (err) {
@@ -154,17 +161,23 @@ const getAllUsers = async (req, res) => {
     }
 
     const result = await db.query(
-      `SELECT id, lastname, firstname, email, role, profil 
+      `SELECT id, lastname, firstname, email, role, profil, is_active 
        FROM users
        ORDER BY lastname ASC`
     );
 
-    res.json(result.rows);
+    const users = result.rows.map(u => ({
+      ...u,
+      active: u.is_active === true || u.is_active === 1, // booléen
+    }));
+
+    res.json(users);
   } catch (error) {
     console.error("Erreur lors de la récupération des utilisateurs:", error);
     res.status(500).json({ message: "Erreur serveur lors de la récupération des utilisateurs" });
   }
 };
+
 
 module.exports = {
   createUser,

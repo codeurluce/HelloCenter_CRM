@@ -62,7 +62,7 @@ export default function useUsers({
   useEffect(() => {
     fetchUsers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, limit, roleFilter, profilFilter]);
+  }, [page, limit, roleFilter, profilFilter, q]);
 
   const filteredUsers = useMemo(() => {
     let result = Array.isArray(users) ? users.slice() : [];

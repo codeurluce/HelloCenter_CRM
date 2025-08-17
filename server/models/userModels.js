@@ -12,9 +12,23 @@ function generateTempPassword(length = 10) {
     return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
 }
 
+// ✅ Normalisation ici
 const findUserByEmail = async (email) => {
-    const result = await db.query('SELECT * FROM users WHERE email = $1', [email]);
-    return result.rows[0];
+    const result = await db.query(
+        `SELECT id, firstname, lastname, email, role, profil, password, 
+                is_first_login, password_changed_at, is_active
+         FROM users
+         WHERE email = $1`,
+        [email]
+    );
+
+    if (result.rows.length === 0) return null;
+
+    const user = result.rows[0];
+    return {
+        ...user,
+        active: user.is_active === true || user.is_active === 1, // booléen
+    };
 };
 
 const createUserWithGeneratedEmail = async (lastname, firstname, role = 'Agent', profil = 'Available') => {
@@ -40,14 +54,19 @@ const createUserWithGeneratedEmail = async (lastname, firstname, role = 'Agent',
     const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
     const result = await db.query(
-        `INSERT INTO users (lastname, firstname, email, password, role, profil, is_first_login, password_changed_at) 
-              VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-              RETURNING *`,
+        `INSERT INTO users (lastname, firstname, email, password, role, profil, is_first_login, password_changed_at, is_active)  
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true) 
+         RETURNING *`,
         [lastname, firstname, email, hashedPassword, role, profil, true, new Date()]
     );
 
+    const user = result.rows[0];
+
     return {
-        user: result.rows[0],
+        user: {
+            ...user,
+            active: user.is_active === true || user.is_active === 1, // ✅ cohérent
+        },
         plainPassword: tempPassword,
     };
 };

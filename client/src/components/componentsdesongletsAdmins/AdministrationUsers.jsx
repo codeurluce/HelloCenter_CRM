@@ -1,11 +1,12 @@
 // src/components/admin/AdministrationUsers.jsx
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import useUsers from "../../api/useUsers";
 import SearchFilterBar from "../componentsAdminUser/SearchFilterBar";
 import UsersTable from "../componentsAdminUser/UsersTable";
 import UserFormModal from "../componentsAdminUser/UserFormModal";
 import axios from "../../api/axiosInstance";
 import { toast } from "react-toastify";
+import Swal from "sweetalert2";
 
 // Options de filtres
 const rolesOptions = [
@@ -21,6 +22,7 @@ const profilsOptions = [
 ];
 
 export default function AdministrationUsers() {
+
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [q, setQ] = useState("");
