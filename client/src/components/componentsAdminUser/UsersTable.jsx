@@ -135,7 +135,6 @@ export default function UsersTable({
                         <button
                           onClick={() => toggleActive(u)}
                           aria-pressed={u.is_active}
-                          title={u.is_active ? "Désactiver" : "Activer"}
                           className={`px-3 py-1.5 rounded-lg border transition-transform transform focus:outline-none focus:ring-2 focus:ring-offset-1 ${u.is_active
                               ? "text-red-600   border-red-100   hover:bg-red-600   hover:text-white hover:scale-105"
                               : "text-green-600 border-green-100 hover:bg-green-600 hover:text-white hover:scale-105"
