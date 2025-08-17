@@ -32,50 +32,22 @@ const createUser = async (req, res) => {
   }
 };
 
-// Création manuelle d’un agent (avec mot de passe fourni)
-const createAgent = async (req, res) => {
-  const {
-    lastname,
-    firstname,
-    email,
-    password,
-    role,
-    profil,
-    is_first_login,
-    password_changed_at,
-  } = req.body;
+const changePasswordFirstLogin = async (req, res) => {
+  const { password } = req.body;
+  const userId = req.user.id;
 
   try {
-    const existingUser = await findUserByEmail(email);
-    if (existingUser) {
-      return res.status(400).json({ message: 'Email déjà utilisé.' });
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const result = await db.query(
-      `INSERT INTO users 
-       (lastname, firstname, email, password, role, profil, is_first_login, password_changed_at) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
-       RETURNING id, lastname, firstname, email, role, profil`,
-      [
-        lastname,
-        firstname,
-        email,
-        hashedPassword,
-        role,
-        profil,
-        is_first_login ?? true,
-        password_changed_at ?? new Date(),
-      ]
+    const hashed = await bcrypt.hash(password, 10);
+    await db.query(
+      `UPDATE users SET password=$1, is_first_login=false, password_changed_at=NOW() WHERE id=$2`,
+      [hashed, userId]
     );
-
-    const newUser = result.rows[0];
-    res.status(201).json({ message: 'Agent créé avec succès', user: newUser });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Erreur serveur lors de la création de l’agent" });
+    res.json({ success: true, message: "Mot de passe changé avec succés" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };
+
 
 // Connexion utilisateur
 const loginUser = async (req, res) => {
@@ -88,12 +60,32 @@ const loginUser = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(401).json({ message: 'Mot de passe invalide' });
 
+    // Vérification de l'expiration du mot de passe (90 jours)
+    // const THREE_MONTHS_MS = 90 * 24 * 60 * 60 * 1000; // 90 jours en ms
+    // const now = Date.now();
+    // const lastChange = user.password_changed_at
+    //   ? new Date(user.password_changed_at).getTime()
+    //   : 0;
+    // const isPasswordExpired = (now - lastChange) > THREE_MONTHS_MS;
+
+
+    // Vérification de l'expiration du mot de passe (2 jours)
+    // const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
+    // Vérification de l'expiration du mot de passe (2 jours)
+    const TWO_DAYS_MS = 2 * 24 * 60 * 60 * 1000;
+    const lastChange = user.password_changed_at
+      ? new Date(user.password_changed_at).getTime()
+      : 0;
+    const isPasswordExpired = (Date.now() - lastChange) > TWO_DAYS_MS;
+
     const token = jwt.sign(
       {
         id: user.id,
         role: user.role,
         email: user.email,
         univers: user.profil,
+        mustChangePassword: user.is_first_login || isPasswordExpired
       },
       JWT_SECRET,
       { expiresIn: '3d' }
@@ -108,6 +100,7 @@ const loginUser = async (req, res) => {
         firstname: user.firstname,
         lastname: user.lastname,
         univers: user.profil,
+        mustChangePassword: user.is_first_login || isPasswordExpired
       },
     });
   } catch (err) {
@@ -115,6 +108,7 @@ const loginUser = async (req, res) => {
     res.status(500).json({ message: "Erreur serveur lors de la connexion" });
   }
 };
+
 
 // Vérification du token
 const verifyToken = (req, res, next) => {
@@ -174,9 +168,10 @@ const getAllUsers = async (req, res) => {
 
 module.exports = {
   createUser,
-  createAgent,
+  // createAgent,
   loginUser,
   verifyToken,
   getMe,
   getAllUsers,
+  changePasswordFirstLogin,
 };

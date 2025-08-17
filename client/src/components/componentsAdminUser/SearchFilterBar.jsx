@@ -9,8 +9,8 @@ export default function SearchFilterBar({
   setRoleFilter,
   rolesOptions,
   onRefresh,
-  onCreate,          // 👈 nouveau: ouvre la modal création
-  onResetPage,       // 👈 nouveau: remet page à 1 quand on change q/filtre
+  onCreate,         
+  onResetPage,       
 }) {
   return (
     <div className="flex flex-wrap items-center gap-2 mb-4">

@@ -5,11 +5,17 @@ import SearchFilterBar from "../componentsAdminUser/SearchFilterBar";
 import UsersTable from "../componentsAdminUser/UsersTable";
 import UserFormModal from "../componentsAdminUser/UserFormModal";
 import axios from "../../api/axiosInstance";
+import { toast } from "react-toastify";
 
 const rolesOptions = [
   { value: "Agent", label: "Agent" },
   { value: "Manager", label: "Manager" },
   { value: "Admin", label: "Admin" },
+];
+const universOptions = [
+  { value: "Energie", label: "Energie" },
+  { value: "OffreMobile", label: "Offre Mobile" },
+  { value: "Hybride", label: "Hybride" },
 ];
 
 export default function AdministrationUsers() {
@@ -28,7 +34,11 @@ export default function AdministrationUsers() {
     q,
   });
 
-  const totalPages = Math.max(1, Math.ceil((roleFilter || q ? filteredUsers.length : total) / limit));
+  const totalPages = Math.max(
+    1,
+    Math.ceil((roleFilter || q ? filteredUsers.length : total) / limit)
+  );
+
   const pageData = useMemo(() => {
     const source = roleFilter || q ? filteredUsers : users;
     const start = (page - 1) * limit;
@@ -40,8 +50,8 @@ export default function AdministrationUsers() {
     setShowModal(true);
   };
 
-  const openEdit = (u) => {
-    setEditingUser(u);
+  const openEdit = (user) => {
+    setEditingUser(user);
     setShowModal(true);
   };
 
@@ -49,9 +59,13 @@ export default function AdministrationUsers() {
     try {
       setSaving(true);
       if (editingUser) {
+        // Édition existante
         await axios.put(`/users/${editingUser.id}`, form);
+        toast.success("✅ Agent modifiée avec succès !");
       } else {
-        await axios.post("/users", form);
+        // Création nouvel utilisateur
+        await axios.post("/users/register", form);
+        toast.success("✅ Agent créée avec succès !");
       }
       setShowModal(false);
       fetchUsers();
@@ -63,32 +77,34 @@ export default function AdministrationUsers() {
     }
   };
 
-  const toggleActive = async (u) => {
+  const toggleActive = async (user) => {
     try {
-      await axios.patch(`/users/${u.id}`, { active: !u.active });
+      await axios.patch(`/users/${user.id}`, { active: !user.active });
       fetchUsers();
     } catch (err) {
       console.error(err);
+      alert("Erreur lors de la mise à jour du statut actif");
     }
   };
 
-  const resetPassword = async (u) => {
-    if (!window.confirm(`Réinitialiser le mot de passe de ${u.firstname} ${u.lastname} ?`)) return;
+  const resetPassword = async (user) => {
+    if (!window.confirm(`Réinitialiser le mot de passe de ${user.firstname} ${user.lastname} ?`))
+      return;
     try {
-      await axios.post(`/users/${u.id}/reset-password`);
+      await axios.post(`/users/${user.id}/reset-password`);
       alert("Mot de passe réinitialisé !");
     } catch (err) {
       console.error(err);
-      alert("Erreur lors de la réinitialisation");
+      alert("Erreur lors de la réinitialisation du mot de passe");
     }
   };
 
   return (
     <div className="space-y-4">
-      {/* Titre de section (sans bouton à droite) */}
+      {/* Titre de section */}
       <h2 className="text-xl font-semibold">Gestion des utilisateurs</h2>
 
-      {/* Barre de recherche/filtre + bouton créer à droite (même ligne) */}
+      {/* Barre de recherche/filtre + bouton créer */}
       <SearchFilterBar
         q={q}
         setQ={setQ}

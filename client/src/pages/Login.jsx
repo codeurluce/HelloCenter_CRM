@@ -1,3 +1,4 @@
+// Login.jsx
 import React, { useState, useContext } from 'react';
 import { Eye, EyeOff, User, Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -12,12 +13,10 @@ const Login = ({ onLogin }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [mustChangePassword, setMustChangePassword] = useState(false);
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
     setError('');
   };
 
@@ -25,40 +24,43 @@ const Login = ({ onLogin }) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
+    setMustChangePassword(false);
 
     try {
-      const response = await axios.post('http://localhost:5000/api/login', {
-        email: formData.email,
-        password: formData.password
-      });
-
+      const response = await axios.post('http://localhost:5000/api/login', formData);
       const { user, token } = response.data;
-console.log("Utilisateur connecté :", user);
-      // Stockage local
+
+      // Stockage des infos utilisateur
       localStorage.setItem('token', token);
       localStorage.setItem('role', user.role);
       localStorage.setItem('univers', user.profil);
       localStorage.setItem('user', JSON.stringify(user));
 
-      // Mise à jour du contexte
       setUser(user);
-      if (onLogin) onLogin();
+      if (onLogin) onLogin(token, user);
 
-      // Redirection selon rôle (avec reload forcé pour déclencher useEffect dans Dashboard)
-      switch (user.role) {
-        case 'Agent':
-          window.location.href = '/agent';
-          break;
-        case 'Manager':
-          window.location.href = '/manager';
-          break;
-        case 'Admin':
-          window.location.href = '/admin';
-          break;
-        default:
-          setError("Rôle utilisateur inconnu.");
+      // Détection première connexion ou mot de passe expiré
+      const isFirstLogin = user.is_first_login === true || user.is_first_login === 'true';
+      const passwordExpired = user.password_expired === true || user.password_expired === 'true';
+
+      if (isFirstLogin || passwordExpired) {
+        setMustChangePassword(true); // On affiche le message et le bouton
+      } else {
+        // Navigation normale selon rôle
+        switch (user.role) {
+          case 'Agent':
+            navigate('/agent');
+            break;
+          case 'Manager':
+            navigate('/manager');
+            break;
+          case 'Admin':
+            navigate('/admin');
+            break;
+          default:
+            setError('Rôle utilisateur inconnu.');
+        }
       }
-
     } catch (err) {
       setError(err.response?.data?.message || 'Identifiants invalides.');
     } finally {
@@ -80,6 +82,18 @@ console.log("Utilisateur connecté :", user);
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
             {error}
+          </div>
+        )}
+
+        {mustChangePassword && (
+          <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded-lg text-sm">
+            Votre mot de passe doit être changé pour continuer.
+            <button
+              onClick={() => navigate('/change-password')}
+              className="ml-2 text-blue-600 underline"
+            >
+              Changer mon mot de passe
+            </button>
           </div>
         )}
 

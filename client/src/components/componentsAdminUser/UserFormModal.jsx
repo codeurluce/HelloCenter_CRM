@@ -117,9 +117,9 @@ export default function UserFormModal({ show, setShow, editingUser, onSave, savi
               <label className="text-sm font-medium text-gray-700">Profil / Univers</label>
               <select
                 className="w-full mt-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                value={form.role}
+                value={form.profil}
                 onChange={(e) =>
-                  setForm((f) => ({ ...f, role: e.target.value }))
+                  setForm((f) => ({ ...f, profil: e.target.value }))
                 }
                 required
               >

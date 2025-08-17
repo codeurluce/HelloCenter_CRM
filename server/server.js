@@ -10,10 +10,10 @@ const PORT = process.env.PORT || 5000;
 
 // Import des routes
 const sessionRoutes = require('./routes/sessionRoutes');
-const authRoutes = require('./routes/userRoutes');
 const salesRoutes = require('./routes/salesRoutes');
 const filesRoutes = require('./routes/filesRoutes');
 const historiquesfilesRoutes = require('./routes/historiquesfilesRoutes');
+const userRoutes = require('./routes/userRoutes');
 
 
 // Initialisation de l'application Express
@@ -26,7 +26,8 @@ const io = new Server(server, {
 // les API d'authentification, de sessions et de ventes
 app.use(cors());
 app.use(express.json());
-app.use('/api', authRoutes); // API pour l'authentification
+app.use('/api', userRoutes)
+app.use('/api/users', userRoutes) 
 app.use('/api/sales', salesRoutes); // APi pour les ventes
 app.use('/api/session_agents', sessionRoutes); // API pour les sessions
 app.use('/api/files', filesRoutes); // API pour les fichiers
