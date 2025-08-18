@@ -5,15 +5,21 @@ import { Search, RefreshCw, Plus } from "lucide-react";
 export default function SearchFilterBar({
   q,
   setQ,
+  rolesOptions,
   roleFilter,
   setRoleFilter,
-  rolesOptions,
+
+  profilsOptions,
   profilFilter,
   setProfilFilter,
-  profilsOptions,
+
+  statusOptions,
+  statusFilter,
+  setStatusFilter,
+
   onRefresh,
-  onCreate,         
-  onResetPage,       
+  onCreate,
+  onResetPage,
 }) {
   return (
     <div className="flex flex-wrap items-center gap-2 mb-4">
@@ -65,6 +71,15 @@ export default function SearchFilterBar({
         ))}
       </select>
 
+     <select
+  value={statusFilter}
+  onChange={(e) => { setStatusFilter(e.target.value); onResetPage?.();}}
+  className="px-3 py-2 rounded-lg border border-gray-200 focus:outline-none"
+>
+  <option value="">Tous les status</option>
+  <option value="active">Actifs</option>
+  <option value="inactive">Désactivés</option>
+</select>
       {/* Rafraîchir */}
       <button
         onClick={onRefresh}

@@ -5,6 +5,7 @@ import axios from "../api/axiosInstance";
  * useUsers hook
  * - roleFilter: string (ex: "Agent")
  * - profilFilter: string (ex: "Energie")
+ * - statusFilter: string ("active" / "inactive")
  * - q: recherche texte
  * - options.clientSideOnly: 
  *    true  => récupère tous les users et filtre côté client
@@ -15,6 +16,7 @@ export default function useUsers({
   limit,
   roleFilter,
   profilFilter,
+  statusFilter,
   q,
   options = { clientSideOnly: true },
 }) {
@@ -37,7 +39,14 @@ export default function useUsers({
       if (options.clientSideOnly) {
         // Récupération brute puis filtrage côté client
         const { data } = await axios.get("/users", { params: { page, limit } });
-        const list = data.items ?? data;
+        let list = data.items ?? data;
+
+        // Mapping active pour le filtre statusFilter
+        list = list.map(u => ({
+          ...u,
+          active: u.is_active === true || u.is_active === 1
+        }));
+
         setUsers(Array.isArray(list) ? list : []);
         setTotal(data.total ?? (Array.isArray(list) ? list.length : 0));
       } else {
@@ -46,8 +55,10 @@ export default function useUsers({
         if (roleFilter) params.role = normalizeForServer(roleFilter);
         if (profilFilter) params.profil = normalizeForServer(profilFilter);
         if (q) params.q = q;
+
         const { data } = await axios.get("/users", { params });
         const list = data.items ?? data;
+
         setUsers(Array.isArray(list) ? list : []);
         setTotal(data.total ?? (Array.isArray(list) ? list.length : 0));
       }
@@ -62,7 +73,7 @@ export default function useUsers({
   useEffect(() => {
     fetchUsers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, limit, roleFilter, profilFilter, q]);
+  }, [page, limit, roleFilter, profilFilter, statusFilter, q]);
 
   const filteredUsers = useMemo(() => {
     let result = Array.isArray(users) ? users.slice() : [];
@@ -83,6 +94,16 @@ export default function useUsers({
       );
     }
 
+    // Filtre actif/désactivé
+    if (statusFilter) {
+      const sf = statusFilter.trim().toLowerCase();
+      result = result.filter(u => {
+        if (sf === "active") return u.active === true;
+        if (sf === "inactive") return u.active === false;
+        return true;
+      });
+    }
+
     // Recherche texte
     if (q) {
       const needle = q.trim().toLowerCase();
@@ -98,7 +119,7 @@ export default function useUsers({
     }
 
     return result;
-  }, [users, roleFilter, profilFilter, q]);
+  }, [users, roleFilter, profilFilter, statusFilter, q]);
 
   return { users, filteredUsers, total, loading, error, fetchUsers, setUsers };
 }

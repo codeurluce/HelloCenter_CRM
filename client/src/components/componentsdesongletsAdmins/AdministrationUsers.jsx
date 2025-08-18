@@ -21,13 +21,19 @@ const profilsOptions = [
   { value: "Hybride", label: "Hybride" },
 ];
 
+const statusOptions = [
+  { value: "active", label: "Actifs" },
+  { value: "inactive", label: "Désactivés" },
+];
+
 export default function AdministrationUsers() {
 
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [q, setQ] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
-  const [profilFilter, setProfilFilter] = useState(""); // <-- Ajout
+  const [profilFilter, setProfilFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -37,7 +43,8 @@ export default function AdministrationUsers() {
     page,
     limit,
     roleFilter,
-    profilFilter, // <-- Ajouté ici pour filtrage backend
+    profilFilter,
+    statusFilter,
     q,
   });
 
@@ -46,11 +53,11 @@ export default function AdministrationUsers() {
     Math.ceil((roleFilter || profilFilter || q ? filteredUsers.length : total) / limit)
   );
 
-  const pageData = useMemo(() => {
-    const source = roleFilter || profilFilter || q ? filteredUsers : users;
-    const start = (page - 1) * limit;
-    return source.slice(start, start + limit);
-  }, [users, filteredUsers, roleFilter, profilFilter, q, page, limit]);
+const pageData = useMemo(() => {
+  const source = roleFilter || profilFilter || q || statusFilter ? filteredUsers : users;
+  const start = (page - 1) * limit;
+  return source.slice(start, start + limit);
+}, [users, filteredUsers, roleFilter, profilFilter, q, statusFilter, page, limit]);
 
   const openCreate = () => {
     setEditingUser(null);
@@ -145,9 +152,12 @@ const toggleActive = async (user) => {
         roleFilter={roleFilter}
         setRoleFilter={setRoleFilter}
         rolesOptions={rolesOptions}
-        profilFilter={profilFilter}          // <-- Ajout
-        setProfilFilter={setProfilFilter}    // <-- Ajout
-        profilsOptions={profilsOptions}      // <-- Ajout
+        profilFilter={profilFilter} 
+        setProfilFilter={setProfilFilter} 
+        profilsOptions={profilsOptions}
+        statusFilter={statusFilter}
+        setStatusFilter={setStatusFilter}         
+        statusOptions={statusOptions}     
         onRefresh={fetchUsers}
         onCreate={openCreate}
         onResetPage={() => setPage(1)}
