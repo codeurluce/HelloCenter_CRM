@@ -1,17 +1,18 @@
 // src/components/admin/UserFormModal.jsx
 import React, { useState, useEffect } from "react";
-import { Loader2, User } from "lucide-react";
+import { Loader2, User, UserPlus, UserPen, X } from "lucide-react";
 
 const rolesOptions = [
   { value: "Agent", label: "Agent" },
   { value: "Manager", label: "Manager" },
   { value: "Admin", label: "Admin" },
 ];
+
 const universOptions = [
   { value: "Energie", label: "Energie" },
   { value: "OffreMobile", label: "Offre Mobile" },
   { value: "Hybride", label: "Hybride" },
-]
+];
 
 export default function UserFormModal({ show, setShow, editingUser, onSave, saving }) {
   const defaultForm = {
@@ -46,24 +47,33 @@ export default function UserFormModal({ show, setShow, editingUser, onSave, savi
   if (!show) return null;
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-3">
-      <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl p-6">
+    <div
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-3"
+      onClick={() => setShow(false)}
+    >
+      <div
+        className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden transform transition-all duration-300 scale-100"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">
-            {editingUser ? "Modifier l’utilisateur" : "Nouvel utilisateur"}
-          </h2>
+        <div className="bg-blue-600 text-white flex items-center justify-between px-6 py-4">
+          <div className="flex items-center gap-2">
+            {editingUser ? <UserPen size={22} /> : <UserPlus size={22} />}
+            <h3 className="text-lg font-bold">
+              {editingUser ? "Modifier l’utilisateur" : "Nouvel utilisateur"}
+            </h3>
+          </div>
           <button
             onClick={() => setShow(false)}
-            className="text-gray-500 hover:text-gray-700"
             aria-label="Fermer"
+            className="hover:bg-white/20 p-1 rounded-full transition-colors"
           >
-            ✕
+            <X size={20} />
           </button>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 p-6">
           {/* Prénom + Nom */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
