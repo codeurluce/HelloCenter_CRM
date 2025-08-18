@@ -83,6 +83,11 @@ const loginUser = async (req, res) => {
       : 0;
     const isPasswordExpired = (Date.now() - lastChange) > TWO_DAYS_MS;
 
+    const mustChangePassword = {
+  required: user.is_first_login || isPasswordExpired,
+  reason: user.is_first_login ? 'first_login' : isPasswordExpired ? 'expired' : null,
+};
+
     const token = jwt.sign(
       {
         id: user.id,
@@ -90,7 +95,6 @@ const loginUser = async (req, res) => {
         email: user.email,
         univers: user.profil,
         is_first_login: user.is_first_login,
-        mustChangePassword: user.is_first_login || isPasswordExpired,
         etatCompte: user.is_active
       },
       JWT_SECRET,
@@ -99,7 +103,7 @@ const loginUser = async (req, res) => {
 
     res.status(200).json({
       token,
-      mustChangePassword: user.is_first_login || isPasswordExpired,
+      mustChangePassword,
       user: {
         id: user.id,
         role: user.role,

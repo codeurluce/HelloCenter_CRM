@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
@@ -7,6 +7,15 @@ const ChangePassword = ({ onPasswordChanged }) => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [reason, setReason] = useState(null);
+
+  useEffect(() => {
+    // Essayer de récupérer la raison dans localStorage au chargement
+    const storedReason = localStorage.getItem('mustChangePasswordReason');
+    if (storedReason) {
+      setReason(storedReason);
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -28,6 +37,7 @@ const ChangePassword = ({ onPasswordChanged }) => {
       if (onPasswordChanged) onPasswordChanged();
 
       localStorage.setItem('mustChangePassword', 'false');
+      localStorage.setItem('mustChangePasswordReason', '');
 
       const role = localStorage.getItem('role');
 
@@ -44,6 +54,16 @@ const ChangePassword = ({ onPasswordChanged }) => {
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="p-6 max-w-md w-full bg-white rounded shadow-md">
         <h2 className="text-xl font-bold mb-4 text-center">Changer le mot de passe</h2>
+        {reason === 'first_login' && (
+          <p className="mb-4 text-center text-blue-700">
+            Bienvenue ! Comme c’est votre première connexion, merci de changer votre mot de passe.
+          </p>
+        )}
+        {reason === 'expired' && (
+          <p className="mb-4 text-center text-red-700">
+            Votre mot de passe a expiré. Veuillez le changer pour continuer.
+          </p>
+        )}
         {error && <div className="text-red-600 mb-2 text-center">{error}</div>}
         <form onSubmit={handleSubmit} className="space-y-4">
           <input

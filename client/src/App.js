@@ -35,18 +35,22 @@ function App() {
     JSON.parse(localStorage.getItem('user')) || null
   );
 
-  const handleLogin = (newToken, newUser, mustChangePassword) => {
+  const handleLogin = (newToken, newUser, mustChangePasswordObj) => {
     // Met à jour l’objet user avec mustChangePassword
-    const updatedUser = { ...newUser, mustChangePassword };
+    const updatedUser = { ...newUser, 
+      mustChangePassword:       mustChangePasswordObj.required, 
+      mustChangePasswordReason: mustChangePasswordObj.reason };
+
 
     localStorage.setItem('token', newToken);
     localStorage.setItem('user', JSON.stringify(updatedUser));
-    localStorage.setItem('mustChangePassword', mustChangePassword);
+    localStorage.setItem('mustChangePassword', mustChangePasswordObj.required);
+  localStorage.setItem('mustChangePasswordReason', mustChangePasswordObj.reason);
 
     setToken(newToken);
     setUser(updatedUser);
 
-    if (mustChangePassword) {
+    if (mustChangePasswordObj.required) {
       navigate('/change-password');
     } else {
       redirectByRole(updatedUser.role);
