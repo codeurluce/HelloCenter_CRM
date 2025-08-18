@@ -106,30 +106,46 @@ export default function UsersTable({
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex justify-end gap-2 items-center">
-                      <button
-                        className="px-3 py-1.5 rounded-lg border hover:bg-gray-50 text-blue-600"
-                        onClick={() => onViewAgent && onViewAgent(u)}
-                        title="Consulter"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-
-                      <button
-                        className="px-3 py-1.5 rounded-lg border hover:bg-gray-50 text-green-600"
-                        onClick={() => openEdit(u)}
-                        title="Modifier"
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </button>
-
-                      <button
-                        className="px-3 py-1.5 rounded-lg border hover:bg-gray-50 text-yellow-600"
-                        onClick={() => resetPassword(u)}
-                        title="Réinitialiser le mot de passe"
-                      >
-                        <RefreshCw className="w-4 h-4" />
-                      </button>
+                    <div className="flex justify-end gap-2 items-center ">
+                      <div className="relative group">
+                        <button
+                          className="px-3 py-1.5 rounded-lg border border-blue-100 hover:bg-blue-600 text-blue-600 transition-transform transform focus:outline-none focus:ring-2 focus:ring-offset-1 hover:text-white hover:scale-105"
+                          onClick={() => onViewAgent && onViewAgent(u)}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <span
+                          className={`pointer-events-none absolute -top-9 right-0 hidden group-hover:block text-xs whitespace-nowrap px-2 py-1 rounded shadow-lg bg-blue-600 text-white }`}
+                        >
+                          {"Consulter"}
+                        </span>
+                      </div>
+                      <div className="relative group">
+                        <button
+                          className="px-3 py-1.5 rounded-lg border border-green-100 hover:bg-green-600 text-green-600 transition-transform transform focus:outline-none focus:ring-2 focus:ring-offset-1 hover:text-white hover:scale-105"
+                          onClick={() => openEdit(u)}
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <span
+                          className={`pointer-events-none absolute -top-9 right-0 hidden group-hover:block text-xs whitespace-nowrap px-2 py-1 rounded shadow-lg bg-green-600 text-white }`}
+                        >
+                          {"Modifier"}
+                        </span>
+                      </div>
+                      <div className="relative group">
+                        <button
+                          className="px-3 py-1.5 rounded-lg border border-yellow-100 hover:bg-yellow-600 text-yellow-600 transition-transform transform focus:outline-none focus:ring-2 focus:ring-offset-1 hover:text-white hover:scale-105"
+                          onClick={() => resetPassword(u)}
+                        >
+                          <RefreshCw className="w-4 h-4" />
+                        </button>
+                        <span
+                          className={`pointer-events-none absolute -top-9 right-0 hidden group-hover:block text-xs whitespace-nowrap px-2 py-1 rounded shadow-lg bg-yellow-600 text-white }`}
+                        >
+                          {"Réinitialiser le mot de passe"}
+                        </span>
+                      </div>
 
                       {/* wrapper pour tooltip */}
                       <div className="relative group">
@@ -137,8 +153,8 @@ export default function UsersTable({
                           onClick={() => toggleActive(u)}
                           aria-pressed={u.is_active}
                           className={`px-3 py-1.5 rounded-lg border transition-transform transform focus:outline-none focus:ring-2 focus:ring-offset-1 ${u.is_active
-                              ? "text-red-600   border-red-100   hover:bg-red-600   hover:text-white hover:scale-105"
-                              : "text-green-600 border-green-100 hover:bg-green-600 hover:text-white hover:scale-105"
+                            ? "text-red-600   border-red-100   hover:bg-red-600   hover:text-white hover:scale-105"
+                            : "text-green-600 border-green-100 hover:bg-green-600 hover:text-white hover:scale-105"
                             }`}
                         >
                           <Power className="w-4 h-4" />
