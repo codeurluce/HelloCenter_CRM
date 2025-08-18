@@ -75,7 +75,7 @@ export default function AdministrationUsers() {
       setSaving(true);
       if (editingUser) {
         // Modification utilisateur existant
-        await axios.put(`/users/${editingUser.id}`, form);
+        await axios.put(`/users/${editingUser.id}/update`, form);
         toast.success("✅ Agent modifié avec succès !");
       } else {
         // Création nouvel utilisateur

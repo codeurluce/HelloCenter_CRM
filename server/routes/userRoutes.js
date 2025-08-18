@@ -10,6 +10,7 @@ const {
   getAllUsers,
   changePasswordFirstLogin,
   toggleActiveUser,
+  updateUser,
 } = require('../controllers/userControllers');
 
 // Créer un agent (avec email + mot de passe fournis)
@@ -28,6 +29,8 @@ router.post('/change-password-first-login', verifyToken, changePasswordFirstLogi
 router.get('/me', verifyToken, getMe);
 
 router.put('/:id/toggle-active', verifyToken, toggleActiveUser);
+
+router.put('/:id/update', verifyToken, updateUser);
 
 // Récupérer tous les utilisateurs (admin)
 router.get('/users', verifyToken, getAllUsers);

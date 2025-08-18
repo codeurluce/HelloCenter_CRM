@@ -23,7 +23,7 @@ const AgentDetailsModal = ({ agent, onClose, onEdit, onToggleStatus }) => {
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50" onClick={onClose}  >
             <div className="bg-gradient-to-b from-white to-gray-50 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden transform transition-all duration-300 scale-100" onClick={stopPropagation} >
                 {/* Header */}
-                <div className={`${isActive ? "bg-blue-600" : "bg-gray-600" } text-white flex items-center justify-between px-6 py-4`} >
+                <div className={`${isActive ? "bg-blue-600" : "bg-gray-600"} text-white flex items-center justify-between px-6 py-4`} >
                     <div className="flex items-center gap-2">
                         <User size={22} />
                         <h3 className="text-lg font-bold">
@@ -96,8 +96,8 @@ const AgentDetailsModal = ({ agent, onClose, onEdit, onToggleStatus }) => {
                     <button
                         onClick={() => onToggleStatus(agent)}
                         className={`flex items-center gap-2 ${isActive
-                                ? "bg-red-600 hover:bg-red-700"
-                                : "bg-green-600 hover:bg-green-700"
+                            ? "bg-red-600 hover:bg-red-700"
+                            : "bg-green-600 hover:bg-green-700"
                             } text-white font-medium px-5 py-2 rounded-lg shadow-sm transition-colors`}
                     >
                         {isActive ? "Désactiver" : "Activer"}

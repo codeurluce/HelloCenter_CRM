@@ -48,7 +48,6 @@ const changePasswordFirstLogin = async (req, res) => {
   }
 };
 
-
 // Connexion utilisateur
 const loginUser = async (req, res) => {
   const { email, password } = req.body;
@@ -90,6 +89,7 @@ const loginUser = async (req, res) => {
         role: user.role,
         email: user.email,
         univers: user.profil,
+        is_first_login: user.is_first_login,
         mustChangePassword: user.is_first_login || isPasswordExpired,
         etatCompte: user.is_active
       },
@@ -107,7 +107,8 @@ const loginUser = async (req, res) => {
         firstname: user.firstname,
         lastname: user.lastname,
         univers: user.profil,
-        etatCompte: user.is_active
+        etatCompte: user.is_active,
+        is_first_login: user.is_first_login
       },
     });
   } catch (err) {
@@ -214,6 +215,44 @@ const toggleActiveUser =  async (req, res) => {
   }
 };
 
+// Mettre à jour un utilisateur
+const updateUser = async (req, res) => {
+  const { id } = req.params;
+  const { firstname, lastname, email, role, profil } = req.body;
+
+  if (!firstname || !lastname || !email || !role || !profil) {
+    return res.status(400).json({ message: "Champs manquants." });
+  }
+
+  try {
+    // Vérifier que l'utilisateur existe
+    const userCheck = await db.query('SELECT * FROM users WHERE id = $1', [id]);
+    if (!userCheck.rows.length) {
+      return res.status(404).json({ message: "Utilisateur non trouvé." });
+    }
+
+    const query = `
+      UPDATE users
+      SET firstname = $1,
+          lastname = $2,
+          email= $3,
+          role = $4,
+          profil = $5,
+          updated_at = NOW()
+      WHERE id = $6
+      RETURNING id, firstname, lastname, email, role, profil;
+    `;
+
+    const values = [firstname, lastname, email, role, profil, id]
+
+    const result = await db.query(query, values);
+
+    res.json({ message: "Utilisateur mis à jour.", user: result.rows[0] });
+  } catch (error) {
+    console.error("Erreur updateUser:", error);
+    res.status(500).json({ message: "Erreur serveur." });
+  }
+};
 
 module.exports = {
   createUser,
@@ -224,4 +263,5 @@ module.exports = {
   getAllUsers,
   changePasswordFirstLogin,
 toggleActiveUser,
+updateUser,
 };

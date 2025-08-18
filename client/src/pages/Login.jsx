@@ -1,4 +1,3 @@
-// Login.jsx
 import React, { useState, useContext } from 'react';
 import { Eye, EyeOff, User, Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -13,7 +12,6 @@ const Login = ({ onLogin }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [mustChangePassword, setMustChangePassword] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -24,30 +22,24 @@ const Login = ({ onLogin }) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
-    setMustChangePassword(false);
 
     try {
       const response = await axios.post('http://localhost:5000/api/login', formData);
-      const { user, token } = response.data;
-
-      // Stockage des infos utilisateur
+      const { user, token, mustChangePassword  } = response.data;
+      
       localStorage.setItem('token', token);
       localStorage.setItem('role', user.role);
       localStorage.setItem('univers', user.profil);
+      localStorage.setItem('mustChangePassword', mustChangePassword);
       localStorage.setItem('user', JSON.stringify(user));
 
       setUser(user);
-      if (onLogin) onLogin(token, user);
+      if (onLogin) onLogin(token, user, mustChangePassword);
 
-      // Détection première connexion ou mot de passe expiré
-      const isFirstLogin = user.is_first_login === true || user.is_first_login === 'true';
-      const passwordExpired = user.password_expired === true || user.password_expired === 'true';
-
-      if (isFirstLogin || passwordExpired) {
-        setMustChangePassword(true); // On affiche le message et le bouton
-      } else {
-        // Navigation normale selon rôle
-        switch (user.role) {
+      if (mustChangePassword) {
+      navigate('/change-password');
+    } else {
+      switch (user.role) {
           case 'Agent':
             navigate('/agent');
             break;
@@ -82,18 +74,6 @@ const Login = ({ onLogin }) => {
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
             {error}
-          </div>
-        )}
-
-        {mustChangePassword && (
-          <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded-lg text-sm">
-            Votre mot de passe doit être changé pour continuer.
-            <button
-              onClick={() => navigate('/change-password')}
-              className="ml-2 text-blue-600 underline"
-            >
-              Changer mon mot de passe
-            </button>
           </div>
         )}
 

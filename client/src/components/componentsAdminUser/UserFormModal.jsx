@@ -1,6 +1,7 @@
 // src/components/admin/UserFormModal.jsx
 import React, { useState, useEffect } from "react";
 import { Loader2, User, UserPlus, UserPen, X } from "lucide-react";
+import axios from "axios";
 
 const rolesOptions = [
   { value: "Agent", label: "Agent" },
@@ -26,21 +27,42 @@ export default function UserFormModal({ show, setShow, editingUser, onSave, savi
   const [form, setForm] = useState(defaultForm);
 
   useEffect(() => {
-    if (editingUser) {
-      setForm({
-        firstname: editingUser.firstname || "",
-        lastname: editingUser.lastname || "",
-        role: editingUser.role || "Agent",
-        profil: editingUser.profil || "Energie",
-      });
-    } else {
-      setForm(defaultForm);
+    if (show) {
+      if (editingUser) {
+        setForm({
+          firstname: editingUser.firstname || "",
+          lastname: editingUser.lastname || "",
+          email: editingUser.email || "",
+          role: editingUser.role || "Agent",
+          profil: editingUser.profil || "Energie",
+          is_first_login: editingUser.is_first_login ?? true,
+        });
+      } else {
+        setForm(defaultForm);
+      }
     }
-  }, [editingUser]);
+  }, [editingUser, show]);
 
-  const handleSubmit = (e) => {
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     onSave(form);
+
+    try {
+      // Envoi des données modifiées au backend
+      const res = await axios.put(`/users/${editingUser.id}/update`, {
+        firstname: form.firstname,
+        lastname: form.lastname,
+        email: form.email,
+        role: form.role,
+        profil: form.profil,
+      });
+
+      onSave(res.data); // mettre à jour la liste frontend
+      setShow(false);
+    } catch (err) {
+      console.error("Erreur update user:", err.response?.data || err.message);
+    }
   };
 
   if (!show) return null;
@@ -101,6 +123,23 @@ export default function UserFormModal({ show, setShow, editingUser, onSave, savi
               />
             </div>
           </div>
+
+
+          {/* Email */}
+          {editingUser && (
+            <div>
+              <label className="text-sm font-medium text-gray-700">Email</label>
+              <input
+                type="email"
+                className="w-full mt-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                value={form.email || ""}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, email: e.target.value }))
+                }
+                required
+              />
+            </div>
+          )}
 
           {/* Rôle + Profil */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

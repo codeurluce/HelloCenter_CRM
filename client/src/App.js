@@ -35,18 +35,21 @@ function App() {
     JSON.parse(localStorage.getItem('user')) || null
   );
 
-  const handleLogin = (newToken, newUser) => {
+  const handleLogin = (newToken, newUser, mustChangePassword) => {
+    // Met à jour l’objet user avec mustChangePassword
+    const updatedUser = { ...newUser, mustChangePassword };
+
     localStorage.setItem('token', newToken);
-    localStorage.setItem('user', JSON.stringify(newUser));
-    localStorage.setItem('mustChangePassword', newUser.mustChangePassword);
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+    localStorage.setItem('mustChangePassword', mustChangePassword);
 
     setToken(newToken);
-    setUser(newUser);
+    setUser(updatedUser);
 
-    if (newUser.mustChangePassword) {
+    if (mustChangePassword) {
       navigate('/change-password');
     } else {
-      redirectByRole(newUser.role);
+      redirectByRole(updatedUser.role);
     }
   };
 
@@ -66,7 +69,7 @@ function App() {
     }
   };
 
-  // Redirection automatique si token et user
+  // Redirection automatique selon token, user et mustChangePassword
   useEffect(() => {
     if (!token || !user) return;
 
@@ -93,6 +96,7 @@ function App() {
       <Route path="/change-password" element={
         token ? (
           <ChangePassword onPasswordChanged={() => {
+            // Met à jour mustChangePassword à false après changement de mdp
             const updatedUser = { ...user, mustChangePassword: false };
             setUser(updatedUser);
             localStorage.setItem('mustChangePassword', 'false');
