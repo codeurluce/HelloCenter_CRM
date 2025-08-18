@@ -37,6 +37,19 @@ const changePasswordFirstLogin = async (req, res) => {
   const userId = req.user.id;
 
   try {
+
+    // Récupérer utilisateur
+    const result = await db.query('SELECT password FROM users WHERE id=$1', [userId]);
+    if (result.rows.length === 0) return res.status(404).json({ message: 'Utilisateur non trouvé' });
+
+    const oldHashedPassword = result.rows[0].password;
+
+    // Comparer le nouveau mot de passe avec l’ancien haché
+    const isSamePassword = await bcrypt.compare(password, oldHashedPassword);
+    if (isSamePassword) {
+      return res.status(400).json({ message: "Le nouveau mot de passe ne peut pas être identique à l'ancien." });
+    }
+
     const hashed = await bcrypt.hash(password, 10);
     await db.query(
       `UPDATE users SET password=$1, is_first_login=false, password_changed_at=NOW() WHERE id=$2`,
