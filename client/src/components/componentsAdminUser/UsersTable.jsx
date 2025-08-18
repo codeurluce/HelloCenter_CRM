@@ -23,6 +23,7 @@ export default function UsersTable({
   setPage,
   limit,
   setLimit,
+  onViewAgent,
 }) {
   const Badge = ({ children, className = "" }) => (
     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${className}`}>
@@ -108,7 +109,7 @@ export default function UsersTable({
                     <div className="flex justify-end gap-2 items-center">
                       <button
                         className="px-3 py-1.5 rounded-lg border hover:bg-gray-50 text-blue-600"
-                        onClick={() => openEdit(u)}
+                        onClick={() => onViewAgent && onViewAgent(u)}
                         title="Consulter"
                       >
                         <Eye className="w-4 h-4" />

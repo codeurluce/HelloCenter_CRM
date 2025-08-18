@@ -4,6 +4,7 @@ import useUsers from "../../api/useUsers";
 import SearchFilterBar from "../componentsAdminUser/SearchFilterBar";
 import UsersTable from "../componentsAdminUser/UsersTable";
 import UserFormModal from "../componentsAdminUser/UserFormModal";
+import AgentDetailsModal from "../componentsAdminUser/AgentDetailsModal";
 import axios from "../../api/axiosInstance";
 import { toast } from "react-toastify";
 import Swal from "sweetalert2";
@@ -27,7 +28,6 @@ const statusOptions = [
 ];
 
 export default function AdministrationUsers() {
-
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [q, setQ] = useState("");
@@ -37,6 +37,7 @@ export default function AdministrationUsers() {
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [selectedAgent, setSelectedAgent] = useState(null);
 
   // Hook pour récupérer les users
   const { users, filteredUsers, total, loading, error, fetchUsers } = useUsers({
@@ -50,14 +51,14 @@ export default function AdministrationUsers() {
 
   const totalPages = Math.max(
     1,
-    Math.ceil((roleFilter || profilFilter || q ? filteredUsers.length : total) / limit)
+    Math.ceil((roleFilter || profilFilter || statusFilter || q ? filteredUsers.length : total) / limit)
   );
 
-const pageData = useMemo(() => {
-  const source = roleFilter || profilFilter || q || statusFilter ? filteredUsers : users;
-  const start = (page - 1) * limit;
-  return source.slice(start, start + limit);
-}, [users, filteredUsers, roleFilter, profilFilter, q, statusFilter, page, limit]);
+  const pageData = useMemo(() => {
+    const source = roleFilter || profilFilter || q || statusFilter ? filteredUsers : users;
+    const start = (page - 1) * limit;
+    return source.slice(start, start + limit);
+  }, [users, filteredUsers, roleFilter, profilFilter, q, statusFilter, page, limit]);
 
   const openCreate = () => {
     setEditingUser(null);
@@ -91,40 +92,40 @@ const pageData = useMemo(() => {
     }
   };
 
-const toggleActive = async (user) => {
-  try {
-    const result = await Swal.fire({
-      title: `${user.is_active ? "Désactiver" : "Activer"} l'agent ?`,
-      text: `Êtes-vous sûr de vouloir ${user.is_active ? "désactiver" : "activer"} ${user.firstname} ${user.lastname} ?`,
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: user.is_active ? '#d33' : '#28a745', // rouge si désactiver, vert si activer
-      cancelButtonColor: '#6c757d', // neutre gris
-      confirmButtonText: user.is_active ? 'Désactiver' : 'Activer',
-      cancelButtonText: 'Annuler',
-      reverseButtons: true,
-    });
-
-    if (result.isConfirmed) {
-      const res = await axios.put(`/users/${user.id}/toggle-active`);
-      Swal.fire({
-        icon: 'success',
-        title: 'Succès',
-        text: res.data.message,
-        timer: 2000,
-        showConfirmButton: false
+  const toggleActive = async (user) => {
+    try {
+      const result = await Swal.fire({
+        title: `${user.is_active ? "Désactiver" : "Activer"} l'agent ?`,
+        text: `Êtes-vous sûr de vouloir ${user.is_active ? "désactiver" : "activer"} ${user.firstname} ${user.lastname} ?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: user.is_active ? '#d33' : '#28a745', // rouge si désactiver, vert si activer
+        cancelButtonColor: '#6c757d', // neutre gris
+        confirmButtonText: user.is_active ? 'Désactiver' : 'Activer',
+        cancelButtonText: 'Annuler',
+        reverseButtons: true,
       });
-      fetchUsers();
+
+      if (result.isConfirmed) {
+        const res = await axios.put(`/users/${user.id}/toggle-active`);
+        Swal.fire({
+          icon: 'success',
+          title: 'Succès',
+          text: res.data.message,
+          timer: 2000,
+          showConfirmButton: false
+        });
+        fetchUsers();
+      }
+    } catch (err) {
+      console.error(err);
+      Swal.fire({
+        icon: 'error',
+        title: 'Erreur',
+        text: "Erreur lors de la mise à jour de l'état de l'utilisateur",
+      });
     }
-  } catch (err) {
-    console.error(err);
-    Swal.fire({
-      icon: 'error',
-      title: 'Erreur',
-      text: "Erreur lors de la mise à jour de l'état de l'utilisateur",
-    });
-  }
-};
+  };
 
 
 
@@ -152,12 +153,12 @@ const toggleActive = async (user) => {
         roleFilter={roleFilter}
         setRoleFilter={setRoleFilter}
         rolesOptions={rolesOptions}
-        profilFilter={profilFilter} 
-        setProfilFilter={setProfilFilter} 
+        profilFilter={profilFilter}
+        setProfilFilter={setProfilFilter}
         profilsOptions={profilsOptions}
         statusFilter={statusFilter}
-        setStatusFilter={setStatusFilter}         
-        statusOptions={statusOptions}     
+        setStatusFilter={setStatusFilter}
+        statusOptions={statusOptions}
         onRefresh={fetchUsers}
         onCreate={openCreate}
         onResetPage={() => setPage(1)}
@@ -177,8 +178,24 @@ const toggleActive = async (user) => {
         toggleActive={toggleActive}
         openEdit={openEdit}
         resetPassword={resetPassword}
+        onViewAgent={(agent) => setSelectedAgent(agent)}
       />
-                                    
+
+      {selectedAgent && (
+        <AgentDetailsModal
+          agent={selectedAgent}
+          onClose={() => setSelectedAgent(null)}
+          onEdit={() => {
+            openEdit(selectedAgent);
+            setSelectedAgent(null);
+          }}
+          onToggleStatus={(agent) => {
+            toggleActive(agent);
+            setSelectedAgent(null);
+          }}
+        />
+      )}
+
       <UserFormModal
         show={showModal}
         setShow={setShowModal}
@@ -186,6 +203,7 @@ const toggleActive = async (user) => {
         onSave={handleSave}
         saving={saving}
       />
+
     </div>
   );
 }
