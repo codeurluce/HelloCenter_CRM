@@ -32,7 +32,6 @@ export default function UserFormModal({ show, setShow, editingUser, onSave, savi
         lastname: editingUser.lastname || "",
         role: editingUser.role || "Agent",
         profil: editingUser.profil || "Energie",
-        is_first_login: editingUser.is_first_login ?? true,
       });
     } else {
       setForm(defaultForm);

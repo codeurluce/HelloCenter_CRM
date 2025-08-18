@@ -176,7 +176,7 @@ export default function AdministrationUsers() {
         limit={limit}
         setLimit={setLimit}
         toggleActive={toggleActive}
-        openEdit={openEdit}
+        openEdit={(agent) => openEdit(agent)}
         resetPassword={resetPassword}
         onViewAgent={(agent) => setSelectedAgent(agent)}
       />
