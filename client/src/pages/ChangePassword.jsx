@@ -67,49 +67,55 @@ const ChangePassword = ({ onPasswordChanged }) => {
     );
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError('');
 
-    if (password !== confirmPassword) {
-      setError('Les mots de passe ne correspondent pas.');
-      return;
-    }
+  if (password !== confirmPassword) {
+    setError('Les mots de passe ne correspondent pas.');
+    return;
+  }
 
-    if (!validatePassword(password)) {
-      setError(
-        'Le mot de passe doit contenir au moins 8 caractères, dont une majuscule, une minuscule, un chiffre et un caractère spécial.'
-      );
-      return;
-    }
+  if (!validatePassword(password)) {
+    setError(
+      'Le mot de passe doit contenir au moins 8 caractères, dont une majuscule, une minuscule, un chiffre et un caractère spécial.'
+    );
+    return;
+  }
 
-    setIsSubmitting(true);
+  setIsSubmitting(true);
 
-    try {
-      const token = localStorage.getItem('token');
+  try {
+    const token = localStorage.getItem('token');
 
-      await axios.post(
-        'http://localhost:5000/api/change-password-first-login',
-        { password },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+    await axios.post(
+      'http://localhost:5000/api/change-password-first-login',
+      { password },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
 
-      if (onPasswordChanged) onPasswordChanged();
+    if (onPasswordChanged) onPasswordChanged();
 
-      localStorage.setItem('mustChangePassword', 'false');
-      localStorage.setItem('mustChangePasswordReason', '');
+    localStorage.setItem('mustChangePassword', 'false');
+    localStorage.setItem('mustChangePasswordReason', '');
 
-      const role = localStorage.getItem('role');
-      if (role === 'Agent') navigate('/agent');
-      else if (role === 'Manager') navigate('/manager');
-      else if (role === 'Admin') navigate('/admin');
-      else navigate('/');
-    } catch (err) {
+    const role = localStorage.getItem('role');
+    if (role === 'Agent') navigate('/agent');
+    else if (role === 'Manager') navigate('/manager');
+    else if (role === 'Admin') navigate('/admin');
+    else navigate('/');
+  } catch (err) {
+    if (
+      err.response?.data?.message === "Le nouveau mot de passe ne peut pas être identique à l'ancien."
+    ) {
+      setError("Vous devez choisir un mot de passe différent de l'ancien.");
+    } else {
       setError(err.response?.data?.message || 'Erreur lors du changement de mot de passe');
-    } finally {
-      setIsSubmitting(false);
     }
-  };
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
