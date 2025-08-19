@@ -128,16 +128,45 @@ export default function AdministrationUsers() {
   };
 
 
-
   const resetPassword = async (user) => {
-    if (!window.confirm(`Réinitialiser le mot de passe de ${user.firstname} ${user.lastname} ?`))
-      return;
     try {
-      await axios.post(`/users/${user.id}/reset-password`);
-      toast.success("Mot de passe réinitialisé !");
+      const result = await Swal.fire({
+        title: `Réinitialiser le mot de passe ?`,
+        text: `Êtes-vous sûr de vouloir réinitialiser le mot de passe de ${user.firstname} ${user.lastname} ?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33', // rouge pour bien indiquer un reset
+        cancelButtonColor: '#6c757d', // gris neutre
+        confirmButtonText: 'Réinitialiser',
+        cancelButtonText: 'Annuler',
+        reverseButtons: true,
+      });
+
+      if (result.isConfirmed) {
+        const res = await axios.post(`/users/${user.id}/reset-password`);
+
+        Swal.fire({
+          icon: 'success',
+          title: 'Mot de passe réinitialisé',
+          html: `
+          ✅ Le nouveau mot de passe temporaire est : 
+          <br/><br/>
+          <strong style="font-size: 18px; color: #007bff;">
+            ${res.data.temporaryPassword}
+          </strong>
+          <br/><br/>
+          L’agent devra le changer à sa prochaine connexion.
+        `,
+          confirmButtonText: 'OK'
+        });
+      }
     } catch (err) {
       console.error(err);
-      toast.error("Erreur lors de la réinitialisation du mot de passe");
+      Swal.fire({
+        icon: 'error',
+        title: 'Erreur',
+        text: "❌ Une erreur est survenue lors de la réinitialisation du mot de passe",
+      });
     }
   };
 

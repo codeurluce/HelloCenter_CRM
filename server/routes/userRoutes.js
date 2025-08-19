@@ -1,9 +1,8 @@
 // routes/userRoutes.js
-const express = require('express');
+const express = require("express");
 const router = express.Router();
 const {
   createUser,
-  // createAgent,
   loginUser,
   verifyToken,
   getMe,
@@ -11,28 +10,43 @@ const {
   changePasswordFirstLogin,
   toggleActiveUser,
   updateUser,
-} = require('../controllers/userControllers');
+  resetPasswordByAdmin,
+} = require("../controllers/userControllers");
 
-// Créer un agent (avec email + mot de passe fournis)
-// router.post('/create-agent', createAgent);
+/**
+ * AUTHENTIFICATION & COMPTE
+ */
 
-// Créer un utilisateur avec email généré
-router.post('/register', createUser);
+// Création d'utilisateur (mot de passe généré automatiquement)
+router.post("/register", createUser);
 
-// Connexion
-router.post('/login', loginUser);
+// Connexion utilisateur
+router.post("/login", loginUser);
+
+// 👉 Routes protégées par token
+router.use(verifyToken);
+
+// Changer mot de passe au premier login
+router.post("/change-password-first-login", changePasswordFirstLogin);
+
+// Infos du profil connecté
+router.get("/me", getMe);
 
 
-router.post('/change-password-first-login', verifyToken, changePasswordFirstLogin);
+/**
+ * GESTION DES UTILISATEURS (ADMIN)
+ */
 
-// Infos de l'utilisateur connecté
-router.get('/me', verifyToken, getMe);
+// Récupérer tous les utilisateurs
+router.get("/users", getAllUsers);
 
-router.put('/:id/toggle-active', verifyToken, toggleActiveUser);
+// Activer / désactiver un utilisateur
+router.put("/:id/toggle-active", toggleActiveUser);
 
-router.put('/:id/update', verifyToken, updateUser);
+// Mettre à jour un utilisateur
+router.put("/:id/update", updateUser);
 
-// Récupérer tous les utilisateurs (admin)
-router.get('/users', verifyToken, getAllUsers);
+// Réinitialiser le mot de passe (admin uniquement)
+router.post("/:id/reset-password", resetPasswordByAdmin);
 
 module.exports = router;

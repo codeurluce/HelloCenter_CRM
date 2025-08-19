@@ -73,7 +73,7 @@ const loginUser = async (req, res) => {
     if (!isMatch) return res.status(401).json({ message: 'Mot de passe invalide' });
 
     // Vérifier si le compte est désactivé
-     if (!user.is_active) {
+    if (!user.is_active) {
       return res.status(403).json({ message: 'Compte désactivé, connexion impossible' });
     }
 
@@ -97,9 +97,9 @@ const loginUser = async (req, res) => {
     const isPasswordExpired = (Date.now() - lastChange) > TWO_DAYS_MS;
 
     const mustChangePassword = {
-  required: user.is_first_login || isPasswordExpired,
-  reason: user.is_first_login ? 'first_login' : isPasswordExpired ? 'expired' : null,
-};
+      required: user.is_first_login || isPasswordExpired,
+      reason: user.is_first_login ? 'first_login' : isPasswordExpired ? 'expired' : null,
+    };
 
     const token = jwt.sign(
       {
@@ -197,7 +197,7 @@ const getAllUsers = async (req, res) => {
 };
 
 // Activer/Désactiver un user
-const toggleActiveUser =  async (req, res) => {
+const toggleActiveUser = async (req, res) => {
   const { id } = req.params;
 
   try {
@@ -271,6 +271,42 @@ const updateUser = async (req, res) => {
   }
 };
 
+const resetPasswordByAdmin = async (req, res) => {
+  try {
+    const { id: userId } = req.params;
+
+    // On récupère le nom de famille de l'utilisateur pour générer le mot de passe
+    const userResult = await db.query(`SELECT lastname FROM users WHERE id = $1`, [userId]);
+    if (userResult.rowCount === 0) {
+      return res.status(404).json({ error: "Utilisateur non trouvé." });
+    }
+
+    const lastname = userResult.rows[0].lastname;
+
+    // Génération du mot de passe temporaire
+    const tempPassword = `HC@${lastname.toLowerCase()}${new Date().getFullYear()}`;
+    const hashedPassword = await bcrypt.hash(tempPassword, 10);
+
+    // Mise à jour du mot de passe
+    await db.query(
+      `UPDATE users 
+       SET password = $1, is_first_login = true, updated_at = NOW()
+       WHERE id = $2`,
+      [hashedPassword, userId]
+    );
+
+    // Réponse à l’admin
+    res.json({
+      success: true,
+      message: "Mot de passe réinitialisé avec succès.",
+      temporaryPassword: tempPassword, // ⚠️ à afficher uniquement à l’admin
+    });
+  } catch (err) {
+    console.error("Erreur resetPasswordByAdmin:", err);
+    res.status(500).json({ error: "Erreur serveur." });
+  }
+};
+
 module.exports = {
   createUser,
   // createAgent,
@@ -279,6 +315,7 @@ module.exports = {
   getMe,
   getAllUsers,
   changePasswordFirstLogin,
-toggleActiveUser,
-updateUser,
+  toggleActiveUser,
+  updateUser,
+  resetPasswordByAdmin,
 };
