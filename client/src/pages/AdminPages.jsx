@@ -7,6 +7,7 @@ import { useContext } from 'react';
 import useTimers from '../api/useTimers.js';
 import AgentInfoPanel from '../components/componentsdesongletsAgents/AgentInfoPanel.jsx';
 import AdministrationUsers from '../components/componentsdesongletsAdmins/AdministrationUsers.jsx';
+import AdminSessionsUsers from '../components/componentsdesongletsAdmins/AdminSessionsUsers.jsx';
 
 
 
@@ -31,7 +32,7 @@ const AdminDashboard = () => {
             {activeItem === 'activité' && <AgentInfoPanel {...timersData} userId={user?.id} />}
             {activeItem === 'sales' && <p> doit contenir les ventes de tous les agents </p>}
             {activeItem === 'files' && <p> doit contenir les fichiers des agnets</p>}
-            {activeItem === 'sessions' && <p> doit contenir les sessions de tous les agents</p>}
+            {activeItem === 'sessions' && <AdminSessionsUsers />}
             {activeItem === 'administration' && <AdministrationUsers />}
             {activeItem === 'settings' && <p> doit contenir les paramètres de l'administrateur</p>}
           </main>          
