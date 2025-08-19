@@ -47,6 +47,7 @@ const DashboardHeader = ({
   useEffect(() => {
     const checkRDVs = async () => {
       const fiches = await fetchFichesRdv();
+      if (!Array.isArray(fiches)) return;
       const now = new Date();
       const newNotifs = [];
       let shouldNotify = false;
@@ -64,7 +65,7 @@ const DashboardHeader = ({
         const diffMs = localRDV.getTime() - localNow.getTime();
         const diffMin = Math.round(diffMs / 60000);
 
-        if ((diffMin === 2 || diffMin === 0) && !notifiedIdsRef.current.has(`${fiche.id}_${diffMin}`)) {
+        if ((diffMin === 5 || diffMin === 0) && !notifiedIdsRef.current.has(`${fiche.id}_${diffMin}`)) {
           setRdvNotifications(prev => prev.filter(n => n.id !== fiche.id));
           newNotifs.push({
             id: fiche.id,

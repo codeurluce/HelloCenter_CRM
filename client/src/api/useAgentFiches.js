@@ -8,7 +8,8 @@ export default function useFiches(user) {
   const loadFiches = async () => {
     if (!user?.id) return;
     const allFiches = await fetchFiches();
-    setFiches(allFiches);
+    setFiches(Array.isArray(allFiches) ? allFiches : []);
+
   };
 
   useEffect(() => {

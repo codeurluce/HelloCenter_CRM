@@ -46,7 +46,7 @@ const AgentDashboard = () => {
             )}
             {activeItem === 'activité' && <AgentInfoPanel {...timersData} userId={user?.id} />}
             {activeItem === 'sales' && <VentesInfoPanel setActiveItem={setActiveItem} />}
-            {activeItem === 'files' && <FichesInfoPanel fiches={fichesData.fiches} currentAgent={user?.id?.toString()} {...fichesData} />}
+            {activeItem === 'files' && <FichesInfoPanel fiches={fichesData.fiches || [] } currentAgent={user?.id?.toString()} {...fichesData} />}
           </main>
         </div>
       </div>

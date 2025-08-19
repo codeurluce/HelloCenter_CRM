@@ -17,20 +17,17 @@ const {
  * AUTHENTIFICATION & COMPTE
  */
 
-// Création d'utilisateur (mot de passe généré automatiquement)
+// Créer un utilisateur avec mot de passe temporaire (généré automatiquement)
 router.post("/register", createUser);
 
 // Connexion utilisateur
 router.post("/login", loginUser);
 
-// 👉 Routes protégées par token
-router.use(verifyToken);
-
 // Changer mot de passe au premier login
-router.post("/change-password-first-login", changePasswordFirstLogin);
+router.post("/change-password-first-login", verifyToken, changePasswordFirstLogin);
 
 // Infos du profil connecté
-router.get("/me", getMe);
+router.get("/me", verifyToken, getMe);
 
 
 /**
@@ -38,15 +35,15 @@ router.get("/me", getMe);
  */
 
 // Récupérer tous les utilisateurs
-router.get("/users", getAllUsers);
+router.get("/users", verifyToken, getAllUsers);
 
 // Activer / désactiver un utilisateur
-router.put("/:id/toggle-active", toggleActiveUser);
+router.put("/:id/toggle-active", verifyToken, toggleActiveUser);
 
 // Mettre à jour un utilisateur
-router.put("/:id/update", updateUser);
+router.put("/:id/update", verifyToken, updateUser);
 
 // Réinitialiser le mot de passe (admin uniquement)
-router.post("/:id/reset-password", resetPasswordByAdmin);
+router.post("/:id/reset-password", verifyToken, resetPasswordByAdmin);
 
 module.exports = router;

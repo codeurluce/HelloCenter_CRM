@@ -139,7 +139,7 @@ exports.getFilesToRDV = async (req, res) => {
 exports.getUpcomingRendezVous = async (req, res) => {
   const { agentId } = req.params;
   const now = new Date();
-  const oneHourLater = new Date(now.getTime() + 2 * 60 * 1000);
+  const oneHourLater = new Date(now.getTime() + 5 * 60 * 1000);
 
   try {
     const result = await db.query(
