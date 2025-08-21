@@ -1,3 +1,4 @@
+// sessionsAgentsActions
 import axios from "./axiosInstance";
 
 export interface Session {
@@ -68,4 +69,20 @@ export const exportSessions = async (options: ExportOptions) => {
   } catch (error: any) {
     console.error("Erreur exportSessions:", error.response || error.message);
   }
+};
+
+// 📌 Récupérer l’historique d’un agent
+export const getUserHistory = async (userId: number, period: string = "today") => {
+  const res = await axios.get(`/sessions/history/${userId}?period=${period}`);
+  return res.data;
+};
+
+// 📌 Changer de statut
+export const changeStatus = async (userId: number, newStatus: string, pauseType?: string) => {
+  const res = await axios.post(`/sessions/change`, {
+    user_id: userId,
+    new_status: newStatus,
+    pause_type: pauseType || null,
+  });
+  return res.data;
 };

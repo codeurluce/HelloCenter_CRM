@@ -83,7 +83,7 @@ export default function SearchFilterBar({
       {/* Rafraîchir */}
       <button
         onClick={onRefresh}
-        className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border bg-white hover:bg-gray-50"
+        className="flex items-center gap-2 py-1 px-3 rounded-md border border-blue-500 text-blue-600 hover:bg-blue-100 transition"
         title="Rafraîchir"
       >
         <RefreshCw className="w-4 h-4" />

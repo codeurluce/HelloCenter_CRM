@@ -1,84 +1,100 @@
-import React, { useState, useEffect } from 'react';
-import SessionsTable from '../componentsAdminSessions/SessionsTable';
-import SessionFilters from '../componentsAdminSessions/SessionFilters';
-import ExportModal from '../componentsAdminSessions/ExportModal.jsx';
-import axiosInstance from '../../api/axiosInstance';
-import { Download } from 'lucide-react';
+import React, { useEffect, useState } from "react";
+import axiosInstance from "../../api/axiosInstance";
+import SessionsTable from "../componentsAdminSessions/SessionsTable";
+import SessionFilters from "../componentsAdminSessions/SessionFilters";
+import ExportModal from "../componentsAdminSessions/ExportModal.jsx";
+import { Download } from "lucide-react";
 
 export default function AdminSessionsUsers() {
+  const [users, setUsers] = useState([]);
   const [sessions, setSessions] = useState([]);
-  const [filteredSessions, setFilteredSessions] = useState([]);
-
   const [filters, setFilters] = useState({
-    search: '',
-    status: '',
+    search: "",
+    status: "",
     startDate: null,
     endDate: null,
   });
-
-  const [exportOpen, setExportOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
 
-  const fetchSessions = async () => {
+  // Charger tous les utilisateurs
+  const fetchUsers = async () => {
+    try {
+      const res = await axiosInstance.get("/users");
+      setUsers(res.data);
+    } catch (error) {
+      console.error("Erreur lors de la récupération des utilisateurs :", error);
+    }
+  };
+
+  // Charger statuts et agrégats pour chaque utilisateur
+  const fetchSessionsAndStatus = async () => {
+    if (users.length === 0) return;
     setLoading(true);
     try {
-      const res = await axiosInstance.get('/sessions');
-      setSessions(res.data);
-      setFilteredSessions(res.data);
-    } catch (error) {
-      console.error('Erreur fetch sessions:', error);
+      const results = await Promise.all(
+        users.map(async (user) => {
+          try {
+            const res = await axiosInstance.get(`/session_agents/user/${user.id}/today-aggregates`);
+            return {
+              ...user,
+              status: res.data.active?.status || "Inconnu",
+              start_time: res.data.active?.start_time || null,
+              presence_total: res.data.presence_total || 0,
+              status_cumulative: res.data.totals?.[res.data.active?.status] || 0,
+            };
+          } catch {
+            return {
+              ...user,
+              status: "Inconnu",
+              start_time: null,
+              presence_total: 0,
+              status_cumulative: 0,
+            };
+          }
+        })
+      );
+      setSessions(results);
     } finally {
       setLoading(false);
     }
   };
 
+  // Chargement initial des utilisateurs
   useEffect(() => {
-    fetchSessions();
-    const interval = setInterval(fetchSessions, 30000);
-    return () => clearInterval(interval);
+    fetchUsers();
   }, []);
 
+  // Dès que les utilisateurs sont chargés, récupérer leurs statuts et agrégats
   useEffect(() => {
-    let filtered = [...sessions];
-    const { search, status, startDate, endDate } = filters;
+    fetchSessionsAndStatus();
+  }, [users]);
 
-    if (search.trim()) {
-      const searched = search.trim().toLowerCase();
-      filtered = filtered.filter(
-        (s) =>
-          s.user.firstname.toLowerCase().includes(searched) ||
-          s.user.lastname.toLowerCase().includes(searched) ||
-          s.user.email.toLowerCase().includes(searched)
-      );
+  // Appliquer recherche + filtre statut
+  const filteredSessions = sessions.filter((user) => {
+    const s = filters.search.toLowerCase();
+    if (
+      s &&
+      ![user.firstname, user.lastname, user.email].some((field) =>
+        field?.toLowerCase().includes(s)
+      )
+    ) {
+      return false;
     }
-    if (status) {
-      filtered = filtered.filter((s) => s.status === status);
-    }
-    if (startDate) {
-      filtered = filtered.filter((s) => new Date(s.start_time) >= startDate);
-    }
-    if (endDate) {
-      filtered = filtered.filter((s) => new Date(s.start_time) <= endDate);
-    }
-    setFilteredSessions(filtered);
-  }, [filters, sessions]);
+    if (filters.status && user.status !== filters.status) return false;
+    return true;
+  });
 
   return (
     <div className="p-6 bg-white rounded-md shadow-md max-w-full">
-      <h2 className="text-3xl font-bold text-blue-700 mb-6">Sessions des agents</h2>
+      <h2 className="text-3xl font-bold text-blue-700 mb-6">Statuts journaliers des agents</h2>
 
-      {/* Container avec SessionFilters à gauche et Exporter à droite */}
       <div className="flex flex-wrap items-center gap-4 mb-6">
         <div className="flex-grow max-w-7xl">
           <SessionFilters
             onApply={(newFilters) => setFilters(newFilters)}
             onReset={() =>
-              setFilters({
-                search: '',
-                status: '',
-                startDate: null,
-                endDate: null,
-              })
+              setFilters({ search: "", status: "", startDate: null, endDate: null })
             }
           />
         </div>
@@ -94,7 +110,7 @@ export default function AdminSessionsUsers() {
         </div>
       </div>
 
-      <SessionsTable sessions={filteredSessions} loading={loading} refresh={fetchSessions} />
+      <SessionsTable sessions={filteredSessions} loading={loading} refresh={fetchSessionsAndStatus} />
 
       {exportOpen && (
         <ExportModal sessions={filteredSessions} onClose={() => setExportOpen(false)} />
