@@ -44,17 +44,15 @@ exports.closeCurrentSession = async (req, res) => {
     if (!user_id) {
       return res.status(400).json({ message: "user_id est requis" });
     }
-
     // Met à jour la session active (end_time NULL) pour l'utilisateur
     const now = new Date();
-
     const result = await db.query(
       `UPDATE session_agents
        SET end_time = $1,
            duration = EXTRACT(EPOCH FROM ($1 - start_time))
        WHERE user_id = $2
          AND end_time IS NULL
-       RETURNING id`,
+       RETURNING id, status`,
       [now, user_id]
     );
 
@@ -62,12 +60,119 @@ exports.closeCurrentSession = async (req, res) => {
       return res.status(404).json({ message: "Aucune session active trouvée" });
     }
 
-    res.status(200).json({ message: "Session fermée avec succès", session_id: result.rows[0].id });
+    res.status(200).json({ 
+  message: "Session fermée avec succès",
+  session_id: result.rows[0].id,
+  status: "En ligne mais inactif",
+  is_connected: false
+});
   } catch (error) {
     console.error('Erreur fermeture session :', error);
     res.status(500).json({ message: "Erreur serveur" });
   }
 };
+
+exports.closeSessionForce = async (userId) => {
+  try {
+    const query = `
+      UPDATE session_agents
+      SET end_time = NOW(),
+          duration = EXTRACT(EPOCH FROM (NOW() - start_time))
+      WHERE user_id = $1 AND end_time IS NULL
+      RETURNING *;
+    `;
+    const result = await db.query(query, [userId]);
+    if (result.rows.length > 0) {
+      console.log(`✅ Session fermée pour l'agent ${userId} (déconnexion forcée).`);
+      return result.rows[0];
+    } else {
+      console.log(`ℹ️ Aucune session active trouvée pour l'agent ${userId}.`);
+      return null;
+    }
+  } catch (error) {
+    console.error("❌ Erreur closeSessionForce:", error);
+    throw error;
+  }
+};
+
+// GET /api/sessions/agents/live
+exports.getLiveSessionAgents = async (req, res) => {
+  try {
+    const query = `
+      WITH sessions_today AS (
+        SELECT user_id, status, start_time, COALESCE(end_time, NOW()) AS end_time
+        FROM session_agents
+        WHERE DATE(start_time) = CURRENT_DATE
+      ),
+      cumuls AS (
+        SELECT user_id, status,
+               SUM(EXTRACT(EPOCH FROM (end_time - start_time)))::INT AS duree_sec
+        FROM sessions_today
+        GROUP BY user_id, status
+      ),
+      actives AS (
+        SELECT sa.user_id, sa.status, sa.start_time AS last_change,
+               EXTRACT(EPOCH FROM (NOW() - sa.start_time))::INT AS elapsed_sec
+        FROM session_agents sa
+        WHERE sa.end_time IS NULL
+          AND DATE(sa.start_time) = CURRENT_DATE
+      )
+      SELECT u.id AS user_id, u.lastname, u.firstname,
+             CASE 
+               WHEN u.is_connected = false THEN 'Hors ligne'
+               ELSE COALESCE(a.status, 'En ligne mais inactif')
+             END AS statut_actuel,
+             CASE
+               WHEN u.is_connected = false THEN 0
+               WHEN a.status IS NULL THEN 0
+               ELSE COALESCE(c.duree_sec,0) + COALESCE(a.elapsed_sec,0)
+             END AS depuis_sec,
+             (
+               SELECT SUM(EXTRACT(EPOCH FROM (COALESCE(end_time,NOW()) - start_time))) 
+               FROM session_agents s2
+               WHERE s2.user_id = u.id AND DATE(s2.start_time) = CURRENT_DATE
+             )::INT AS presence_totale_sec,
+             u.is_connected
+      FROM users u
+      LEFT JOIN actives a ON u.id = a.user_id
+      LEFT JOIN cumuls c ON u.id = c.user_id AND c.status = a.status
+      ORDER BY u.lastname, u.firstname;
+    `;
+    const result = await db.query(query);
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Erreur getLiveSessionAgents:", err);
+    res.status(500).json({ error: "Erreur récupération sessions live" });
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 exports.getSessions = async (req, res) => {
   try {
