@@ -135,6 +135,38 @@ const loginUser = async (req, res) => {
 };
 
 
+// Connexion de l'agent
+const connectAgent = async (req, res) => {
+  const { userId } = req.body;
+  try {
+    await db.query("UPDATE users SET is_connected = TRUE WHERE id = $1", [userId]);
+    await db.query(
+      "INSERT INTO agent_connections_history (user_id, event_type) VALUES ($1, 'connect')",
+      [userId]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur lors de la connexion de l’agent' });
+  }
+};
+
+// Déconnexion de l'agent
+const disconnectAgent = async (req, res) => {
+  const { userId } = req.body;
+  try {
+    await db.query("UPDATE users SET is_connected = FALSE WHERE id = $1", [userId]);
+    await db.query(
+      "INSERT INTO agent_connections_history (user_id, event_type) VALUES ($1, 'disconnect')",
+      [userId]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur lors de la déconnexion de l’agent' });
+  }
+};
+
 // Vérification du token
 const verifyToken = (req, res, next) => {
   const token = req.headers['authorization'];
@@ -318,4 +350,6 @@ module.exports = {
   toggleActiveUser,
   updateUser,
   resetPasswordByAdmin,
+  connectAgent,
+  disconnectAgent,
 };

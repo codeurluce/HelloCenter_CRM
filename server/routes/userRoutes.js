@@ -11,6 +11,8 @@ const {
   toggleActiveUser,
   updateUser,
   resetPasswordByAdmin,
+  connectAgent,
+  disconnectAgent,
 } = require("../controllers/userControllers");
 
 /**
@@ -22,6 +24,9 @@ router.post("/register", createUser);
 
 // Connexion utilisateur
 router.post("/login", loginUser);
+
+router.post('/agent/connect', connectAgent);
+router.post('/agent/disconnect', disconnectAgent);
 
 // Changer mot de passe au premier login
 router.post("/change-password-first-login", verifyToken, changePasswordFirstLogin);

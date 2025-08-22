@@ -3,6 +3,7 @@ import { Eye, EyeOff, User, Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { AuthContext } from './AuthContext';
+import socket  from '../socket';
 
 const Login = ({ onLogin }) => {
   const { setUser } = useContext(AuthContext);
@@ -32,8 +33,21 @@ const Login = ({ onLogin }) => {
       localStorage.setItem('univers', user.profil);
       localStorage.setItem('mustChangePassword', mustChangePassword);
       localStorage.setItem('user', JSON.stringify(user));
-
       setUser(user);
+
+        // ⚡ Notifie le backend que l'agent est connecté
+if (user) {
+  try {
+    await axios.post(
+      'http://localhost:5000/api/agent/connect',
+      { userId: user.id },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    socket.emit('agent_connected', { userId: user.id });
+  } catch (err) {
+    console.error("Impossible de notifier la connexion de l'agent", err);
+  }
+}
       if (onLogin) onLogin(token, user, mustChangePassword);
 
       if (mustChangePassword) {

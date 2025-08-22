@@ -14,6 +14,7 @@ const salesRoutes = require('./routes/salesRoutes');
 const filesRoutes = require('./routes/filesRoutes');
 const historiquesfilesRoutes = require('./routes/historiquesfilesRoutes');
 const userRoutes = require('./routes/userRoutes');
+const initSockets = require('./socket');
 
 
 // Initialisation de l'application Express
@@ -23,6 +24,8 @@ const io = new Server(server, {
   cors: { origin: '*' }
 });
 
+
+initSockets(io);
 // les API d'authentification, de sessions et de ventes
 app.use(cors());
 app.use(express.json());
@@ -51,12 +54,12 @@ app.get('/', (req, res) => {
   res.send('API CRM en ligne ✅');
 });
 
-io.on('connection', socket => {
-  console.log('Un utilisateur connecté :', socket.id);
-  socket.on('disconnect', () => {
-    console.log('Utilisateur déconnecté :', socket.id);
-  });
-});
+// io.on('connection', socket => {
+//   console.log('Un utilisateur connecté :', socket.id);
+//   socket.on('disconnect', () => {
+//     console.log('Utilisateur déconnecté :', socket.id);
+//   });
+// });
 
 server.listen(PORT, () => {
   console.log(`🚀 Serveur CRM lancé sur http://localhost:${PORT}`);

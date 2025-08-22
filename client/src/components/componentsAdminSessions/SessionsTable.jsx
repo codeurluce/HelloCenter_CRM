@@ -8,13 +8,38 @@ export default function SessionsTable({ sessions, loading, refresh }) {
   const [now, setNow] = useState(dayjs());
   const [presenceElapsedMap, setPresenceElapsedMap] = useState({});
 
+  // Traduction du statut
+const getDisplayStatus = (s) => {
+  // Si pas connecté => Hors connexion
+  if (!s.is_connected) {
+    return "Hors connexion";
+  }
+
+  // Si connecté mais pas actif => En ligne mais inactif
+  if (s.status?.toLowerCase().includes("inactif")) {
+    return "En ligne mais inactif";
+  }
+
+  // Sinon on garde le statut fourni
+  return s.status || "Inconnu";
+};
+
+
   useEffect(() => {
-    const timer = setInterval(() => {
-      setNow(dayjs());
-    }, 1000);
+    const timer = setInterval(() => {setNow(dayjs()); }, 1000);
     return () => clearInterval(timer);
   }, []);
 
+
+  function renderDepuis(row) {
+  // Si agent pas dans un statut actif
+  if (row.statut_actuel === "En ligne mais inactif" || row.statut_actuel === "Hors ligne") {
+    return "00:00:00"; 
+  }
+
+  // Sinon on affiche la durée réelle
+  return formatDuration(row.depuis_sec);
+}
   // Formatage en hh:mm:ss
   const formatTime = (seconds) => {
     if (!seconds || seconds < 0) return "00:00:00";
@@ -85,20 +110,20 @@ export default function SessionsTable({ sessions, loading, refresh }) {
                 <td className="px-6 py-3 text-gray-800">{s.lastname}</td>
                 <td className="px-6 py-3 text-gray-800">{s.firstname}</td>
                 <td className="px-6 py-3">
-                  <span
-                    className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
-                      s.status?.toLowerCase().includes("disponible")
-                        ? "bg-green-100 text-green-800"
-                        : s.status?.toLowerCase().includes("pause")
-                        ? "bg-yellow-100 text-yellow-800"
-                        : s.status?.toLowerCase().includes("indisponible")
-                        ? "bg-red-100 text-red-800"
-                        : "bg-gray-100 text-gray-800"
-                    }`}
-                  >
-                    {s.status || "Inconnu"}
-                  </span>
-                </td>
+  <span
+    className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
+      getDisplayStatus(s) === "Disponible"
+        ? "bg-green-100 text-green-800"
+        : getDisplayStatus(s).includes("Pause")
+        ? "bg-yellow-100 text-yellow-800"
+        : getDisplayStatus(s).includes("Indisponible")
+        ? "bg-red-100 text-red-800"
+        : "bg-gray-100 text-gray-800"
+    }`}
+  >
+    {getDisplayStatus(s)}
+  </span>
+</td>
                 <td className="px-6 py-3 font-mono text-sm text-gray-700">{getDurationSince(s)}</td>
                 <td className="px-6 py-3 font-mono text-sm text-gray-700">{getPresenceTotal(s)}</td>
                 <td className="px-6 py-3 text-center flex justify-center gap-3">

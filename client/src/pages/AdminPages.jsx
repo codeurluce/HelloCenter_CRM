@@ -8,6 +8,9 @@ import useTimers from '../api/useTimers.js';
 import AgentInfoPanel from '../components/componentsdesongletsAgents/AgentInfoPanel.jsx';
 import AdministrationUsers from '../components/componentsdesongletsAdmins/AdministrationUsers.jsx';
 import AdminSessionsUsers from '../components/componentsdesongletsAdmins/AdminSessionsUsers.jsx';
+import socket  from '../socket.js';
+import useAgentFiches from '../api/useAgentFiches.js';
+import axiosInstance from '../api/axiosInstance.js';
 
 
 
@@ -15,12 +18,26 @@ const AdminDashboard = () => {
   const { user, setUser } = useContext(AuthContext);
   const [activeItem, setActiveItem] = useState('dashboard');
   const timersData = useTimers();
+  const fichesData = useAgentFiches(user);
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    window.location.href = '/'; // Redirection après déconnexion
+  const handleLogout = async () => {
+    try {
+      const user = JSON.parse(localStorage.getItem('user'));
+      if (user) {
+        // ⚡ Notifie le backend que l'agent se déconnecte
+        await axiosInstance.post('http://localhost:5000/api/agent/disconnect', { userId: user.id });
+        socket.emit('agent_disconnected', { userId: user.id });
+      }
+      // Nettoyage local
+      localStorage.clear();
+      fichesData.loadFiches([]);
+      setUser(null);
+      // Redirection
+      window.location.href = '/login'; 
+    } catch (err) {
+      console.error('Erreur lors de la déconnexion:', err);
+    }
   };
-
   return (
     <AgentStatusProvider>
       <div className="flex h-screen">

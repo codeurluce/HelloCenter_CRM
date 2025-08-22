@@ -9,8 +9,10 @@ import VentesInfoPanel from '../components/componentsdesongletsAgents/VentesInfo
 import FichesInfoPanel from '../components/componentsdesfiches/FichesInfoPanel.tsx';
 import { AuthContext } from './AuthContext.jsx';
 import { AgentStatusProvider } from '../api/AgentStatusContext.jsx';
-import  useTimers  from '../api/useTimers.js';
-import  useAgentFiches  from '../api/useAgentFiches.js';
+import useTimers from '../api/useTimers.js';
+import useAgentFiches from '../api/useAgentFiches.js';
+import axiosInstance from '../api/axiosInstance.js';
+import socket  from '../socket.js';
 
 const AgentDashboard = () => {
   const { user, setUser } = useContext(AuthContext);
@@ -19,11 +21,23 @@ const AgentDashboard = () => {
   const timersData = useTimers();
   const fichesData = useAgentFiches(user);
 
-  const handleLogout = () => {
-    localStorage.clear();
-    fichesData.loadFiches([]);
-    setUser(null);
-    window.location.href = '/';
+  const handleLogout = async () => {
+    try {
+      const user = JSON.parse(localStorage.getItem('user'));
+      if (user) {
+        // ⚡ Notifie le backend que l'agent se déconnecte
+        await axiosInstance.post('http://localhost:5000/api/agent/disconnect', { userId: user.id });
+        socket.emit('agent_disconnected', { userId: user.id });
+      }
+      // Nettoyage local
+      localStorage.clear(); // ou removeItem individuellement si tu préfères
+      fichesData.loadFiches([]);
+      setUser(null);
+      // Redirection
+      window.location.href = '/login'; // ou '/' selon ton routing
+    } catch (err) {
+      console.error('Erreur lors de la déconnexion:', err);
+    }
   };
 
   return (
@@ -46,7 +60,7 @@ const AgentDashboard = () => {
             )}
             {activeItem === 'activité' && <AgentInfoPanel {...timersData} userId={user?.id} />}
             {activeItem === 'sales' && <VentesInfoPanel setActiveItem={setActiveItem} />}
-            {activeItem === 'files' && <FichesInfoPanel fiches={fichesData.fiches || [] } currentAgent={user?.id?.toString()} {...fichesData} />}
+            {activeItem === 'files' && <FichesInfoPanel fiches={fichesData.fiches || []} currentAgent={user?.id?.toString()} {...fichesData} />}
           </main>
         </div>
       </div>

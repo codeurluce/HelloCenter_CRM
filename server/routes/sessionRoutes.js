@@ -12,6 +12,20 @@ const sessionControllers = require('../controllers/sessionControllers');
 router.get('/', sessionControllers.getSessions);
 router.post('/start', sessionControllers.createSession);
 router.post('/close', sessionControllers.closeCurrentSession);
+router.post('/close-force', async (req, res) => {
+  try {
+    const { userId } = req.body;
+    if (!userId) return res.status(400).json({ message: "userId requis" });
+    const session = await sessionControllers.closeSessionForce(userId);
+    res.json({ session });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
+router.get('/user/live' ,sessionControllers.getLiveSessionAgents)
+
+
 // Presence Total
 router.get('/user/:id/status-today', sessionControllers.getUserStatusToday);
 

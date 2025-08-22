@@ -58,6 +58,13 @@ export const closeSession = async ({ user_id }) => {
 
     const data = await response.json();
     console.log('✅ Session fermée:', data);
+
+    // 🔹 Mettre à jour localStorage
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (user) {
+      localStorage.setItem('dernierStatus', 'Hors Ligne'); // ou Hors ligne
+    }
+
     return data;
   } catch (error) {
     console.error('❌ Erreur lors de la fermeture de session :', error.message);
