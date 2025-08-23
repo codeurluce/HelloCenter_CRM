@@ -105,39 +105,34 @@ exports.getLiveSessionAgents = async (req, res) => {
         WHERE DATE(start_time) = CURRENT_DATE
       ),
       cumuls AS (
-        SELECT user_id, status,
-               SUM(EXTRACT(EPOCH FROM (end_time - start_time)))::INT AS duree_sec
+        SELECT user_id, SUM(EXTRACT(EPOCH FROM (end_time - start_time)))::INT AS presence_totale_sec
         FROM sessions_today
-        GROUP BY user_id, status
+        GROUP BY user_id
       ),
       actives AS (
         SELECT sa.user_id, sa.status, sa.start_time AS last_change,
-               EXTRACT(EPOCH FROM (NOW() - sa.start_time))::INT AS elapsed_sec
+               EXTRACT(EPOCH FROM (NOW() - sa.start_time))::INT AS depuis_sec
         FROM session_agents sa
         WHERE sa.end_time IS NULL
           AND DATE(sa.start_time) = CURRENT_DATE
       )
-      SELECT u.id AS user_id, u.lastname, u.firstname,
-             CASE 
-               WHEN u.is_connected = false THEN 'Hors ligne'
-               ELSE COALESCE(a.status, 'En ligne mais inactif')
-             END AS statut_actuel,
-             CASE
-               WHEN u.is_connected = false THEN 0
-               WHEN a.status IS NULL THEN 0
-               ELSE COALESCE(c.duree_sec,0) + COALESCE(a.elapsed_sec,0)
-             END AS depuis_sec,
-             (
-               SELECT SUM(EXTRACT(EPOCH FROM (COALESCE(end_time,NOW()) - start_time))) 
-               FROM session_agents s2
-               WHERE s2.user_id = u.id AND DATE(s2.start_time) = CURRENT_DATE
-             )::INT AS presence_totale_sec,
-             u.is_connected
+      SELECT 
+        u.id AS user_id,
+        u.lastname,
+        u.firstname,
+        CASE 
+          WHEN u.is_connected = false THEN 'Hors ligne'
+          ELSE COALESCE(a.status, 'En ligne mais inactif')
+        END AS statut_actuel,
+        COALESCE(a.depuis_sec, 0) AS depuis_sec,
+        COALESCE(c.presence_totale_sec, 0) AS presence_totale_sec,
+        u.is_connected
       FROM users u
       LEFT JOIN actives a ON u.id = a.user_id
-      LEFT JOIN cumuls c ON u.id = c.user_id AND c.status = a.status
+      LEFT JOIN cumuls c ON u.id = c.user_id
       ORDER BY u.lastname, u.firstname;
     `;
+
     const result = await db.query(query);
     res.json(result.rows);
   } catch (err) {
@@ -147,6 +142,38 @@ exports.getLiveSessionAgents = async (req, res) => {
 };
 
 
+exports.getUserStatusToday = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const query = `
+      SELECT sa.*
+      FROM session_agents sa
+      INNER JOIN (
+        SELECT 
+          user_id,
+          DATE(start_time) AS jour,
+          MAX(start_time) AS max_start_time
+        FROM session_agents
+        WHERE user_id = $1 AND DATE(start_time) = CURRENT_DATE
+        GROUP BY user_id, DATE(start_time)
+      ) last_session 
+      ON sa.user_id = last_session.user_id 
+      AND DATE(sa.start_time) = last_session.jour 
+      AND sa.start_time = last_session.max_start_time;
+    `;
+    const result = await db.query(query, [id]);
+
+    if (result.rows.length === 0) {
+      // Retourner statut par défaut
+      return res.json({ user_id: id, status: 'Inconnu' });
+    }
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error("Erreur getUserStatusToday:", error);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+};
 
 
 
@@ -290,7 +317,6 @@ exports.getUserStatusToday = async (req, res) => {
   }
 };
 
-
 // 📌 Changer de statut (Disponible → Pause → Indispo etc.)
 // POST /api/sessions/change
 exports.changeStatus = async (req, res) => {
@@ -350,7 +376,6 @@ exports.getUserHistory = async (req, res) => {
     res.status(500).json({ message: "Erreur serveur" });
   }
 };
-
 
 exports.getUserTodayAggregates = async (req, res) => {
   const { id } = req.params;
