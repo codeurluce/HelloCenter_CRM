@@ -7,6 +7,7 @@ const cors = require('cors');
 const http = require('http');
 const { Server } = require('socket.io');
 const PORT = process.env.PORT || 5000;
+const cron = require('node-cron');
 
 // Import des routes
 const sessionRoutes = require('./routes/sessionRoutes');
@@ -15,6 +16,9 @@ const filesRoutes = require('./routes/filesRoutes');
 const historiquesfilesRoutes = require('./routes/historiquesfilesRoutes');
 const userRoutes = require('./routes/userRoutes');
 const initSockets = require('./socket');
+const { splitSessionsAtMidnight } = require('./controllers/sessionControllers');
+
+
 
 
 // Initialisation de l'application Express
@@ -24,8 +28,16 @@ const io = new Server(server, {
   cors: { origin: '*' }
 });
 
-
 initSockets(io);
+
+
+
+// ⏰ Tâche planifiée : tous les jours à 00:00
+cron.schedule('0 0 * * *', async () => {
+  console.log("⏰ Minuit → Split des sessions en cours...");
+  await splitSessionsAtMidnight();
+});
+
 // les API d'authentification, de sessions et de ventes
 app.use(cors());
 app.use(express.json());

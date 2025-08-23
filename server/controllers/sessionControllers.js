@@ -176,6 +176,45 @@ exports.getUserStatusToday = async (req, res) => {
 };
 
 
+exports.splitSessionsAtMidnight = async () => {
+  try {
+    // sessions actives hier à 23:59:59
+    const activeSessions = await db.query(`
+      SELECT * FROM session_agents
+      WHERE end_time IS NULL
+    `);
+
+    for (const session of activeSessions.rows) {
+      const { user_id, start_time } = session;
+
+      // si start_time < aujourd'hui 00:00 → on doit couper
+      const today = new Date();
+      today.setHours(0,0,0,0);
+
+      if (start_time < today) {
+        // 1. Clôturer l'ancienne session à 23:59:59 hier
+        await db.query(`
+          UPDATE session_agents
+          SET end_time = (DATE_TRUNC('day', NOW()) - INTERVAL '1 second'),
+              duration = EXTRACT(EPOCH FROM ((DATE_TRUNC('day', NOW()) - INTERVAL '1 second') - start_time))
+          WHERE user_id = $1 AND end_time IS NULL
+        `, [user_id]);
+
+        // 2. Créer une nouvelle session à 00:00:00 aujourd'hui
+        await db.query(`
+          INSERT INTO session_agents (user_id, start_time)
+          VALUES ($1, DATE_TRUNC('day', NOW()))
+        `, [user_id]);
+
+        console.log(`🔄 Session de l'agent ${user_id} splittée à minuit`);
+      }
+    }
+  } catch (err) {
+    console.error("❌ Erreur splitSessionsAtMidnight:", err);
+  }
+};
+
+
 
 
 

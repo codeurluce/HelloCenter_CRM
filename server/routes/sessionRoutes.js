@@ -1,6 +1,7 @@
 // server/routes/sessionRoutes.js
 const express = require('express');
 const router = express.Router();
+
 const sessionControllers = require('../controllers/sessionControllers');
 
 // 📌 Récupérer toutes les sessions avec leurs statuts/durées
