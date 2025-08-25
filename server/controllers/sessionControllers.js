@@ -63,7 +63,7 @@ exports.closeCurrentSession = async (req, res) => {
     res.status(200).json({ 
   message: "Session fermée avec succès",
   session_id: result.rows[0].id,
-  status: "En ligne mais inactif",
+  status: "En ligne",
   is_connected: false
 });
   } catch (error) {
@@ -134,7 +134,7 @@ exports.getLiveSessionAgents = async (req, res) => {
         u.lastname,
         u.firstname,
         COALESCE(ls.statut_actuel, 
-                 CASE WHEN u.is_connected = false THEN 'Hors ligne' ELSE 'En ligne mais inactif' END
+                 CASE WHEN u.is_connected = false THEN 'Hors ligne' ELSE 'En ligne' END
         ) AS statut_actuel,
         COALESCE(ls.depuis_sec, 0) AS depuis_sec,
         COALESCE(ct.presence_totale_sec, 0) AS presence_totale_sec,

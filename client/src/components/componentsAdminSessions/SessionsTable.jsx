@@ -14,8 +14,8 @@ const formatTime = (seconds) => {
 const getDisplayStatus = (session) => {
   if (!session.is_connected) return "Hors connexion";
   const status = session.statut_actuel || session.status || "";
-  if (!status) return "En ligne mais inactif";
-  if (status.toLowerCase().includes("inactif")) return "En ligne mais inactif";
+  if (!status) return "En ligne";
+  if (status.toLowerCase().includes("inactif")) return "En ligne";
   return status;
 };
 
@@ -79,6 +79,10 @@ export default function SessionsTable({ sessions, loading, refresh }) {
                         ? "bg-green-100 text-green-800"
                         : getDisplayStatus(s).includes("Pause")
                         ? "bg-yellow-100 text-yellow-800"
+                        : getDisplayStatus(s).includes("Formation")
+                        ? "bg-yellow-100 text-yellow-800"
+                        : getDisplayStatus(s).includes("En ligne")
+                        ? "bg-green-50 text-green-500"
                         : getDisplayStatus(s).includes("Indisponible")
                         ? "bg-red-100 text-red-800"
                         : "bg-gray-100 text-gray-800"
