@@ -13,7 +13,8 @@ const formatTime = (seconds) => {
 // Traduction / affichage du statut
 const getDisplayStatus = (session) => {
   if (!session.is_connected) return "Hors connexion";
-  const status = session.statut_actuel || session.status || "Inconnu";
+  const status = session.statut_actuel || session.status || "";
+  if (!status) return "Connecté";
   if (status.toLowerCase().includes("inactif")) return "En ligne mais inactif";
   return status;
 };
@@ -60,11 +61,15 @@ export default function SessionsTable({ sessions, loading, refresh }) {
         <tbody>
           {loading ? (
             <tr>
-              <td colSpan="6" className="text-center py-6 text-gray-600 font-medium">Chargement...</td>
+              <td colSpan="6" className="text-center py-6 text-gray-600 font-medium">
+                Chargement...
+              </td>
             </tr>
           ) : sessions.length === 0 ? (
             <tr>
-              <td colSpan="6" className="text-center py-6 text-gray-500 italic">Aucune session trouvée</td>
+              <td colSpan="6" className="text-center py-6 text-gray-500 italic">
+                Aucune session trouvée
+              </td>
             </tr>
           ) : (
             sessions.map((s) => (

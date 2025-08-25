@@ -13,13 +13,15 @@ export default function AdminLiveSessions() {
   const [showExport, setShowExport] = useState(false);
   const intervalRef = useRef();
 
+  const STATUTS_VALIDES = ["Disponible", "Pause", "Pause Café", "Pause Déjeuner", "Autre Pause", "Formation", "Indisponible"];
+
   const fetchAgents = async () => {
     setLoading(true);
     try {
       const res = await axiosInstance.get("/session_agents/user/live", { params: filters });
       const data = res.data.map(a => ({
         ...a,
-        depuis_sec: a.cumul_statuts?.[a.statut_actuel] ?? 0,
+        depuis_sec: STATUTS_VALIDES.includes(a.statut_actuel) ? a.cumul_statuts?.[a.statut_actuel] ?? 0 : 0,
         presence_totale_sec: a.presence_totale_sec ?? 0,
         last_statut: a.statut_actuel,
       }));
@@ -43,6 +45,12 @@ export default function AdminLiveSessions() {
           const cumul = { ...agent.cumul_statuts };
           const lastStatut = agent.last_statut || agent.statut_actuel;
 
+          // Timer ne démarre que si statut valide
+          if (!STATUTS_VALIDES.includes(agent.statut_actuel)) {
+            return { ...agent, depuis_sec: 0, last_statut: agent.statut_actuel };
+          }
+
+          // Changement de statut : sauvegarde du temps précédent
           if (agent.statut_actuel !== lastStatut) {
             cumul[lastStatut] = (cumul[lastStatut] ?? 0) + (agent.depuis_sec ?? 0);
             const newDepuis = cumul[agent.statut_actuel] ?? 0;
@@ -55,6 +63,7 @@ export default function AdminLiveSessions() {
             };
           }
 
+          // Sinon incrément normal
           return {
             ...agent,
             depuis_sec: (agent.depuis_sec ?? 0) + 1,
@@ -77,7 +86,7 @@ export default function AdminLiveSessions() {
       setAgents(prev =>
         prev.map(agent =>
           agent.user_id === userId
-            ? { ...agent, statut_actuel: "Hors ligne", is_connected: false, depuis_sec: 0 }
+            ? { ...agent, statut_actuel: "", is_connected: false, depuis_sec: 0 }
             : agent
         )
       );
@@ -87,7 +96,7 @@ export default function AdminLiveSessions() {
       setAgents(prev =>
         prev.map(agent =>
           agent.user_id === userId
-            ? { ...agent, statut_actuel: "En ligne", is_connected: true }
+            ? { ...agent, statut_actuel: "", is_connected: true, depuis_sec: 0 }
             : agent
         )
       );
