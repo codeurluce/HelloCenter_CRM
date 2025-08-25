@@ -1,51 +1,68 @@
 import React, { useEffect, useState, useRef } from "react";
 import axiosInstance from "../../api/axiosInstance";
 import socket from "../../socket";
-
-// Formatage hh:mm:ss
-const formatTime = (sec) => {
-  if (!sec || sec < 0) return "00:00:00";
-  const h = Math.floor(sec / 3600);
-  const m = Math.floor((sec % 3600) / 60);
-  const s = sec % 60;
-  return [h, m, s].map(v => String(v).padStart(2, "0")).join(":");
-};
+import SessionsTable from "../componentsAdminSessions/SessionsTable";
+import SessionFilters from "../componentsAdminSessions/SessionFilters";
+import ExportModal from "../componentsAdminSessions/ExportModal.jsx";
+import { Download } from "lucide-react";
 
 export default function AdminLiveSessions() {
   const [agents, setAgents] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [filters, setFilters] = useState({});
+  const [showExport, setShowExport] = useState(false);
   const intervalRef = useRef();
 
-  // Récupère les agents depuis le backend
   const fetchAgents = async () => {
+    setLoading(true);
     try {
-      const res = await axiosInstance.get("/session_agents/user/live");
+      const res = await axiosInstance.get("/session_agents/user/live", { params: filters });
       const data = res.data.map(a => ({
         ...a,
-        depuis_sec: a.depuis_sec || 0,
+        depuis_sec: a.cumul_statuts?.[a.statut_actuel] ?? 0,
         presence_totale_sec: a.presence_totale_sec ?? 0,
-        is_connected: a.is_connected ?? false,
+        last_statut: a.statut_actuel,
       }));
       setAgents(data);
     } catch (err) {
       console.error("Erreur récupération sessions live:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
+  // Interval incrément
   useEffect(() => {
     fetchAgents();
 
-    // Intervalle live pour incrémenter les timers
     intervalRef.current = setInterval(() => {
       setAgents(prev =>
-        prev.map(a => {
-          const statutValide = ["Disponible", "Pause", "Pause Café", "Pause Déjeuner", "Autre Pause", "Formation", "Indisponible"];
-           if (!a.is_connected || !statutValide.includes(a.statut_actuel)) {
-        return { ...a, depuis_sec: 0 };
-      }
+        prev.map(agent => {
+          if (!agent.is_connected) return agent;
+
+          const cumul = { ...agent.cumul_statuts };
+          const lastStatut = agent.last_statut || agent.statut_actuel;
+
+          if (agent.statut_actuel !== lastStatut) {
+            cumul[lastStatut] = (cumul[lastStatut] ?? 0) + (agent.depuis_sec ?? 0);
+            const newDepuis = cumul[agent.statut_actuel] ?? 0;
+            return {
+              ...agent,
+              last_statut: agent.statut_actuel,
+              depuis_sec: newDepuis,
+              presence_totale_sec: (agent.presence_totale_sec ?? 0) + 1,
+              cumul_statuts: cumul,
+            };
+          }
+
           return {
-            ...a,
-            depuis_sec: (a.depuis_sec ?? 0) + 1,
-            presence_totale_sec: (a.presence_totale_sec ?? 0) + 1,
+            ...agent,
+            depuis_sec: (agent.depuis_sec ?? 0) + 1,
+            presence_totale_sec: (agent.presence_totale_sec ?? 0) + 1,
+            cumul_statuts: {
+              ...cumul,
+              [agent.statut_actuel]: (cumul[agent.statut_actuel] ?? 0) + 1,
+            },
           };
         })
       );
@@ -54,26 +71,24 @@ export default function AdminLiveSessions() {
     return () => clearInterval(intervalRef.current);
   }, []);
 
-  // Gestion des déconnexions
+  // Sockets
   useEffect(() => {
-    // Déconnexion
     socket.on("agent_disconnected", ({ userId }) => {
       setAgents(prev =>
-        prev.map(a =>
-          a.user_id === userId
-            ? { ...a, statut_actuel: "Hors ligne", is_connected: false, depuis_sec: 0 }
-            : a
+        prev.map(agent =>
+          agent.user_id === userId
+            ? { ...agent, statut_actuel: "Hors ligne", is_connected: false, depuis_sec: 0 }
+            : agent
         )
       );
     });
 
-    // Connexion
-    socket.on("agent_connected", ({ userId, depuis_sec }) => {
+    socket.on("agent_connected", ({ userId }) => {
       setAgents(prev =>
-        prev.map(a =>
-          a.user_id === userId
-            ? { ...a, statut_actuel: "En ligne", is_connected: true, depuis_sec: depuis_sec || 0 }
-            : a
+        prev.map(agent =>
+          agent.user_id === userId
+            ? { ...agent, statut_actuel: "En ligne", is_connected: true }
+            : agent
         )
       );
     });
@@ -84,47 +99,31 @@ export default function AdminLiveSessions() {
     };
   }, []);
 
+  const handleApplyFilters = (f) => { setFilters(f); fetchAgents(); };
+  const handleResetFilters = () => { setFilters({}); fetchAgents(); };
+  const handleExport = (options) => { console.log("Export:", options); setShowExport(false); };
+
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-      <h2 className="text-2xl font-bold mb-4">👥 Suivi en live des agents</h2>
-      <table className="min-w-full border border-gray-200 bg-white rounded-lg overflow-hidden">
-        <thead className="bg-blue-100">
-          <tr>
-            <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Nom</th>
-            <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Prénom</th>
-            <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Statut actuel</th>
-            <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Depuis</th>
-            <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Présence Totale</th>
-            <th className="px-6 py-3 text-center text-sm font-semibold text-blue-700">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {agents.map(a => (
-            <tr key={a.user_id} className="border-b border-gray-200 hover:bg-gray-50">
-              <td className="px-6 py-3">{a.lastname}</td>
-              <td className="px-6 py-3">{a.firstname}</td>
-              <td className="px-6 py-3">{a.statut_actuel}</td>
-              <td className="px-6 py-3">{formatTime(a.depuis_sec)}</td>
-              <td className="px-6 py-3">{formatTime(a.presence_totale_sec)}</td>
-              <td className="px-6 py-3 text-center">
-                <button
-                  className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
-                  onClick={() => alert(`Consulter ${a.lastname} ${a.firstname}`)}
-                >
-                  Consulter
-                </button>
-              </td>
-            </tr>
-          ))}
-          {agents.length === 0 && (
-            <tr>
-              <td colSpan="6" className="text-center py-4 text-gray-500">
-                Aucun agent connecté
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-bold">👥 Suivi en live des agents</h2>
+        <button
+          onClick={() => setShowExport(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        >
+          <Download size={16} /> Exporter
+        </button>
+      </div>
+
+      <div className="mb-4">
+        <SessionFilters onApply={handleApplyFilters} onReset={handleResetFilters} />
+      </div>
+
+      <SessionsTable sessions={agents} loading={loading} refresh={fetchAgents} />
+
+      {showExport && (
+        <ExportModal agents={agents} onExport={handleExport} onClose={() => setShowExport(false)} />
+      )}
     </div>
   );
 }

@@ -105,31 +105,45 @@ exports.getLiveSessionAgents = async (req, res) => {
         WHERE DATE(start_time) = CURRENT_DATE
       ),
       cumuls AS (
-        SELECT user_id, SUM(EXTRACT(EPOCH FROM (end_time - start_time)))::INT AS presence_totale_sec
+        SELECT user_id, status, SUM(EXTRACT(EPOCH FROM (end_time - start_time)))::INT AS sec
         FROM sessions_today
+        GROUP BY user_id, status
+      ),
+      cumul_total AS (
+        SELECT user_id, SUM(sec)::INT AS presence_totale_sec
+        FROM cumuls
         GROUP BY user_id
       ),
-      actives AS (
-        SELECT sa.user_id, sa.status, sa.start_time AS last_change,
-               EXTRACT(EPOCH FROM (NOW() - sa.start_time))::INT AS depuis_sec
-        FROM session_agents sa
-        WHERE sa.end_time IS NULL
-          AND DATE(sa.start_time) = CURRENT_DATE
+      last_status AS (
+        SELECT DISTINCT ON (user_id)
+               user_id,
+               status AS statut_actuel,
+               EXTRACT(EPOCH FROM (NOW() - start_time))::INT AS depuis_sec
+        FROM session_agents
+        WHERE end_time IS NULL AND DATE(start_time) = CURRENT_DATE
+        ORDER BY user_id, start_time DESC
+      ),
+      cumul_json AS (
+        SELECT c.user_id,
+               json_object_agg(c.status, c.sec) AS cumul_statuts
+        FROM cumuls c
+        GROUP BY c.user_id
       )
       SELECT 
         u.id AS user_id,
         u.lastname,
         u.firstname,
-        CASE 
-          WHEN u.is_connected = false THEN 'Hors ligne'
-          ELSE COALESCE(a.status, 'En ligne mais inactif')
-        END AS statut_actuel,
-        COALESCE(a.depuis_sec, 0) AS depuis_sec,
-        COALESCE(c.presence_totale_sec, 0) AS presence_totale_sec,
-        u.is_connected
+        COALESCE(ls.statut_actuel, 
+                 CASE WHEN u.is_connected = false THEN 'Hors ligne' ELSE 'En ligne mais inactif' END
+        ) AS statut_actuel,
+        COALESCE(ls.depuis_sec, 0) AS depuis_sec,
+        COALESCE(ct.presence_totale_sec, 0) AS presence_totale_sec,
+        u.is_connected,
+        COALESCE(cj.cumul_statuts, '{}'::json) AS cumul_statuts
       FROM users u
-      LEFT JOIN actives a ON u.id = a.user_id
-      LEFT JOIN cumuls c ON u.id = c.user_id
+      LEFT JOIN last_status ls ON u.id = ls.user_id
+      LEFT JOIN cumul_total ct ON u.id = ct.user_id
+      LEFT JOIN cumul_json cj ON u.id = cj.user_id
       ORDER BY u.lastname, u.firstname;
     `;
 
@@ -140,6 +154,7 @@ exports.getLiveSessionAgents = async (req, res) => {
     res.status(500).json({ error: "Erreur récupération sessions live" });
   }
 };
+
 
 
 exports.getUserStatusToday = async (req, res) => {
@@ -174,7 +189,6 @@ exports.getUserStatusToday = async (req, res) => {
     res.status(500).json({ message: "Erreur serveur" });
   }
 };
-
 
 exports.splitSessionsAtMidnight = async () => {
   try {
@@ -322,40 +336,6 @@ exports.getActiveSession = async (req, res) => {
 };
 
 // 📌 Récupérer l’historique des sessions d’un agent
-// GET /api/sessions/history/:user_id
-exports.getUserStatusToday = async (req, res) => {
-  const { id } = req.params;
-
-  try {
-    const query = `
-      SELECT sa.*
-      FROM session_agents sa
-      INNER JOIN (
-        SELECT 
-          user_id,
-          DATE(start_time) AS jour,
-          MAX(start_time) AS max_start_time
-        FROM session_agents
-        WHERE user_id = $1 AND DATE(start_time) = CURRENT_DATE
-        GROUP BY user_id, DATE(start_time)
-      ) last_session 
-      ON sa.user_id = last_session.user_id 
-      AND DATE(sa.start_time) = last_session.jour 
-      AND sa.start_time = last_session.max_start_time;
-    `;
-    const result = await db.query(query, [id]);
-
-    if (result.rows.length === 0) {
-      // Retourner statut par défaut
-      return res.json({ user_id: id, status: 'Inconnu' });
-    }
-    res.json(result.rows[0]);
-  } catch (error) {
-    console.error("Erreur getUserStatusToday:", error);
-    res.status(500).json({ message: "Erreur serveur" });
-  }
-};
-
 // 📌 Changer de statut (Disponible → Pause → Indispo etc.)
 // POST /api/sessions/change
 exports.changeStatus = async (req, res) => {
