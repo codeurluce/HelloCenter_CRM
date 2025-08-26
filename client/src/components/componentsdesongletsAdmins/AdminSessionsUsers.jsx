@@ -162,7 +162,11 @@ export default function AdminLiveSessions() {
         />
       </div>
 
-      <SessionsTable sessions={filteredAgents} loading={loading} refresh={fetchAgents} />
+      <SessionsTable 
+      sessions={filteredAgents} 
+      loading={loading} 
+      refresh={fetchAgents} 
+      />
 
       {showExport && (
         <ExportModal

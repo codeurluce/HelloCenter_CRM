@@ -74,13 +74,13 @@ const totalPauses = ["Pause Café", "Pause Déjeuner", "Pause Formation", "Autre
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
-      onClick={onClose}
-    >
-      <div
-        className="bg-gradient-to-b from-white to-gray-50 rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden transform transition-all duration-300 scale-100"
-        onClick={stopPropagation}
-      >
+  className="fixed inset-0 bg-black/10 flex items-center justify-center z-50"
+  onClick={onClose}
+>
+  <div
+    className="bg-white rounded-xl border border-gray-100 max-w-3xl w-full overflow-hidden"
+    onClick={stopPropagation}
+  >
         {/* Header */}
         <div className="bg-blue-600 text-white flex items-center justify-between px-6 py-4">
           <div className="flex items-center gap-2">
