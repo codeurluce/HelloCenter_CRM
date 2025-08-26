@@ -1,3 +1,4 @@
+// src/pages/admin/AdminLiveSessions.jsx (ou AdminSessionsUsers.jsx selon ton arbo)
 import React, { useEffect, useState, useRef } from "react";
 import axiosInstance from "../../api/axiosInstance";
 import socket from "../../socket";
@@ -9,19 +10,34 @@ import { Download } from "lucide-react";
 export default function AdminLiveSessions() {
   const [agents, setAgents] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [filters, setFilters] = useState({});
+
+  // Etats de la barre de filtre/recherche
+  const [q, setQ] = useState("");
+  const [sessionStatusFilter, setSessionStatusFilter] = useState("");
+
   const [showExport, setShowExport] = useState(false);
   const intervalRef = useRef();
 
-  const STATUTS_VALIDES = ["Disponible", "Pause", "Pause Café", "Pause Déjeuner", "Autre Pause", "Formation", "Indisponible"];
+  // Statuts qui incrémentent un timer (hors connexion exclu)
+  const STATUTS_VALIDES = [
+    "Disponible",
+    "Pause Café",
+    "Pause Déjeuner",
+    "Autre Pause",
+    "Formation",
+    "Indisponible",
+  ];
 
   const fetchAgents = async () => {
     setLoading(true);
     try {
-      const res = await axiosInstance.get("/session_agents/user/live", { params: filters });
-      const data = res.data.map(a => ({
+      // On récupère tout ; le filtrage est fait côté front (comme dans AdministrationUsers)
+      const res = await axiosInstance.get("/session_agents/user/live");
+      const data = res.data.map((a) => ({
         ...a,
-        depuis_sec: STATUTS_VALIDES.includes(a.statut_actuel) ? a.cumul_statuts?.[a.statut_actuel] ?? 0 : 0,
+        depuis_sec: STATUTS_VALIDES.includes(a.statut_actuel)
+          ? a.cumul_statuts?.[a.statut_actuel] ?? 0
+          : 0,
         presence_totale_sec: a.presence_totale_sec ?? 0,
         last_statut: a.statut_actuel,
       }));
@@ -33,24 +49,22 @@ export default function AdminLiveSessions() {
     }
   };
 
-  // Interval incrément
+  // Récup init + tick d'une seconde pour les compteurs
   useEffect(() => {
     fetchAgents();
 
     intervalRef.current = setInterval(() => {
-      setAgents(prev =>
-        prev.map(agent => {
+      setAgents((prev) =>
+        prev.map((agent) => {
           if (!agent.is_connected) return agent;
 
           const cumul = { ...agent.cumul_statuts };
           const lastStatut = agent.last_statut || agent.statut_actuel;
 
-          // Timer ne démarre que si statut valide
           if (!STATUTS_VALIDES.includes(agent.statut_actuel)) {
             return { ...agent, depuis_sec: 0, last_statut: agent.statut_actuel };
           }
 
-          // Changement de statut : sauvegarde du temps précédent
           if (agent.statut_actuel !== lastStatut) {
             cumul[lastStatut] = (cumul[lastStatut] ?? 0) + (agent.depuis_sec ?? 0);
             const newDepuis = cumul[agent.statut_actuel] ?? 0;
@@ -63,7 +77,6 @@ export default function AdminLiveSessions() {
             };
           }
 
-          // Sinon incrément normal
           return {
             ...agent,
             depuis_sec: (agent.depuis_sec ?? 0) + 1,
@@ -78,25 +91,25 @@ export default function AdminLiveSessions() {
     }, 1000);
 
     return () => clearInterval(intervalRef.current);
-  }, []);
+  }, []); // ← pas de dépendances sur q/status : on filtre en front
 
-  // Sockets
+  // Sockets connexion / déconnexion
   useEffect(() => {
     socket.on("agent_disconnected", ({ userId }) => {
-      setAgents(prev =>
-        prev.map(agent =>
+      setAgents((prev) =>
+        prev.map((agent) =>
           agent.user_id === userId
-            ? { ...agent, statut_actuel: "", is_connected: false, depuis_sec: 0 }
+            ? { ...agent, statut_actuel: "Hors connexion", is_connected: false, depuis_sec: 0 }
             : agent
         )
       );
     });
 
     socket.on("agent_connected", ({ userId }) => {
-      setAgents(prev =>
-        prev.map(agent =>
+      setAgents((prev) =>
+        prev.map((agent) =>
           agent.user_id === userId
-            ? { ...agent, statut_actuel: "", is_connected: true, depuis_sec: 0 }
+            ? { ...agent, is_connected: true, depuis_sec: 0 }
             : agent
         )
       );
@@ -108,9 +121,24 @@ export default function AdminLiveSessions() {
     };
   }, []);
 
-  const handleApplyFilters = (f) => { setFilters(f); fetchAgents(); };
-  const handleResetFilters = () => { setFilters({}); fetchAgents(); };
-  const handleExport = (options) => { console.log("Export:", options); setShowExport(false); };
+  // ---- Filtrage côté front (comme ta page AdministrationUsers) ----
+  const normalize = (s = "") =>
+    s.toString().toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "");
+
+  const filteredAgents = agents.filter((a) => {
+    const haystack = normalize(
+      `${a.lastname || ""} ${a.firstname || ""} ${a.email || ""} ${a.univers || ""}`
+    );
+    const okSearch = q.trim() === "" ? true : haystack.includes(normalize(q));
+    const okStatus =
+      sessionStatusFilter === "" ? true : a.statut_actuel === sessionStatusFilter;
+
+    return okSearch && okStatus;
+  });
+
+  // ----------------------------------------------------------------
+
+  const handleExport = () => setShowExport(false);
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
@@ -125,13 +153,23 @@ export default function AdminLiveSessions() {
       </div>
 
       <div className="mb-4">
-        <SessionFilters onApply={handleApplyFilters} onReset={handleResetFilters} />
+        <SessionFilters
+          q={q}
+          setQ={setQ}
+          sessionStatusFilter={sessionStatusFilter}
+          setSessionStatusFilter={setSessionStatusFilter}
+          onResetPage={() => {}}
+        />
       </div>
 
-      <SessionsTable sessions={agents} loading={loading} refresh={fetchAgents} />
+      <SessionsTable sessions={filteredAgents} loading={loading} refresh={fetchAgents} />
 
       {showExport && (
-        <ExportModal agents={agents} onExport={handleExport} onClose={() => setShowExport(false)} />
+        <ExportModal
+          agents={filteredAgents}
+          onExport={handleExport}
+          onClose={() => setShowExport(false)}
+        />
       )}
     </div>
   );

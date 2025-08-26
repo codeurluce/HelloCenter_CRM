@@ -77,24 +77,20 @@ const loginUser = async (req, res) => {
       return res.status(403).json({ message: 'Compte désactivé, connexion impossible' });
     }
 
-    // Vérification de l'expiration du mot de passe (90 jours)
-    // const THREE_MONTHS_MS = 90 * 24 * 60 * 60 * 1000; // 90 jours en ms
-    // const now = Date.now();
-    // const lastChange = user.password_changed_at
-    //   ? new Date(user.password_changed_at).getTime()
-    //   : 0;
-    // const isPasswordExpired = (now - lastChange) > THREE_MONTHS_MS;
-
-
-    // Vérification de l'expiration du mot de passe (2 jours)
-    // const ONE_DAY_MS = 24 * 60 * 60 * 1000;
-
-    // Vérification de l'expiration du mot de passe (2 jours)
-    const TWO_DAYS_MS = 2 * 24 * 60 * 60 * 1000;
+    // Vérification de l'expiration du mot de passe (90 jours/ 3mois)
+    const THREE_MONTHS_MS = 90 * 24 * 60 * 60 * 1000; // 90 jours en ms
+    const now = Date.now();
     const lastChange = user.password_changed_at
       ? new Date(user.password_changed_at).getTime()
       : 0;
-    const isPasswordExpired = (Date.now() - lastChange) > TWO_DAYS_MS;
+    const isPasswordExpired = (now - lastChange) > THREE_MONTHS_MS;
+
+    // Vérification de l'expiration du mot de passe (2 jours) pour faire des test
+    // const TWO_DAYS_MS = 2 * 24 * 60 * 60 * 1000;
+    // const lastChange = user.password_changed_at
+    //   ? new Date(user.password_changed_at).getTime()
+    //   : 0;
+    // const isPasswordExpired = (Date.now() - lastChange) > TWO_DAYS_MS;
 
     const mustChangePassword = {
       required: user.is_first_login || isPasswordExpired,
