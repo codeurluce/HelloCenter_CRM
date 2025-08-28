@@ -40,6 +40,15 @@ export default function AdminLiveSessions() {
           : 0,
         presence_totale_sec: a.presence_totale_sec ?? 0,
         last_statut: a.statut_actuel,
+        sessions: [{
+          date: a.date || new Date().toISOString(),
+          first_connection: a.first_connection || "-",
+          last_disconnection: a.last_disconnection || "-",
+          total_presence: a.presence_totale_sec ?? 0,
+          time_available: a.cumul_statuts?.Disponible ?? 0,
+          time_pause: a.cumul_statuts?.["Pause Café"] ?? 0,
+          time_unavailable: a.cumul_statuts?.Indisponible ?? 0,
+        }],
       }));
       setAgents(data);
     } catch (err) {
@@ -170,6 +179,7 @@ export default function AdminLiveSessions() {
 
       {showExport && (
         <ExportModal
+        isOpen={showExport}  
           agents={filteredAgents}
           onExport={handleExport}
           onClose={() => setShowExport(false)}

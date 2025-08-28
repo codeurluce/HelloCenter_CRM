@@ -37,6 +37,10 @@ router.post('/close-force', async (req, res) => {
 // 📌 Sessions en ligne (agents actifs)
 router.get('/user/live', sessionControllers.getLiveSessionAgents);
 
+router.get('/user/agent_connection_details', sessionControllers.getDailyConnectionTimes);
+
+router.post('/export-sessions', sessionControllers.exportSessions);
+
 // 📌 Statut & présence totale d’un utilisateur aujourd’hui
 router.get('/user/:id/status-today', sessionControllers.getUserStatusToday);
 

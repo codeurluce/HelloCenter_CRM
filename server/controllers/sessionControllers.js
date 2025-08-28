@@ -155,6 +155,124 @@ exports.getLiveSessionAgents = async (req, res) => {
   }
 };
 
+exports.getDailyConnectionTimes = async (req, res) => {
+  try {
+    const query = `
+      SELECT 
+        user_id,
+        MIN(event_time) FILTER (WHERE event_type = 'connect') AS first_connection,
+        MAX(event_time) FILTER (WHERE event_type = 'disconnect') AS last_disconnection
+      FROM agent_connections_history
+      WHERE DATE(event_time) = CURRENT_DATE
+      GROUP BY user_id
+      ORDER BY user_id;
+    `;
+
+    const result = await db.query(query);
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Erreur getDailyConnectionTimes:", err);
+    res.status(500).json({ error: "Erreur récupération connexions quotidiennes" });
+  }
+};
+
+// POST /export-sessions
+exports.exportSessions = async (req, res) => {
+  try {
+    const { userIds = [], startDate, endDate } = req.body || {};
+
+    if (!startDate || !endDate) {
+      return res.status(400).json({ error: "startDate et endDate sont obligatoires" });
+    }
+
+    // Préparer la clause pour filtrer les users si nécessaire
+    const userFilter = userIds && userIds.length ? `AND sa.user_id = ANY($3)` : '';
+
+    const query = `
+      WITH sessions AS (
+        SELECT 
+          sa.user_id,
+          sa.status,
+          DATE(sa.start_time) AS session_date,
+          sa.start_time,
+          COALESCE(sa.end_time, NOW()) AS end_time,
+          EXTRACT(EPOCH FROM (COALESCE(sa.end_time, NOW()) - sa.start_time))::INT AS duree_sec
+        FROM session_agents sa
+        WHERE DATE(sa.start_time) BETWEEN $1 AND $2
+        ${userFilter}
+      ),
+      cumuls AS (
+        SELECT user_id, session_date, status, SUM(duree_sec)::INT AS sec
+        FROM sessions
+        GROUP BY user_id, session_date, status
+      ),
+      cumul_total AS (
+        SELECT user_id, session_date, SUM(sec)::INT AS presence_totale_sec
+        FROM cumuls
+        GROUP BY user_id, session_date
+      ),
+      last_status AS (
+        SELECT DISTINCT ON (user_id, DATE(start_time)) 
+               user_id,
+               DATE(start_time) AS session_date,
+               status AS statut_actuel,
+               EXTRACT(EPOCH FROM (NOW() - start_time))::INT AS depuis_sec
+        FROM session_agents
+        WHERE end_time IS NULL
+          AND DATE(start_time) BETWEEN $1 AND $2
+        ORDER BY user_id, DATE(start_time), start_time DESC
+      ),
+      cumul_json AS (
+        SELECT user_id, session_date,
+               json_object_agg(status, sec) AS cumul_statuts
+        FROM cumuls
+        GROUP BY user_id, session_date
+      ),
+      connections AS (
+        SELECT 
+          ach.user_id,
+          DATE(ach.event_time) AS session_date,
+          MIN(ach.event_time) FILTER (WHERE event_type = 'connect') AS first_connection,
+          MAX(ach.event_time) FILTER (WHERE event_type = 'disconnect') AS last_disconnection
+        FROM agent_connections_history ach
+        WHERE DATE(ach.event_time) BETWEEN $1 AND $2
+        GROUP BY ach.user_id, DATE(ach.event_time)
+      )
+      SELECT 
+  u.id AS user_id,
+  u.lastname,
+  u.firstname,
+  COALESCE(ls.statut_actuel, 
+           CASE WHEN u.is_connected = false THEN 'Hors ligne' ELSE 'En ligne' END
+  ) AS statut_actuel,
+  COALESCE(ls.depuis_sec, 0) AS depuis_sec,
+  COALESCE(ct.presence_totale_sec, 0) AS presence_totale_sec,
+  COALESCE(cj.cumul_statuts, '{}'::json) AS cumul_statuts,
+  co.first_connection,
+  co.last_disconnection,
+  ct.session_date
+FROM users u
+LEFT JOIN cumul_total ct ON ct.user_id = u.id
+LEFT JOIN cumul_json cj ON cj.user_id = u.id AND cj.session_date = ct.session_date
+LEFT JOIN last_status ls ON ls.user_id = u.id AND ls.session_date = ct.session_date
+LEFT JOIN connections co ON co.user_id = u.id AND co.session_date = ct.session_date
+WHERE ct.session_date BETWEEN $1 AND $2
+${userFilter ? "AND u.id = ANY($3)" : ""}
+ORDER BY u.lastname, u.firstname, ct.session_date;
+    `;
+
+    const params = [startDate, endDate];
+    if (userIds && userIds.length) params.push(userIds);
+
+    const { rows } = await db.query(query, params);
+
+    res.json(rows);
+
+  } catch (err) {
+    console.error("Erreur exportSessions:", err);
+    res.status(500).json({ error: "Erreur export sessions" });
+  }
+};
 
 
 exports.getUserStatusToday = async (req, res) => {

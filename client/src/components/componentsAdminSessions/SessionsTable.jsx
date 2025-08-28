@@ -2,9 +2,6 @@ import React, { useState, useEffect } from "react";
 import { RefreshCw, Eye, RotateCcw, Power, Pause, Play } from "lucide-react";
 import SessionAgentDetailsModal from "./SessionAgentDetailsModal";
 
-
-
-
 // Formatage hh:mm:ss
 const formatTime = (seconds) => {
   if (!seconds || seconds < 0) return "00:00:00";
@@ -80,16 +77,16 @@ export default function SessionsTable({ sessions, loading, refresh }) {
                 <td className="px-6 py-3">
                   <span
                     className={`inline-block px-3 py-1 rounded-full text-xs font-semibold cursor-default ${getDisplayStatus(s) === "Disponible"
-                        ? "bg-green-100 text-green-800"
-                        : getDisplayStatus(s).includes("Pause")
+                      ? "bg-green-100 text-green-800"
+                      : getDisplayStatus(s).includes("Pause")
+                        ? "bg-yellow-100 text-yellow-800"
+                        : getDisplayStatus(s).includes("Formation")
                           ? "bg-yellow-100 text-yellow-800"
-                          : getDisplayStatus(s).includes("Formation")
-                            ? "bg-yellow-100 text-yellow-800"
-                            : getDisplayStatus(s).includes("En ligne")
-                              ? "bg-green-50 text-green-500"
-                              : getDisplayStatus(s).includes("Indisponible")
-                                ? "bg-red-100 text-red-800"
-                                : "bg-gray-100 text-gray-800"
+                          : getDisplayStatus(s).includes("En ligne")
+                            ? "bg-green-50 text-green-500"
+                            : getDisplayStatus(s).includes("Indisponible")
+                              ? "bg-red-100 text-red-800"
+                              : "bg-gray-100 text-gray-800"
                       }`}
                     title={renderTooltip(s.cumul_statuts)}
                   >
@@ -115,10 +112,10 @@ export default function SessionsTable({ sessions, loading, refresh }) {
                     </span>
                   </div>
                   {selectedAgent && (
-  <SessionAgentDetailsModal
-    agent={selectedAgent}
-    onClose={() => setSelectedAgent(null)}
-  />)}
+                    <SessionAgentDetailsModal
+                      agent={selectedAgent}
+                      onClose={() => setSelectedAgent(null)}
+                    />)}
                   {/* <button className="text-yellow-600 hover:text-yellow-800" title="Forcer Pause"><Pause size={18} /></button>
                   <button className="text-green-600 hover:text-green-800" title="Mettre en disponible"><Play size={18} /></button> */}
                 </td>
