@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Filter, Eye, Edit, Trash2 } from 'lucide-react';
+import { Search, Filter, Eye, Edit, Trash2, Pencil } from 'lucide-react';
 import { BadgeCheck, X as BadgeX } from 'lucide-react';
 import Swal from 'sweetalert2';
 
@@ -171,38 +171,69 @@ const FiltreSalesList = ({
                   <td className="py-3 px-4">{getStatusText(sale.status)}</td>
                   <td className="py-3 px-4">
                     <div className="flex space-x-2">
-                      <button className="p-1 hover:bg-gray-100 rounded transition-colors"
+
+                      {/* <div className="relative group"> */}
+                      <button
                         title="Voir"
                         type="button"
-                        onClick={() => onViewSale && onViewSale(sale)}>
-                        <Eye className="w-4 h-4 text-gray-500" />
+                        onClick={() => onViewSale && onViewSale(sale)}
+                        className="px-3 py-1.5 rounded-lg border border-blue-100 text-blue-600 hover:bg-blue-600 hover:text-white 
+                                      transition-transform transform focus:outline-none focus:ring-2 focus:ring-offset-1 hover:scale-105"
+                      >
+                        <Eye className="w-4 h-4" />
                       </button>
+                      <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-blue-600 text-white text-xs whitespace-nowrap">
+                        Voir
+                      </span>
+                      {/* </div> */}
 
+
+
+                      {/* <div className="relative group"> */}
                       {(isAdmin || (sale.status === "pending")) && (
-                        <button
-                          className="p-1 hover:bg-gray-100 rounded transition-colors"
-                          title="Modifier"
-                          type="button"
-                          onClick={onEditSale && (() => onEditSale(sale))}
-                        >
-                          <Edit className="w-4 h-4 text-gray-500" />
-                        </button>
+                        <>
+                          <button
+                            title="Modifier"
+                            type="button"
+                            onClick={onEditSale && (() => onEditSale(sale))}
+                            className="px-3 py-1.5 rounded-lg border border-green-100 text-green-600 hover:bg-green-600 hover:text-white
+                                      transition-transform transform focus:outline-none focus:ring-2 focus:ring-offset-1 hover:scale-105"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-green-600 text-white text-xs whitespace-nowrap">
+                            Modifier
+                          </span>
+                        </>
                       )}
+                      {/* </div> */}
 
-                      <button
-                        className="p-1 hover:bg-gray-100 rounded transition-colors"
-                        title="Supprimer"
-                        type="button"
-                        onClick={() => onDeleteSale(sale.id)}>
-                        <Trash2 className="w-4 h-4 text-red-500" />
-                      </button>
+                      {/* <div className="relative group"> */}
+                      {(isAdmin || (sale.status === "pending")) && (
+                        <>
+                          <button
+                            title="Supprimer"
+                            type="button"
+                            onClick={() => onDeleteSale(sale.id)}
+                            className="px-3 py-1.5 rounded-lg border border-yellow-100 text-yellow-600 hover:bg-yellow-600 hover:text-white 
+                                      transition-transform transform focus:outline-none focus:ring-2 focus:ring-offset-1 hover:scale-105"
+                          >
 
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                          <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-yellow-600 text-white text-xs whitespace-nowrap">
+                            supprimer
+                          </span>
+                        </>
+                      )}
+                      {/* </div> */}
 
                       {/* ✅ Boutons admin visibles SEULEMENT si onUpdateStatus est fourni */}
                       {isAdmin && onUpdateStatus && (
                         <>
                           <button
-                            className="p-1 hover:bg-gray-100 rounded transition-colors"
+                            className="px-3 py-1.5 rounded-lg border border-green-100 text-green-600 hover:bg-green-400 hover:text-white 
+                                      transition-transform transform focus:outline-none focus:ring-2 focus:ring-offset-1 hover:scale-105"
                             title="Marquer comme payée"
                             onClick={() => {
                               Swal.fire({
@@ -222,11 +253,12 @@ const FiltreSalesList = ({
                               });
                             }}
                           >
-                            <BadgeCheck className="w-4 h-4 text-green-500" />
+                            <BadgeCheck className="w-4 h-4" />
                           </button>
 
                           <button
-                            className="p-1 hover:bg-gray-100 rounded transition-colors"
+                            className="px-3 py-1.5 rounded-lg border border-red-100 text-red-600 hover:bg-red-400 hover:text-white 
+                                      transition-transform transform focus:outline-none focus:ring-2 focus:ring-offset-1 hover:scale-105"
                             title="Annuler la vente"
                             onClick={async () => {
                               const { value: motif } = await Swal.fire({
@@ -251,7 +283,7 @@ const FiltreSalesList = ({
                               }
                             }}
                           >
-                            <BadgeX className="w-4 h-4 text-red-500" />
+                            <BadgeX className="w-4 h-4" />
                           </button>
                         </>
                       )}
