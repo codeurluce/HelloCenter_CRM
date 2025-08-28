@@ -7,7 +7,8 @@ const {
     createSale,
     getSaleById,
     updateSale,
-    deleteSale  
+    deleteSale,  
+    getAllSales
     } = require('../controllers/salesControllers');
 const auth = require('../middlewares/authMiddleware');
 
@@ -15,7 +16,7 @@ const auth = require('../middlewares/authMiddleware');
 router.get('/today-summary', auth, getTodaySummary); // Résumé des ventes du jour (protégé)
 router.get('/weekly', auth, getWeeklySales); // Ventes hebdomadaires (protégé)
 
-
+router.get('/admin', auth, getAllSales)
 router.get('/', auth, getSales); // Récupérer tous les ventes de l'agent
 
 
