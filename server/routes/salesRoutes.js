@@ -8,7 +8,8 @@ const {
     getSaleById,
     updateSale,
     deleteSale,  
-    getAllSales
+    getAllSales,
+    updateSaleStatus,
     } = require('../controllers/salesControllers');
 const auth = require('../middlewares/authMiddleware');
 
@@ -19,7 +20,7 @@ router.get('/weekly', auth, getWeeklySales); // Ventes hebdomadaires (protégé)
 router.get('/admin', auth, getAllSales)
 router.get('/', auth, getSales); // Récupérer tous les ventes de l'agent
 
-
+router.put('/:id/change-status', auth, updateSaleStatus);
 router.get('/:id', auth, getSaleById); // Recuperer une vente par son ID (protégé)
 router.put('/:id', auth, updateSale); // Modifier une vente (protégé)
 router.delete('/:id', auth, deleteSale); // Supprimer une vente (protégé)

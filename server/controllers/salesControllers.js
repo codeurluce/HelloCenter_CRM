@@ -192,6 +192,26 @@ exports.createSale = async (req, res) => {
   }
 };
 
+// Export pour supprimer une vente
+exports.deleteSale = async (req, res) => {
+  try {
+    const saleId = req.params.id;
+    const result = await db.query(
+      'DELETE FROM sales WHERE id = $1 RETURNING *',
+      [saleId]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ message: 'Vente non trouvée' });
+    }
+
+    res.json({ message: 'Vente supprimée avec succès', sale: result.rows[0] });
+  } catch (error) {
+    console.error('Erreur deleteSale:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+};
+
 
 // Export pour mettre à jour une vente
 exports.updateSale = async (req, res) => {
@@ -283,23 +303,43 @@ exports.updateSale = async (req, res) => {
 };
 
 
-
-// Export pour supprimer une vente
-exports.deleteSale = async (req, res) => {
+// Mettre à jour le statut d'une vente by Admin
+exports.updateSaleStatus = async (req, res) => {
   try {
-    const saleId = req.params.id;
-    const result = await db.query(
-      'DELETE FROM sales WHERE id = $1 RETURNING *',
-      [saleId]
-    );
+    const { id } = req.params;
+    const { status, motif } = req.body;
+    const updatedBy = req.user.id;
 
-    if (result.rowCount === 0) {
-      return res.status(404).json({ message: 'Vente non trouvée' });
+    let query, values;
+
+    if (status === 'cancelled') {
+      query = `
+        UPDATE sales
+        SET status = $1,
+            cancelled_reason = $2,
+            updated_at = NOW(),
+            updated_by = $3
+        WHERE id = $4
+        RETURNING *;
+      `;
+      values = [status, motif, updatedBy, id];
+    } else {
+      // validated
+      query = `
+        UPDATE sales
+        SET status = $1,
+            updated_at = NOW(),
+            updated_by = $2
+        WHERE id = $3
+        RETURNING *;
+      `;
+      values = [status, updatedBy, id];
     }
 
-    res.json({ message: 'Vente supprimée avec succès', sale: result.rows[0] });
+    const result = await db.query(query, values);
+    res.json(result.rows[0]);
   } catch (error) {
-    console.error('Erreur deleteSale:', error);
+    console.error('Erreur updateSaleStatus:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 };
