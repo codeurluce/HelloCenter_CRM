@@ -7,10 +7,12 @@ function initSockets(io) {
   io.on('connection', (socket) => {
     console.log("🔌 Agent connecté:", socket.id);
 
-    socket.on('agent_connected', ({ userId }) => {
+    socket.on('agent_connected', async ({ userId }) => {
       socket.userId = userId;
       if (!activeSockets[userId]) activeSockets[userId] = [];
       activeSockets[userId].push(socket.id);
+       // Sécurité : ferme toute session restée "ouverte" avant d'en créer une nouvelle
+  await closeSessionForce(userId);
       console.log(`✅ Agent ${userId} lié au socket ${socket.id}`);
     });
 
