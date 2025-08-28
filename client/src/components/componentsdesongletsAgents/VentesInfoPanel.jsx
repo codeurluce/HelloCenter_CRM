@@ -191,9 +191,9 @@ const handleUpdateStatus = async (saleId, newStatus, motif = null) => {
   };
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="p-6 bg-gray-50 min-h-screen">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900">
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">
           Historique des ventes
         </h2>
         <button

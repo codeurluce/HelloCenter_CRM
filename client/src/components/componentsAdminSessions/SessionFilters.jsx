@@ -23,7 +23,7 @@ export default function SessionFilters({
     <div className="flex flex-wrap items-center gap-2 mb-4">
       <input
         type="text"
-        placeholder="Rechercher (nom, email, univers)"
+        placeholder="Rechercher par agent"
         value={q}
         onChange={(e) => {
           setQ(e.target.value);
@@ -46,6 +46,8 @@ export default function SessionFilters({
           </option>
         ))}
       </select>
+
+
     </div>
   );
 }

@@ -151,7 +151,7 @@ export default function AdminLiveSessions() {
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-      <h2 className="text-2xl font-bold mb-4">👥 Suivi en live des agents</h2>
+      <h2 className="text-2xl font-bold mb-4"> Suivi en live des agents</h2>
       <div className="flex items-center mb-4">
         <SessionFilters
           q={q}
