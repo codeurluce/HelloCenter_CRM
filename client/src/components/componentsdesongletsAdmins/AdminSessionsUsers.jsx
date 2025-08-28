@@ -151,8 +151,16 @@ export default function AdminLiveSessions() {
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold">👥 Suivi en live des agents</h2>
+      <h2 className="text-2xl font-bold mb-4">👥 Suivi en live des agents</h2>
+      <div className="flex items-center mb-4">
+        <SessionFilters
+          q={q}
+          setQ={setQ}
+          sessionStatusFilter={sessionStatusFilter}
+          setSessionStatusFilter={setSessionStatusFilter}
+          onResetPage={() => { }}
+        />
+        <div className="flex-1" /> {/* Ceci pousse le bouton à droite */}
         <button
           onClick={() => setShowExport(true)}
           className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
@@ -161,25 +169,15 @@ export default function AdminLiveSessions() {
         </button>
       </div>
 
-      <div className="mb-4">
-        <SessionFilters
-          q={q}
-          setQ={setQ}
-          sessionStatusFilter={sessionStatusFilter}
-          setSessionStatusFilter={setSessionStatusFilter}
-          onResetPage={() => {}}
-        />
-      </div>
-
-      <SessionsTable 
-      sessions={filteredAgents} 
-      loading={loading} 
-      refresh={fetchAgents} 
+      <SessionsTable
+        sessions={filteredAgents}
+        loading={loading}
+        refresh={fetchAgents}
       />
 
       {showExport && (
         <ExportModal
-        isOpen={showExport}  
+          isOpen={showExport}
           agents={filteredAgents}
           onExport={handleExport}
           onClose={() => setShowExport(false)}

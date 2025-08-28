@@ -29,12 +29,12 @@ const STATUS_CONFIG = [
 export default function SessionAgentDetailsModal({ agent, onClose }) {
     const [liveCounters, setLiveCounters] = useState({});
     const [connectionTimes, setConnectionTimes] = useState({});
-    
+
     const formatConnectionTime = (datetime) => {
-    if (!datetime) return "--:--:--";
-    const d = new Date(datetime);
-    return isNaN(d.getTime()) ? "--:--:--" : d.toLocaleTimeString();
-};
+        if (!datetime) return "--:--:--";
+        const d = new Date(datetime);
+        return isNaN(d.getTime()) ? "--:--:--" : d.toLocaleTimeString();
+    };
 
     useEffect(() => {
         const fetchConnectionTimes = async () => {
@@ -131,10 +131,10 @@ export default function SessionAgentDetailsModal({ agent, onClose }) {
                                 Informations session
                             </h3>
                             <Detail
-    label="Heure de connexion"
-    value={formatConnectionTime(connectionTimes.first_connection)}
-    icon={<Clock size={18} className="text-gray-600" />}
-/>
+                                label="Heure de connexion"
+                                value={formatConnectionTime(connectionTimes.first_connection)}
+                                icon={<Clock size={18} className="text-gray-600" />}
+                            />
                             <Detail label="Statut actuel" value={agent.statut_actuel || "—"} icon={<CheckCircle2 size={18} className="text-blue-600" />} />
                             <Detail label="Présence totale" value={formatTime(totalPresence)} icon={<Clock size={18} className="text-gray-500" />} />
                             {totalPauses > 0 && (
@@ -145,10 +145,10 @@ export default function SessionAgentDetailsModal({ agent, onClose }) {
                                 />
                             )}
                             <Detail
-    label="Heure de déconnexion"
-    value={formatConnectionTime(connectionTimes.last_disconnection)}
-    icon={<LogOut size={18} className="text-gray-600" />}
-/>
+                                label="Heure de déconnexion"
+                                value={formatConnectionTime(connectionTimes.last_disconnection)}
+                                icon={<LogOut size={18} className="text-gray-600" />}
+                            />
                         </div>
 
                         {/* Colonne droite : temps par statut */}
