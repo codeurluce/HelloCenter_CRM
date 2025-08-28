@@ -11,6 +11,7 @@ import AdminSessionsUsers from '../components/componentsdesongletsAdmins/AdminSe
 import socket  from '../socket.js';
 import useAgentFiches from '../api/useAgentFiches.js';
 import axiosInstance from '../api/axiosInstance.js';
+import VentesInfoPanel from '../components/componentsdesongletsAgents/VentesInfoPanel.jsx';
 
 
 
@@ -47,7 +48,7 @@ const AdminDashboard = () => {
           <main className="flex-1 p-6 bg-gray-100 overflow-auto">
             {activeItem === 'dashboard' && <p> tableau de bord de l'administrateur</p>             }
             {activeItem === 'activité' && <AgentInfoPanel {...timersData} userId={user?.id} />}
-            {activeItem === 'sales' && <p> doit contenir les ventes de tous les agents </p>}
+            {activeItem === 'sales' && <VentesInfoPanel setActiveItem={setActiveItem} />}
             {activeItem === 'files' && <p> doit contenir les fichiers des agnets</p>}
             {activeItem === 'sessions' && <AdminSessionsUsers />}
             {activeItem === 'administration' && <AdministrationUsers />}

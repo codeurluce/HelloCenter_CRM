@@ -72,6 +72,21 @@ ORDER BY date;
   }
 };
 
+exports.getAllSales = async (req, res) => {
+  try{
+    const result = await db.query(
+      `SELECT *
+      FROM sales
+      ORDER BY created_at DESC`
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Erreur getSales:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+}
+
+
 // Export pour recuperer les ventes dans la base de données de l'agent connecté
 exports.getSales = async (req, res) => {
   try {

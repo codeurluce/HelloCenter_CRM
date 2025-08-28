@@ -1,5 +1,7 @@
 import React from 'react';
 import { Search, Filter, Eye, Edit, Trash2 } from 'lucide-react';
+import { BadgeCheck, X as BadgeX } from 'lucide-react';
+import Swal from 'sweetalert2';
 
 const FiltreSalesList = ({
   sales,
@@ -12,7 +14,9 @@ const FiltreSalesList = ({
   onDeleteSale,
   onViewSale,
   onEditSale,
-  getStatusText
+  onUpdateStatus,
+  getStatusText,
+  isAdmin 
 }) => {
 
   // Filtrage par date
@@ -188,6 +192,65 @@ const FiltreSalesList = ({
                         onClick={() => onDeleteSale(sale.id)}>
                         <Trash2 className="w-4 h-4 text-red-500" />
                       </button>
+
+
+                      {/* ✅ Boutons admin visibles SEULEMENT si onUpdateStatus est fourni */}
+                      {isAdmin && onUpdateStatus && (
+  <>
+    <button
+      className="p-1 hover:bg-gray-100 rounded transition-colors"
+      title="Marquer comme payée"
+      onClick={() => {
+        Swal.fire({
+          title: 'Confirmer',
+          text: 'Voulez-vous vraiment marquer cette vente comme payée ?',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#22c55e',
+          cancelButtonColor: '#ef4444',
+          confirmButtonText: 'Oui, payer',
+          cancelButtonText: 'Fermer'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            onUpdateStatus(sale.id, "validated");
+            Swal.fire('Payée !', 'La vente a été marquée comme payée.', 'success');
+          }
+        });
+      }}
+    >
+      <BadgeCheck className="w-4 h-4 text-green-500" />
+    </button>
+
+    <button
+      className="p-1 hover:bg-gray-100 rounded transition-colors"
+      title="Annuler la vente"
+      onClick={async () => {
+        const { value: motif } = await Swal.fire({
+          title: 'Annuler cette vente',
+          input: 'textarea',
+          inputPlaceholder: 'Motif de l’annulation...',
+          text: 'Voulez-vous vraiment annuler cette vente ?',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#22c55e',
+          cancelButtonColor: '#ef4444',
+          confirmButtonText: 'Oui, annuler',
+          cancelButtonText: 'Fermer',
+          inputValidator: (value) => {
+            if (!value) return 'Vous devez renseigner un motif !';
+          }
+        });
+
+        if (motif) {
+          onUpdateStatus(sale.id, "cancelled", motif);
+          Swal.fire('Annulée !', 'La vente a été annulée.', 'success');
+        }
+      }}
+    >
+      <BadgeX className="w-4 h-4 text-red-500" />
+    </button>
+  </>
+)}
                     </div>
                   </td>
                 </tr>
