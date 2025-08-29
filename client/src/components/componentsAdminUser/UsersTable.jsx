@@ -24,6 +24,7 @@ export default function UsersTable({
   limit,
   setLimit,
   onViewAgent,
+  onRefresh
 }) {
   const Badge = ({ children, className = "" }) => (
     <span
@@ -34,18 +35,26 @@ export default function UsersTable({
   );
 
   return (
-    <div className="bg-white rounded-xl shadow border border-gray-100 overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="min-w-full text-sm">
-          <thead className="bg-gray-50 text-gray-600">
+    <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm bg-white">
+      <div className="flex justify-between items-center p-3 border-b bg-gray-50">
+              <button
+                onClick={onRefresh}
+                className="flex items-center gap-2 py-1 px-3 rounded-md border border-blue-500 text-blue-600 hover:bg-blue-100 transition"
+              >
+                <RefreshCw size={16} /> Rafraîchir
+              </button>
+            </div>
+
+        <table className="w-full border-collapse">
+          <thead className="bg-blue-50">
             <tr>
-              <th className="text-left px-4 py-3 font-medium">Nom</th>
-              <th className="text-left px-4 py-3 font-medium">Prénom</th>
-              <th className="text-left px-4 py-3 font-medium">Email</th>
-              <th className="text-left px-4 py-3 font-medium">Rôle</th>
-              <th className="text-left px-4 py-3 font-medium">Univers</th>
-              <th className="text-left px-4 py-3 font-medium">Statut Compte</th>
-              <th className="text-right px-4 py-3 font-medium">Actions</th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Nom</th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Prénom</th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Email</th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Rôle</th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Univers</th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Statut Compte</th>
+              <th className="px-6 py-3 text-center text-sm font-semibold text-blue-700">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -64,12 +73,11 @@ export default function UsersTable({
               </tr>
             ) : (
               pageData.map((u) => (
-                <tr key={u.id} className="border-t last:border-b-0 hover:bg-gray-50">
+                <tr key={u.id} className="border-t last:border-b-0 hover:bg-blue-50">
                   <td className="px-4 py-3 font-medium text-gray-900">{u.lastname}</td>
                   <td className="px-4 py-3 font-medium text-gray-900">{u.firstname}</td>
 
                   <td className="px-4 py-3 flex items-center gap-2">
-                    <Mail className="w-4 h-4 text-gray-400" />
                     {u.email}
                   </td>
 
@@ -79,8 +87,8 @@ export default function UsersTable({
                         u.role === "Admin"
                           ? "bg-red-100 text-red-700"
                           : u.role === "Manager"
-                          ? "bg-purple-100 text-purple-700"
-                          : "bg-blue-100 text-blue-700"
+                            ? "bg-purple-100 text-purple-700"
+                            : "bg-blue-100 text-blue-700"
                       }
                     >
                       {u.role}
@@ -88,7 +96,6 @@ export default function UsersTable({
                   </td>
 
                   <td className="px-4 py-3 flex items-center gap-2">
-                    <Briefcase className="w-4 h-4 text-gray-400" />
                     {u.profil || "—"}
                   </td>
 
@@ -155,18 +162,16 @@ export default function UsersTable({
                           onClick={() => toggleActive(u)}
                           aria-pressed={u.is_active}
                           title={u.is_active ? "Désactiver le compte" : "Activer le compte"}
-                          className={`px-3 py-1.5 rounded-lg border transition-transform transform focus:outline-none focus:ring-2 focus:ring-offset-1 ${
-                            u.is_active
+                          className={`px-3 py-1.5 rounded-lg border transition-transform transform focus:outline-none focus:ring-2 focus:ring-offset-1 ${u.is_active
                               ? "text-red-600 border-red-100 hover:bg-red-600 hover:text-white hover:scale-105"
                               : "text-green-600 border-green-100 hover:bg-green-600 hover:text-white hover:scale-105"
-                          }`}
+                            }`}
                         >
                           <Power className="w-4 h-4" />
                         </button>
                         <span
-                          className={`pointer-events-none absolute -top-9 right-0 hidden group-hover:block text-xs whitespace-nowrap px-2 py-1 rounded shadow-lg ${
-                            u.is_active ? "bg-red-600 text-white" : "bg-emerald-600 text-white"
-                          }`}
+                          className={`pointer-events-none absolute -top-9 right-0 hidden group-hover:block text-xs whitespace-nowrap px-2 py-1 rounded shadow-lg ${u.is_active ? "bg-red-600 text-white" : "bg-emerald-600 text-white"
+                            }`}
                         >
                           {u.is_active ? "Désactiver le compte" : "Activer le compte"}
                         </span>
@@ -178,7 +183,7 @@ export default function UsersTable({
             )}
           </tbody>
         </table>
-      </div>
+      
 
       {/* Pagination */}
       <div className="flex flex-wrap items-center justify-between gap-3 p-3 border-t bg-gray-50">

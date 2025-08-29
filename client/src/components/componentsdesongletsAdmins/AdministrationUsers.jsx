@@ -171,9 +171,9 @@ export default function AdministrationUsers() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="p-6 bg-gray-50 min-h-screen">
       {/* Titre de section */}
-      <h2 className="text-xl font-semibold">Gestion des utilisateurs</h2>
+      <h2 className="text-2xl font-bold mb-4">Gestion des utilisateurs</h2>
 
       {/* Barre de recherche/filtre + bouton créer */}
       <SearchFilterBar
@@ -208,6 +208,7 @@ export default function AdministrationUsers() {
         openEdit={(agent) => openEdit(agent)}
         resetPassword={resetPassword}
         onViewAgent={(agent) => setSelectedAgent(agent)}
+        onRefresh={fetchUsers}
       />
 
       {selectedAgent && (

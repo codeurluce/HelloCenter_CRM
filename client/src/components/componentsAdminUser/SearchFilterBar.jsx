@@ -22,7 +22,7 @@ export default function SearchFilterBar({
   onResetPage,
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-2 mb-4">
+    <div className="flex flex-wrap items-center gap-2 mb-8">
       {/* Recherche */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -80,15 +80,6 @@ export default function SearchFilterBar({
   <option value="active">Actifs</option>
   <option value="inactive">Désactivés</option>
 </select>
-      {/* Rafraîchir */}
-      <button
-        onClick={onRefresh}
-        className="flex items-center gap-2 py-1 px-3 rounded-md border border-blue-500 text-blue-600 hover:bg-blue-100 transition"
-        title="Rafraîchir"
-      >
-        <RefreshCw className="w-4 h-4" />
-        Rafraîchir
-      </button>
 
       {/* Bouton créer aligné à droite */}
       <div className="ml-auto">
