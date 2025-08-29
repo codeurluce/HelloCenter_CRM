@@ -140,7 +140,7 @@ const SaleDetailsModal = ({ sale, onClose, onEdit, getStatusText }) => {
                                 }
                             />
                             {statusKey === "annule" && (
-                                <Detail label="Motif" value={sale.commentaire || "-"} />
+                                <Detail label="Motif" value={sale.cancelled_reason || "-"} />
 
                             )}
                         </div>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Eye, Pencil, Trash2, RefreshCw, Plus } from 'lucide-react';
+import { Eye, Pencil, Trash2, RefreshCw, Plus, Download } from 'lucide-react';
 import { BadgeCheck, X as BadgeX } from 'lucide-react';
 import Swal from 'sweetalert2';
 
@@ -19,7 +19,7 @@ const FiltreSalesList = ({
   isAdmin,
   onRefresh,
   loading,
-  onOpenNewSale, // 👈 bouton vient de VentesInfoPanel
+  onOpenNewSale,
 }) => {
   // --- Filtrage par date
   const filterByDate = (saleDate) => {
@@ -96,47 +96,59 @@ const FiltreSalesList = ({
     <div>
       {/* --- Barre filtres --- */}
       <div className="flex flex-wrap items-center justify-between gap-2 mb-8">
-      <div className="flex flex-wrap items-center gap-2">
-        <input
-          type="text"
-          placeholder="Rechercher client, réf, tel, mail..."
-          value={searchTerm}
-          onChange={e => setSearchTerm(e.target.value)}
-          className="pl-3 pr-3 py-2 rounded-lg border border-gray-200 w-64"
-        />
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            type="text"
+            placeholder="Rechercher client, réf, tel, mail..."
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            className="pl-3 pr-3 py-2 rounded-lg border border-gray-200 w-64"
+          />
 
-        <select
-          value={statusFilter}
-          onChange={e => setStatusFilter(e.target.value)}
-          className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-        >
-          <option value="all">Tous les statuts</option>
-          <option value="pending">En attente</option>
-          <option value="validated">Payées</option>
-          <option value="cancelled">Annulées</option>
-        </select>
+          <select
+            value={statusFilter}
+            onChange={e => setStatusFilter(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="all">Tous les statuts</option>
+            <option value="pending">En attente</option>
+            <option value="validated">Payées</option>
+            <option value="cancelled">Annulées</option>
+          </select>
 
-        <select
-          value={dateFilter}
-          onChange={e => setDateFilter(e.target.value)}
-          className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          <select
+            value={dateFilter}
+            onChange={e => setDateFilter(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="all">Toutes les dates</option>
+            <option value="today">Aujourd'hui</option>
+            <option value="week">Cette semaine</option>
+            <option value="month">Ce mois</option>
+          </select>
+        </div>
+
+        {/* --- Bouton à droite --- */}
+        <div className="flex-1" /> 
+        {isAdmin && (
+        <button
+          onClick={() => setShowExport(true)}
+          className="flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 gap-2 rounded-lg transition-colors"
         >
-          <option value="all">Toutes les dates</option>
-          <option value="today">Aujourd'hui</option>
-          <option value="week">Cette semaine</option>
-          <option value="month">Ce mois</option>
-        </select>
-      </div>
-      {/* --- Bouton à droite --- */}
+          <Download size={16} /> Exporter
+        </button>
+        )}
+
+
         <button
           onClick={onOpenNewSale}
-          className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+          className="flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 space-x-2 rounded-lg transition-colors"
         >
           <Plus className="w-4 h-4" />
           <span>Nouvelle vente</span>
         </button>
       </div>
-      
+
       <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm bg-white">
         <div className="flex justify-between items-center p-3 border-b bg-gray-50">
           <button
