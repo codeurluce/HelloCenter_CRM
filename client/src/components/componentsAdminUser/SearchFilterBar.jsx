@@ -71,15 +71,15 @@ export default function SearchFilterBar({
         ))}
       </select>
 
-     <select
-  value={statusFilter}
-  onChange={(e) => { setStatusFilter(e.target.value); onResetPage?.();}}
-  className="px-3 py-2 rounded-lg border border-gray-200 focus:outline-none"
->
-  <option value="">Tous les status</option>
-  <option value="active">Actifs</option>
-  <option value="inactive">Désactivés</option>
-</select>
+      <select
+        value={statusFilter}
+        onChange={(e) => { setStatusFilter(e.target.value); onResetPage?.(); }}
+        className="px-3 py-2 rounded-lg border border-gray-200 focus:outline-none"
+      >
+        <option value="">Tous les status</option>
+        <option value="active">Actifs</option>
+        <option value="inactive">Désactivés</option>
+      </select>
 
       {/* Bouton créer aligné à droite */}
       <div className="ml-auto">

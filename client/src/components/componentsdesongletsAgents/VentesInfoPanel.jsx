@@ -200,20 +200,11 @@ const VentesInfoPanel = ({ agentId }) => {
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-      <div className="flex items-center justify-between">
+      
         <h2 className="text-2xl font-bold text-gray-900 mb-4">
           Historique des ventes
         </h2>
-        <button
-          onClick={handleOpenSelector}
-          className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Nouvelle vente</span>
-        </button>
-      </div>
-
-      <FiltreSalesList
+<FiltreSalesList
         sales={sales}
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
@@ -227,8 +218,9 @@ const VentesInfoPanel = ({ agentId }) => {
         onEditSale={handleEditSale}
         isAdmin={isAdmin}
         getStatusText={getStatusText}
-        onRefresh={fetchSales}   // 👈 passage direct
-        loading={loading}        // 👈 on passe l’état pour l’affichage
+        onRefresh={fetchSales}   
+        loading={loading} 
+        onOpenNewSale={handleOpenSelector}
       />
 
       <SaleDetailsModal

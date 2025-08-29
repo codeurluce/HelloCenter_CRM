@@ -1,5 +1,5 @@
 import React from 'react';
-import { Eye, Pencil, Trash2, RefreshCw } from 'lucide-react';
+import { Eye, Pencil, Trash2, RefreshCw, Plus } from 'lucide-react';
 import { BadgeCheck, X as BadgeX } from 'lucide-react';
 import Swal from 'sweetalert2';
 
@@ -18,9 +18,9 @@ const FiltreSalesList = ({
   getStatusText,
   isAdmin,
   onRefresh,
-  loading
+  loading,
+  onOpenNewSale, // 👈 bouton vient de VentesInfoPanel
 }) => {
-
   // --- Filtrage par date
   const filterByDate = (saleDate) => {
     if (!saleDate) return false;
@@ -60,7 +60,7 @@ const FiltreSalesList = ({
   };
 
   // --- Filtrage global
-  const filteredSales = sales.filter(sale => {
+  const filteredSales = sales.filter((sale) => {
     const searchFields = [
       sale.client_name || '',
       sale.client_firstname || '',
@@ -77,10 +77,10 @@ const FiltreSalesList = ({
       sale.partenaire || '',
       sale.etat_contrat || '',
       sale.status || '',
-      sale.energie || ''
+      sale.energie || '',
     ];
 
-    const matchesSearch = searchFields.some(field =>
+    const matchesSearch = searchFields.some((field) =>
       field.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
@@ -95,7 +95,8 @@ const FiltreSalesList = ({
   return (
     <div>
       {/* --- Barre filtres --- */}
-      <div className="flex flex-wrap items-center gap-2 mb-8">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-8">
+      <div className="flex flex-wrap items-center gap-2">
         <input
           type="text"
           placeholder="Rechercher client, réf, tel, mail..."
@@ -126,7 +127,16 @@ const FiltreSalesList = ({
           <option value="month">Ce mois</option>
         </select>
       </div>
-
+      {/* --- Bouton à droite --- */}
+        <button
+          onClick={onOpenNewSale}
+          className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+        >
+          <Plus className="w-4 h-4" />
+          <span>Nouvelle vente</span>
+        </button>
+      </div>
+      
       <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm bg-white">
         <div className="flex justify-between items-center p-3 border-b bg-gray-50">
           <button
