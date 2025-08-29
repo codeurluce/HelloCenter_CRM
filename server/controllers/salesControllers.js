@@ -73,19 +73,21 @@ ORDER BY date;
 };
 
 exports.getAllSales = async (req, res) => {
-  try{
+  try {
     const result = await db.query(
-      `SELECT *
-      FROM sales
-      ORDER BY created_at DESC`
+      `SELECT s.*, 
+              u.firstname AS agent_firstname, 
+              u.lastname AS agent_name
+       FROM sales s
+       LEFT JOIN users u ON u.id = s.agent_id
+       ORDER BY s.created_at DESC`
     );
     res.json(result.rows);
   } catch (error) {
     console.error('Erreur getSales:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
-}
-
+};
 
 // Export pour recuperer les ventes dans la base de données de l'agent connecté
 exports.getSales = async (req, res) => {

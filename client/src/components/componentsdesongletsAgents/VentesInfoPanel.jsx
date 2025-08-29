@@ -22,24 +22,32 @@ const VentesInfoPanel = ({ agentId }) => {
   const [dateFilter, setDateFilter] = useState("all");
   const [saleToView, setSaleToView] = useState(null);
   const [saleToEdit, setSaleToEdit] = useState(null);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const role = localStorage.getItem("role");
+  const isAdminRole = role === "Admin";
+  const [isAdmin, setIsAdmin] = useState(isAdminRole);
 
   // Charger les ventes au montage
+  const fetchSales = async () => {
+    setLoading(true);
+    try {
+      const endpoint = isAdminRole ? "/sales/admin" : "/sales";
+      const response = await axiosInstance.get(endpoint);
+
+      // ✅ force un nouveau tableau pour obliger React à re-render
+      setSales([...response.data]);
+    } catch (error) {
+      console.error("Erreur chargement ventes:", error);
+      toast.error("Impossible de récupérer les ventes");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Chargement initial
   useEffect(() => {
-    const role = localStorage.getItem("role");
-    setIsAdmin(role === "Admin");
-
-    const fetchSales = async () => {
-      try {
-        const endpoint = role === "Admin" ? "/sales/admin" : "/sales";
-        const response = await axiosInstance.get(endpoint);
-        setSales(response.data);
-      } catch (error) {
-        console.error("Erreur chargement ventes:", error);
-        toast.error("Impossible de récupérer les ventes");
-      }
-    };
-
+    setIsAdmin(isAdminRole);
     fetchSales();
   }, []);
 
@@ -89,7 +97,7 @@ const VentesInfoPanel = ({ agentId }) => {
     setSaleToEdit(null);
   };
 
-  // Création / modification de vente
+  // Création / modification
   const handleSubmitSale = async (data) => {
     try {
       let response;
@@ -137,45 +145,45 @@ const VentesInfoPanel = ({ agentId }) => {
     }
   };
 
-  // Mise à jour du statut (admin)
-const handleUpdateStatus = async (saleId, newStatus, motif = null) => {
-  if (!isAdmin) return;
+  // Mise à jour statut (admin)
+  const handleUpdateStatus = async (saleId, newStatus, motif = null) => {
+    if (!isAdmin) return;
 
-  // Si annulation sans motif, demander
-  if (newStatus === "cancelled" && !motif) {
-    const { value } = await Swal.fire({
-      title: "Annuler la vente",
-      input: "textarea",
-      inputLabel: "Motif de l’annulation",
-      inputPlaceholder: "Ex: Client a changé d’avis",
-      showCancelButton: true,
-      confirmButtonText: "Oui, annuler",
-      cancelButtonText: "Fermer",
-      inputValidator: (value) => !value && "Vous devez renseigner un motif !",
-    });
-    if (!value) return;
-    motif = value;
-  }
+    if (newStatus === "cancelled" && !motif) {
+      const { value } = await Swal.fire({
+        title: "Annuler la vente",
+        input: "textarea",
+        inputLabel: "Motif de l’annulation",
+        inputPlaceholder: "Ex: Client a changé d’avis",
+        showCancelButton: true,
+        confirmButtonText: "Oui, annuler",
+        cancelButtonText: "Fermer",
+        inputValidator: (value) => !value && "Vous devez renseigner un motif !",
+      });
+      if (!value) return;
+      motif = value;
+    }
 
-  try {
-    const response = await axiosInstance.put(`/sales/${saleId}/change-status`, {
-      status: newStatus,
-      motif
-    });
+    try {
+      const response = await axiosInstance.put(`/sales/${saleId}/change-status`, {
+        status: newStatus,
+        motif,
+      });
 
-    // ✅ Remplacer la vente exacte dans state
-    setSales(prev => prev.map(s => s.id === saleId ? response.data : s));
+      setSales((prev) =>
+        prev.map((s) => (s.id === saleId ? response.data : s))
+      );
 
-    toast.success(
-      newStatus === "cancelled"
-        ? "✅ Vente annulée avec succès"
-        : "✅ Statut mis à jour"
-    );
-  } catch (error) {
-    console.error(error);
-    toast.error("❌ Impossible de mettre à jour le statut");
-  }
-};
+      toast.success(
+        newStatus === "cancelled"
+          ? "✅ Vente annulée avec succès"
+          : "✅ Statut mis à jour"
+      );
+    } catch (error) {
+      console.error(error);
+      toast.error("❌ Impossible de mettre à jour le statut");
+    }
+  };
 
   const getStatusText = (status) => {
     switch (status) {
@@ -219,6 +227,8 @@ const handleUpdateStatus = async (saleId, newStatus, motif = null) => {
         onEditSale={handleEditSale}
         isAdmin={isAdmin}
         getStatusText={getStatusText}
+        onRefresh={fetchSales}   // 👈 passage direct
+        loading={loading}        // 👈 on passe l’état pour l’affichage
       />
 
       <SaleDetailsModal
