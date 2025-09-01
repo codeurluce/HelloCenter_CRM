@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Eye, Pencil, Trash2, RefreshCw, Plus, Download } from 'lucide-react';
 import { BadgeCheck, X as BadgeX } from 'lucide-react';
 import Swal from 'sweetalert2';
+import ExportModal from '../componentsAdminVentes/ExportModal';
 
 const FiltreSalesList = ({
   sales,
@@ -20,7 +21,10 @@ const FiltreSalesList = ({
   onRefresh,
   loading,
   onOpenNewSale,
+  
 }) => {
+  
+  const [showExport, setShowExport] = useState(false);
   // --- Filtrage par date
   const filterByDate = (saleDate) => {
     if (!saleDate) return false;
@@ -312,6 +316,15 @@ const FiltreSalesList = ({
           </table>
         </div>
       </div>
+
+
+      {showExport && (
+  <ExportModal
+    isOpen={showExport}
+    sales={filteredSales}   // ✅ on passe la liste filtrée
+    onClose={() => setShowExport(false)}
+  />
+)}
     </div>
   );
 };
