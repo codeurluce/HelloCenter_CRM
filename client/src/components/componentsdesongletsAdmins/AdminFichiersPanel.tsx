@@ -26,7 +26,6 @@ interface AdminFichiersPanelProps {
   onCancelFiche: (id: number) => void;
   onCloseFiche: (id: number, data: ClotureData) => void;
   onProgramRdv: (id: number, date: string, commentaire: string) => void;
-  onAssignFiche: (ficheId: number, agentId: number) => void;
   onImportFiches: (fiches: Partial<Fiche>[]) => void;
   onDeleteFiche: (id: number) => void;
   onRefresh?: () => void;
@@ -40,7 +39,6 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
   onCancelFiche,
   onCloseFiche,
   onProgramRdv,
-  onAssignFiche,
   onImportFiches,
   onDeleteFiche,
   onRefresh,
@@ -58,24 +56,19 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
     currentAgentId: number | null;
   }>({ isOpen: false, ficheId: null, currentAgentId: null });
 
-  // Onglets avec clés correspondant exactement à univers
+  // Onglets univers
   const tabs = [
     { key: 'Energie', label: 'Énergie' },
     { key: 'OffreMobile', label: 'Box Internet' },
   ];
-
-  // Onglet actif initialisé au premier univers
   const [activeTab, setActiveTab] = useState(tabs[0].key);
-
-  // Filtre actif par onglet univers
   const [tabFilters, setTabFilters] = useState<{ [key: string]: AdminFilterType }>({
     'Energie': 'nouvelles',
     'OffreMobile': 'nouvelles',
   });
-
   const activeFilter = tabFilters[activeTab];
 
-  // Charger les fiches
+  // Fetch fiches
   const fetchFiches = async () => {
     try {
       setLoading(true);
@@ -87,36 +80,18 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
       setLoading(false);
     }
   };
+  useEffect(() => { fetchFiches(); }, []);
 
-  useEffect(() => {
-    fetchFiches();
-  }, []);
-
-  // Filtrer selon univers actif exact (activeTab) + statut + recherche
+  // Filtrage fiches
   const filteredFiches = useMemo(() => {
     let result = fiches.filter(f => f.univers === activeTab);
-
     switch (activeFilter) {
-      case 'nouvelles':
-        result = result.filter(f => f.statut === 'nouvelle' && !f.assigned_to);
-        break;
-      case 'assignees':
-        result = result.filter(f => f.statut === 'nouvelle' && f.assigned_to);
-        break;
-      case 'en_cours':
-        result = result.filter(f => f.statut === 'en_traitement');
-        break;
-      case 'rendez_vous':
-        result = result.filter(f => f.statut === 'rendez_vous');
-        break;
-      case 'cloturees':
-        result = result.filter(f => f.statut === 'cloturee');
-        break;
-      case 'toutes':
-      default:
-        break;
+      case 'nouvelles': result = result.filter(f => f.statut === 'nouvelle' && !f.assigned_to); break;
+      case 'assignees': result = result.filter(f => f.statut === 'nouvelle' && f.assigned_to); break;
+      case 'en_cours': result = result.filter(f => f.statut === 'en_traitement'); break;
+      case 'rendez_vous': result = result.filter(f => f.statut === 'rendez_vous'); break;
+      case 'cloturees': result = result.filter(f => f.statut === 'cloturee'); break;
     }
-
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       result = result.filter(f =>
@@ -127,14 +102,12 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
         (f.univers || '').toLowerCase().includes(term)
       );
     }
-
     return result;
   }, [fiches, activeFilter, searchTerm, activeTab]);
 
-  // Compteurs spécifiques à l'univers actif
+  // Compteurs
   const counters = useMemo(() => {
     const fichesByUnivers = fiches.filter(f => f.univers === activeTab);
-
     return {
       nouvelles: fichesByUnivers.filter(f => f.statut === 'nouvelle' && !f.assigned_to).length,
       assignees: fichesByUnivers.filter(f => f.statut === 'nouvelle' && f.assigned_to).length,
@@ -145,50 +118,40 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
     };
   }, [fiches, activeTab]);
 
-  // Gestion du sélecteur batch
+  // Batch select
   const handleBatchSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value;
-    const newSize = parseInt(value, 10);
-    setBatchSize(isNaN(newSize) ? '' : newSize);
+    const value = parseInt(e.target.value, 10);
+    setBatchSize(isNaN(value) ? '' : value);
+    if (!isNaN(value)) setSelectedFiches(filteredFiches.slice(0, value).map(f => f.id));
+    else setSelectedFiches([]);
+  };
 
-    if (!isNaN(newSize)) {
-      setSelectedFiches(filteredFiches.slice(0, newSize).map(f => f.id));
-    } else {
-      setSelectedFiches([]);
+  // Assign modal
+  const handleAssignFiche = (ficheId: number, currentAgentId?: number) => {
+    setAssignModal({ isOpen: true, ficheId, currentAgentId: currentAgentId || null });
+  };
+
+  const handleAssignSubmit = async (agentId: number) => {
+    try {
+      const ficheIds = assignModal.ficheId ? [assignModal.ficheId] : selectedFiches;
+      const res = await axiosInstance.put('/files/assigned_To', { ficheIds, agentId });
+      console.log(res.data.message);
+
+      // Mise à jour locale
+      setFiches(prev =>
+        prev.map(f =>
+          ficheIds.includes(f.id) ? { ...f, assigned_to: agentId, statut: 'nouvelle' } : f
+        )
+      );
+
+      setSelectedFiches(prev => prev.filter(id => !ficheIds.includes(id)));
+      setAssignModal({ isOpen: false, ficheId: null, currentAgentId: null });
+    } catch (err) {
+      console.error('Erreur assignation:', err);
     }
   };
 
-  // Classes et icônes des filtres
-  const getFilterClass = (filter: AdminFilterType) => {
-    const base = 'flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 ';
-    return base + (activeFilter === filter
-      ? 'bg-blue-600 text-white shadow-md'
-      : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 hover:border-gray-300');
-  };
-
-  const getFilterIcon = (filter: AdminFilterType) => {
-    switch (filter) {
-      case 'nouvelles': return <FileText size={16} />;
-      case 'assignees': return <UserCheck size={16} />;
-      case 'en_cours': return <Clock size={16} />;
-      case 'rendez_vous': return <CalendarClock size={16} />;
-      case 'cloturees': return <CheckCircle size={16} />;
-      default: return <Filter size={16} />;
-    }
-  };
-
-  const getFilterLabel = (filter: AdminFilterType) => {
-    switch (filter) {
-      case 'nouvelles': return 'Nouvelles';
-      case 'assignees': return 'Assignées';
-      case 'en_cours': return 'En cours';
-      case 'rendez_vous': return 'Rendez-vous';
-      case 'cloturees': return 'Clôturées';
-      default: return 'Toutes';
-    }
-  };
-
-  // Badge statut
+  // Statut badge
   const getStatusBadge = (statut: string, assigned_to?: number) => {
     let bgColor, textColor, label;
     if (statut === 'nouvelle' && !assigned_to) { bgColor='bg-blue-100'; textColor='text-blue-800'; label='Nouvelle'; }
@@ -200,25 +163,10 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
     return <span className={`px-2 py-1 rounded-full text-xs font-semibold ${bgColor} ${textColor}`}>{label}</span>;
   };
 
-  // Gestion assignation
-  const handleAssignFiche = (ficheId: number, currentAgentId?: number) => {
-    setAssignModal({ isOpen: true, ficheId, currentAgentId: currentAgentId || null });
-  };
-  const handleAssignSubmit = (agentId: number) => {
-    if (assignModal.ficheId) {
-      onAssignFiche(assignModal.ficheId, agentId);
-    } else if (selectedFiches.length > 0) {
-      selectedFiches.forEach(ficheId => onAssignFiche(ficheId, agentId));
-      setSelectedFiches([]);
-    }
-    setAssignModal({ isOpen: false, ficheId: null, currentAgentId: null });
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
-
-        {/* Header avec barre recherche + importer / exporter */}
+        {/* Header */}
         <div className="flex justify-between items-center">
           <div>
             <h2 className="text-2xl font-bold mb-4">Administration des Fiches</h2>
@@ -235,86 +183,66 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
                 className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-80"
               />
             </div>
-            <button
-              onClick={() => setShowImportModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm"
-            >
+            <button onClick={() => setShowImportModal(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm">
               <Upload size={18} /> Importer
             </button>
-            <button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium shadow-sm">
-              <Download size={18} /> Exporter
-            </button>
+            <button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium shadow-sm"> 
+               <Download size={18} /> Exporter </button>
           </div>
         </div>
 
-        {/* Onglets univers */}
-        <div className="mb-24">
-          <nav className="flex space-x-2">
-            {tabs.map(tab => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={`
-                  px-6 py-3 rounded-t-xl font-medium text-sm transition-all
-                  ${activeTab === tab.key
-                    ? 'bg-white text-blue-600 shadow-md border border-b-0 border-gray-200'
-                    : 'bg-gray-100 text-gray-500 hover:text-gray-700 hover:bg-gray-200 border border-transparent'}
-                `}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </nav>
-        </div>
+        {/* Tabs */}
+        <nav className="flex space-x-2 mb-4">
+          {tabs.map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`px-6 py-3 rounded-t-xl font-medium text-sm transition-all
+                ${activeTab === tab.key
+                  ? 'bg-white text-blue-600 shadow-md border border-b-0 border-gray-200'
+                  : 'bg-gray-100 text-gray-500 hover:text-gray-700 hover:bg-gray-200 border border-transparent'}`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </nav>
 
+        {/* Fiches */}
         {!loading && (
           <div className="bg-white shadow-md rounded-b-xl border border-gray-200 p-6">
-            {/* Filtres */}
+            {/* Filters */}
             <div className="flex flex-wrap gap-3 mb-6">
               {(['nouvelles','assignees','en_cours','rendez_vous','cloturees','toutes'] as AdminFilterType[]).map(f => (
                 <button
                   key={f}
                   onClick={() => setTabFilters(prev => ({ ...prev, [activeTab]: f }))}
-                  className={getFilterClass(f)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200
+                    ${activeFilter === f ? 'bg-blue-600 text-white shadow-md' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'}`}
                 >
-                  {getFilterIcon(f)} <span>{getFilterLabel(f)}</span>
-                  <span className={`px-2 py-1 rounded-full text-xs font-bold ${activeFilter === f ? 'bg-white/20 text-white' : 'bg-blue-100 text-blue-600'}`}>
-                    {counters[f]}
-                  </span>
+                  {f} <span className="px-2 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-600">{counters[f]}</span>
                 </button>
               ))}
-              <button onClick={() => { fetchFiches(); onRefresh?.(); }} className="flex items-center gap-2 py-1 px-3 rounded-md border border-blue-500 text-blue-600 hover:bg-blue-100 transition">
+              <button onClick={fetchFiches} className="flex items-center gap-2 py-1 px-3 rounded-md border border-blue-500 text-blue-600 hover:bg-blue-100 transition">
                 <RefreshCw size={16} /> Rafraîchir
               </button>
             </div>
 
-            {/* Sélecteur batch */}
+            {/* Batch select */}
             <div className="flex items-center gap-3 mb-4">
               <label>Nombre de fiches :</label>
-              <select
-                value={batchSize}
-                onChange={handleBatchSizeChange}
-                className="px-2 py-1 border rounded"
-              >
+              <select value={batchSize} onChange={handleBatchSizeChange} className="px-2 py-1 border rounded">
                 <option value="">-- Choisir --</option>
-                <option value={10}>10</option>
-                <option value={20}>20</option>
-                <option value={30}>30</option>
-                <option value={50}>50</option>
-                <option value={100}>100</option>
+                {[5,10,20,30,50,100].map(n => <option key={n} value={n}>{n}</option>)}
               </select>
 
               {selectedFiches.length > 0 && (
-                <button
-                  onClick={() => setAssignModal({ isOpen: true, ficheId: null, currentAgentId: null })}
-                  className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium shadow-sm"
-                >
+                <button onClick={() => setAssignModal({ isOpen: true, ficheId: null, currentAgentId: null })} className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium shadow-sm">
                   <UserPlus size={18} /> Assigner {selectedFiches.length} fiches
                 </button>
               )}
             </div>
 
-            {/* Tableau */}
+            {/* Table */}
             <div className="overflow-x-auto">
               {filteredFiches.length === 0 ? (
                 <div className="text-center py-12">Aucune fiche trouvée</div>
@@ -387,6 +315,7 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
           agents={agents}
           currentAgentId={assignModal.currentAgentId}
           ficheId={assignModal.ficheId}
+          selectedFiches={selectedFiches}
         />
       </div>
     </div>

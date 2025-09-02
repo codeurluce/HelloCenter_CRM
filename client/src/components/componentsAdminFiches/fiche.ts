@@ -1,4 +1,5 @@
 export interface Fiche {
+  fiche(assigned_to: number, assigned_to_name: string | undefined): import("react").ReactNode;
   id: number;
   nom_client: string;
   prenom_client: string;

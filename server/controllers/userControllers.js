@@ -223,6 +223,31 @@ const getAllUsers = async (req, res) => {
     res.status(500).json({ message: "Erreur serveur lors de la récupération des utilisateurs" });
   }
 };
+const getAllUsersBd = async (req, res) => {
+  try {
+    if (req.user.role !== 'Admin') {
+      return res.status(403).json({ message: 'Accès refusé' });
+    }
+
+    const result = await db.query(
+      `SELECT id, firstname, lastname, email, role, is_active 
+       FROM users
+       WHERE role = 'Agent' AND is_active = true
+       ORDER BY lastname ASC`
+    );
+
+    const agents = result.rows.map(u => ({
+      id: u.id,
+      name: `${u.firstname} ${u.lastname}`,
+      email: u.email,
+    }));
+
+    res.json(agents);
+  } catch (error) {
+    console.error("Erreur récupération agents:", error);
+    res.status(500).json({ message: "Erreur serveur lors de la récupération des agents" });
+  }
+};
 
 // Activer/Désactiver un user
 const toggleActiveUser = async (req, res) => {
@@ -348,4 +373,5 @@ module.exports = {
   resetPasswordByAdmin,
   connectAgent,
   disconnectAgent,
+  getAllUsersBd,
 };

@@ -1,159 +1,210 @@
-import React, { useState } from 'react';
-import { X, UserPlus, User } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { X, UserPlus, Search } from 'lucide-react';
+import axiosInstance from '../../api/axiosInstance';
 
 interface Agent {
   id: number;
   name: string;
-  email: string;
 }
 
 interface AssignModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAssign: (agentId: number) => void;
-  agents: Agent[];
-  currentAgentId: number | null;
+  onAssign: (agentId: number) => void; 
   ficheId: number | null;
+  agents: Agent[];
+  currentAgentId?: number | null;
+  selectedFiches?: number[];
 }
-
 const AssignModal: React.FC<AssignModalProps> = ({
   isOpen,
   onClose,
   onAssign,
-  agents,
-  currentAgentId,
   ficheId,
 }) => {
-  const [selectedAgentId, setSelectedAgentId] = useState<number | null>(currentAgentId);
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [search, setSearch] = useState('');
+  const [selectedAgentId, setSelectedAgentId] = useState<number | null>(null);
+  const [confirmStep, setConfirmStep] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (selectedAgentId) {
-      onAssign(selectedAgentId);
+  // Reset à l'ouverture
+  useEffect(() => {
+    if (isOpen) {
+      setSearch('');
+      setSelectedAgentId(null);
+      setConfirmStep(false);
+      setSubmitting(false);
     }
-  };
+  }, [isOpen]);
 
-  const handleClose = () => {
-    setSelectedAgentId(currentAgentId);
-    onClose();
-  };
+  // Récupération des agents
+  useEffect(() => {
+    const fetchAgents = async () => {
+      try {
+        const res = await axiosInstance.get('/users_bd');
+        setAgents(res.data); // backend déjà filtré et formaté
+      } catch (error) {
+        console.error("Erreur chargement agents:", error);
+      }
+    };
+    fetchAgents();
+  }, []);
+
+  const filteredAgents = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return agents;
+    return agents.filter(a =>
+      a.name.toLowerCase().includes(q)
+    );
+  }, [agents, search]);
+
+  const selectedAgent = useMemo(
+    () => agents.find(a => a.id === selectedAgentId) || null,
+    [agents, selectedAgentId]
+  );
 
   const getInitials = (name: string) => {
-    const parts = name.trim().split(' ');
+    if (!name) return '??';
+    const parts = name.trim().split(/\s+/);
     if (parts.length === 1) return parts[0][0].toUpperCase();
-    return parts[0][0].toUpperCase() + parts[1][0].toUpperCase();
+    return `${parts[0][0].toUpperCase()}${parts[1][0].toUpperCase()}`;
+  };
+
+  const handlePrimaryClick = () => {
+    if (!selectedAgentId) return;
+    setConfirmStep(true);
+  };
+
+  const handleConfirm = () => {
+    if (!selectedAgentId) return;
+    setSubmitting(true);
+    onAssign(selectedAgentId);
+    onClose();
   };
 
   if (!isOpen) return null;
 
+  const headerSubtitle = ficheId ? `Fiche N°: ${ficheId}` : `Fiches sélectionnées`;
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-        
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div>
-            <h2 className="text-xl font-bold text-gray-900">
-              {currentAgentId ? 'Réassigner la fiche' : 'Assigner la fiche'}
-            </h2>
-            <p className="text-sm text-gray-600 mt-1">
-              Fiche #{ficheId}
-            </p>
+            <h2 className="text-xl font-bold text-gray-900">Assigner des fiches</h2>
+            <p className="text-sm text-gray-600 mt-1">{headerSubtitle}</p>
           </div>
-          <button
-            onClick={handleClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          >
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
             <X size={20} className="text-gray-500" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6">
-          
-          {/* Agent actuellement assigné */}
-          {currentAgentId && (
-            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
-                  <span className="text-white font-bold">
-                    {getInitials(agents.find(a => a.id === currentAgentId)?.name || '')}
-                  </span>
-                </div>
-                <div>
-                  <div className="font-medium text-gray-900">Actuellement assignée à:</div>
-                  <div className="text-sm text-blue-700 font-semibold">
-                    {agents.find(a => a.id === currentAgentId)?.name}
+        <div className="p-6">
+          {!confirmStep ? (
+            <>
+              {/* Recherche */}
+              <div className="relative mb-4">
+                <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Rechercher un agent (nom, prenom…)"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              {/* Liste des agents */}
+              <div className="space-y-3 max-h-64 overflow-y-auto">
+                {filteredAgents.length === 0 && (
+                  <div className="text-sm text-gray-500 p-3 border border-dashed rounded-lg">
+                    Aucun agent trouvé.
                   </div>
+                )}
+                {filteredAgents.map((agent) => {
+                  const active = selectedAgentId === agent.id;
+                  return (
+                    <label
+                      key={agent.id}
+                      onClick={() => setSelectedAgentId(agent.id)}
+                      className={`flex items-center gap-4 p-4 border rounded-lg cursor-pointer transition-all duration-200 hover:bg-blue-50 ${
+                        active ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200' : 'border-gray-200'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="agent"
+                        value={agent.id}
+                        checked={active}
+                        onChange={() => setSelectedAgentId(agent.id)}
+                        className="sr-only"
+                      />
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-white ${
+                        active ? 'bg-blue-600' : 'bg-gray-400'
+                      }`}>
+                        {getInitials(agent.name)}
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-semibold text-gray-900">{agent.name}</div>
+                      </div>
+                      {active && (
+                        <div className="w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center">
+                          <div className="w-2 h-2 bg-white rounded-full"></div>
+                        </div>
+                      )}
+                    </label>
+                  );
+                })}
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3 mt-6 pt-4 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  disabled={!selectedAgentId}
+                  onClick={handlePrimaryClick}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <UserPlus size={16} />
+                  Assigner
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Étape confirmation */}
+              <div className="text-center">
+                <p className="mb-4">
+                  Voulez-vous vraiment assigner <strong>{ficheId ? '1 fiche' : 'les fiches sélectionnées'}</strong> à <strong>{selectedAgent?.name}</strong> ?
+                </p>
+                <div className="flex justify-center gap-4 mt-2">
+                  <button
+                    onClick={() => setConfirmStep(false)}
+                    className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+                  >
+                    Retour
+                  </button>
+                  <button
+                    onClick={handleConfirm}
+                    disabled={submitting}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+                  >
+                    {submitting ? 'Assignation…' : 'Confirmer'}
+                  </button>
                 </div>
               </div>
-            </div>
+            </>
           )}
-
-          {/* Sélection nouvel agent */}
-          <div className="space-y-4">
-            <label className="block text-sm font-semibold text-gray-700">
-              {currentAgentId ? 'Nouvel agent' : 'Sélectionner un agent'}
-            </label>
-            
-            <div className="space-y-3 max-h-60 overflow-y-auto">
-              {agents.map((agent) => (
-                <label
-                  key={agent.id}
-                  className={`flex items-center gap-4 p-4 border rounded-lg cursor-pointer transition-all duration-200 hover:bg-gray-50 ${
-                    selectedAgentId === agent.id
-                      ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
-                      : 'border-gray-200'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="agent"
-                    value={agent.id}
-                    checked={selectedAgentId === agent.id}
-                    onChange={() => setSelectedAgentId(agent.id)}
-                    className="sr-only"
-                  />
-                  
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-white ${
-                    selectedAgentId === agent.id ? 'bg-blue-600' : 'bg-gray-400'
-                  }`}>
-                    {getInitials(agent.name)}
-                  </div>
-                  
-                  <div className="flex-1">
-                    <div className="font-semibold text-gray-900">{agent.name}</div>
-                    <div className="text-sm text-gray-500">{agent.email}</div>
-                  </div>
-
-                  {selectedAgentId === agent.id && (
-                    <div className="w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center">
-                      <div className="w-2 h-2 bg-white rounded-full"></div>
-                    </div>
-                  )}
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className="flex gap-3 mt-6 pt-4 border-t border-gray-200">
-            <button
-              type="button"
-              onClick={handleClose}
-              className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              Annuler
-            </button>
-            <button
-              type="submit"
-              disabled={!selectedAgentId}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <UserPlus size={16} />
-              {currentAgentId ? 'Réassigner' : 'Assigner'}
-            </button>
-          </div>
-        </form>
+        </div>
       </div>
     </div>
   );
