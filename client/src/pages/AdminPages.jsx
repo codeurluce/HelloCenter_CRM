@@ -12,8 +12,7 @@ import socket  from '../socket.js';
 import useAgentFiches from '../api/useAgentFiches.js';
 import axiosInstance from '../api/axiosInstance.js';
 import VentesInfoPanel from '../components/componentsdesongletsAgents/VentesInfoPanel.jsx';
-
-
+import AdminFichiersPanel from '../components/componentsdesongletsAdmins/AdminFichiersPanel.tsx';
 
 const AdminDashboard = () => {
   const { user, setUser } = useContext(AuthContext);
@@ -49,7 +48,7 @@ const AdminDashboard = () => {
             {activeItem === 'dashboard' && <p> tableau de bord de l'administrateur</p>             }
             {activeItem === 'activité' && <AgentInfoPanel {...timersData} userId={user?.id} />}
             {activeItem === 'sales' && <VentesInfoPanel setActiveItem={setActiveItem} />}
-            {activeItem === 'files' && <p> doit contenir les fichiers des agnets</p>}
+            {activeItem === 'files' && <AdminFichiersPanel />}
             {activeItem === 'sessions' && <AdminSessionsUsers />}
             {activeItem === 'administration' && <AdministrationUsers />}
             {activeItem === 'settings' && <p> doit contenir les paramètres de l'administrateur</p>}
