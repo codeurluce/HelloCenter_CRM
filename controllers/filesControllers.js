@@ -179,3 +179,30 @@ exports.getAllFiches = async (req, res) => {
     res.status(500).json({ error: 'Erreur serveur' });
   }
 };
+
+
+exports.getAssignedFichesTo = async (req, res ) => {
+ try {
+    const { ficheIds, agentId } = req.body;
+
+    if (!ficheIds || !agentId || ficheIds.length === 0) {
+      return res.status(400).json({ error: 'ficheIds et agentId sont obligatoires' });
+    }
+
+    const result = await db.query(
+      `UPDATE files 
+       SET assigned_to = $1, statut = 'nouvelle', date_modification = NOW()
+       WHERE id = ANY($2::int[])
+       RETURNING id`,
+      [agentId, ficheIds]
+    );
+
+    return res.json({
+      message: `✅ ${result.rowCount} fiche(s) assignée(s) à l’agent ${agentId}`,
+      updated: result.rows.map(r => r.id),
+    });
+  } catch (error) {
+    console.error('Erreur assignation:', error);
+    res.status(500).json({ error: 'Erreur serveur lors de l’assignation' });
+  }
+};

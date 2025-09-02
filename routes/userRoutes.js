@@ -13,6 +13,7 @@ const {
   resetPasswordByAdmin,
   connectAgent,
   disconnectAgent,
+  getAllUsersBd,
 } = require("../controllers/userControllers");
 
 /**
@@ -41,6 +42,7 @@ router.get("/me", verifyToken, getMe);
 
 // Récupérer tous les utilisateurs
 router.get("/users", verifyToken, getAllUsers);
+router.get("/users_bd", verifyToken, getAllUsersBd);
 
 // Activer / désactiver un utilisateur
 router.put("/:id/toggle-active", verifyToken, toggleActiveUser);
