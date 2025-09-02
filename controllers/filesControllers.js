@@ -156,3 +156,26 @@ exports.getUpcomingRendezVous = async (req, res) => {
     res.status(500).send('Erreur lors de la récupération des rendez-vous');
   }
 };
+
+
+// GET API pour obtenir toutes les fiches avec le nom complet de l'agent
+exports.getAllFiches = async (req, res) => {
+  try {
+    const result = await db.query(`
+      SELECT f.*,
+             COALESCE(
+               CONCAT(a.firstname, ' ', a.lastname),
+               f.assigned_to_name,
+               'Agent inconnu'
+             ) AS agent_display_name
+      FROM files f
+      LEFT JOIN users a ON f.agent_id = a.id
+      ORDER BY f.date_creation DESC
+    `);
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Erreur getAllFiches:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+};
