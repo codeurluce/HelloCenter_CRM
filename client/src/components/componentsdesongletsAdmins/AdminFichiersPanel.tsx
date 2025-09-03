@@ -13,6 +13,8 @@ import {
     Search,
     Download,
     RefreshCw,
+    UserPlus2,
+    FileUp,
 } from 'lucide-react';
 import { Fiche, ClotureData } from '../componentsAdminFiches/fiche.ts';
 import ImportModal from '../componentsAdminFiches/ImportModal.tsx';
@@ -185,7 +187,7 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
-            <div className="max-w-7xl mx-auto space-y-6">
+            <div className=" space-y-6">
                 {/* Header */}
                 <div className="flex justify-between items-center">
                     <div>
@@ -271,6 +273,7 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
                                     <table className="w-full border-collapse" >
                                         <thead className="bg-blue-50">
                                             <tr>
+                                                <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700" >N° fiche</th>
                                                 <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700" >Client</th>
                                                 <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Contact</th>
                                                 <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Univers</th>
@@ -293,6 +296,7 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
                                         <tbody>
                                             {filteredFiches.map(fiche => (
                                                 <tr key={fiche.id} className={`border-t border-gray-200 transition-colors ${selectedFiches.includes(fiche.id) ? 'bg-blue-50' : 'hover:bg-blue-50'}`} >
+                                                    <td className="px-6 py-3 text-gray-800">{fiche.id}</td>
                                                     <td className="px-6 py-3 text-gray-800">{fiche.nom_client} {fiche.prenom_client}</td>
                                                     <td className="px-6 py-3 text-gray-800">{fiche.numero_mobile} {fiche.mail_client}</td>
                                                     <td className="px-6 py-3 text-gray-800">{fiche.univers}</td>
@@ -300,13 +304,26 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
                                                     <td className="px-6 py-3 text-gray-800">{fiche.assigned_to_name || 'Non assignée'}</td>
                                                     <td className="px-6 py-3 text-gray-800">{new Date(fiche.date_creation).toLocaleDateString('fr-FR')}</td>
                                                     <td className="px-6 py-3 text-gray-800">
-                                                        <div className="flex gap-2">
-                                                            <button onClick={() => handleAssignFiche(fiche.id, fiche.assigned_to)} title={fiche.assigned_to ? 'Réassigner' : 'Assigner'}>
-                                                                <UserPlus size={16} />
-                                                            </button>
-                                                            <button title="Modifier"><Edit size={16} /></button>
-                                                            <button onClick={() => onDeleteFiche(fiche.id)} title="Supprimer"><Trash2 size={16} /></button>
-                                                        </div>
+                                                        {activeFilter === 'nouvelles' && (
+                                                            <div className="flex items-center gap-2">
+                                                                <button
+                                                                    onClick={() => handleAssignFiche(fiche.id, fiche.assigned_to)}
+                                                                    title={fiche.assigned_to ? 'Réassigner' : 'Assigner'}
+                                                                    className="text-blue-600 hover:text-gray-800 px-6 py-3"
+                                                                >
+                                                                    <FileUp size={16} />
+                                                                </button>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Si besoin, tu peux aussi mettre d’autres actions visibles partout */}
+                                                        {activeFilter !== 'nouvelles' && (
+                                                            <div className="flex items-center gap-2">
+                                                                <button title="Voir fiche" className="text-blue-600 hover:text-gray-800 px-6 py-3">
+                                                                    <FileText size={16} />
+                                                                </button>
+                                                            </div>
+                                                        )}
                                                     </td>
                                                     <td className="px-6 py-3 text-gray-800">
                                                         <input
