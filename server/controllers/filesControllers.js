@@ -157,6 +157,22 @@ exports.getUpcomingRendezVous = async (req, res) => {
   }
 };
 
+// GET API pour obtenir les fiches assignées à l'agent connecté
+exports.getFilesbyAgent = async (req, res) => {
+  try {
+    const agentId = req.user.id; 
+    const result = await db.query(
+      `SELECT * FROM files 
+        WHERE assigned_to = $1 
+        ORDER BY date_creation ASC`,
+      [agentId]
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Erreur serveur lors de la récupération des fiches' });
+  }
+};
 
 // GET API pour obtenir toutes les fiches avec le nom complet de l'agent
 exports.getAllFiches = async (req, res) => {

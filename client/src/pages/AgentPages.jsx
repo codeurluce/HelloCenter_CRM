@@ -10,31 +10,58 @@ import FichesInfoPanel from '../components/componentsdesfiches/FichesInfoPanel.t
 import { AuthContext } from './AuthContext.jsx';
 import { AgentStatusProvider } from '../api/AgentStatusContext.jsx';
 import useTimers from '../api/useTimers.js';
-import useAgentFiches from '../api/useAgentFiches.js';
+import useFiches from '../api/useAgentFiches.js';
 import axiosInstance from '../api/axiosInstance.js';
-import socket  from '../socket.js';
+import socket from '../socket.js';
 
 const AgentDashboard = () => {
   const { user, setUser } = useContext(AuthContext);
   const [activeItem, setActiveItem] = useState('dashboard');
-
   const timersData = useTimers();
-  const fichesData = useAgentFiches(user);
 
+  // Utilisation du hook custom pour fiches
+  const {
+    fiches,
+    loadFiches,
+    onTreatFiche,
+    onCancelFiche,
+    onCloseFiche,
+    onProgramRdv,
+  } = useFiches(user);
+
+  // État loading local pour la gestion UX
+  const [loadingFiches, setLoadingFiches] = useState(false);
+
+  // Fonction refresh qui utilise la méthode du hook + gère loading
+  const fetchFichesFromBackend = async () => {
+    setLoadingFiches(true);
+    try {
+      await loadFiches();
+    } catch (error) {
+      console.error('Erreur lors du chargement des fiches :', error);
+    } finally {
+      setLoadingFiches(false);
+    }
+  };
+
+  // Chargement initial ou au changement d'utilisateur
+  useEffect(() => {
+    if (user) {
+      fetchFichesFromBackend();
+    }
+  }, [user]);
+
+  // Gestion déconnexion
   const handleLogout = async () => {
     try {
-      const user = JSON.parse(localStorage.getItem('user'));
-      if (user) {
-        // ⚡ Notifie le backend que l'agent se déconnecte
-        await axiosInstance.post('http://localhost:5000/api/agent/disconnect', { userId: user.id });
-        socket.emit('agent_disconnected', { userId: user.id });
+      const userStored = JSON.parse(localStorage.getItem('user'));
+      if (userStored) {
+        await axiosInstance.post('http://localhost:5000/api/agent/disconnect', { userId: userStored.id });
+        socket.emit('agent_disconnected', { userId: userStored.id });
       }
-      // Nettoyage local
-      localStorage.clear(); // ou removeItem individuellement si tu préfères
-      fichesData.loadFiches([]);
+      localStorage.clear();
       setUser(null);
-      // Redirection
-      window.location.href = '/login'; // ou '/' selon ton routing
+      window.location.href = '/login';
     } catch (err) {
       console.error('Erreur lors de la déconnexion:', err);
     }
@@ -60,7 +87,18 @@ const AgentDashboard = () => {
             )}
             {activeItem === 'activité' && <AgentInfoPanel {...timersData} userId={user?.id} />}
             {activeItem === 'sales' && <VentesInfoPanel setActiveItem={setActiveItem} />}
-            {activeItem === 'files' && <FichesInfoPanel fiches={fichesData.fiches || []} currentAgent={user?.id?.toString()} {...fichesData} />}
+            {activeItem === 'files' && (
+              <FichesInfoPanel
+                fiches={fiches}
+                currentAgent={user?.id?.toString()}
+                loading={loadingFiches}
+                onRefresh={fetchFichesFromBackend}
+                onTreatFiche={onTreatFiche}
+                onCancelFiche={onCancelFiche}
+                onCloseFiche={onCloseFiche}
+                onProgramRdv={onProgramRdv}
+              />
+            )}
           </main>
         </div>
       </div>

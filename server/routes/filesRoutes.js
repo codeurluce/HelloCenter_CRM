@@ -24,6 +24,7 @@ router.put('/:id/cloturer', filesControllers.cloturerFiche); // => PUT    /api/f
 router.put('/:id/programmer-rdv', filesControllers.programRdv, filesControllers.getFilesToRDV); // => PUT    /api/files/:id/programmer-rdv
 router.get('/rendezvous/upcoming/:agentId', filesControllers.getUpcomingRendezVous);
 router.get('/today-summary', auth, filesControllers.getTodayNewFilesByUniverse);
+router.get('/files_by_agents', filesControllers.getFilesbyAgent);// => GET    /api/files/AssignedTo/agentId
 router.get('/all_files', filesControllers.getAllFiches)
 router.put('/assigned_To', filesControllers.getAssignedFichesTo);
 router.put('/import_files', filesControllers.importFiles);

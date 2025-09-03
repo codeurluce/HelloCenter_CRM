@@ -8,9 +8,14 @@ export default function useFiches(user) {
   const loadFiches = async () => {
     if (!user?.id) return;
     const allFiches = await fetchFiches();
-    setFiches(Array.isArray(allFiches) ? allFiches : []);
-
-  };
+if (Array.isArray(allFiches)) {
+    // Tri explicite par date_creation ASC
+    const sortedFiches = allFiches.sort((a, b) => new Date(a.date_creation) - new Date(b.date_creation));
+    setFiches(sortedFiches);
+  } else {
+    setFiches([]);
+  }
+};
 
   useEffect(() => {
     if (user?.id) {

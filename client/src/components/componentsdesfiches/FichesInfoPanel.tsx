@@ -1,13 +1,16 @@
-import React, { useState, useMemo, useContext } from 'react';
-import { FileText, Clock, CheckCircle, CalendarClock, Filter } from 'lucide-react';
+import React, { useState, useMemo, useContext, useEffect } from 'react';
+import { FileText, Clock, CheckCircle, CalendarClock, Filter, RefreshCw } from 'lucide-react';
 import { Fiche, ClotureData } from './types/fiche';
 import FicheCard from './FicheCard.tsx';
 import ClotureModal from './ClotureModal.tsx';
 import { AuthContext } from '../../pages/AuthContext.jsx';
 import RendezVousModal from './RendezVousModal.jsx';
+import axiosInstance from '../../api/axiosInstance.js';
 
 interface FichesInfoPanelProps {
   fiches: Fiche[];
+  loading: boolean;
+  onRefresh: () => void;
   onTreatFiche: (id: number) => void;
   onCancelFiche: (id: number) => void;
   onCloseFiche: (id: number, data: ClotureData) => void;
@@ -18,6 +21,8 @@ type FilterType = 'nouvelle' | 'en_traitement' | 'rendez_vous' | 'cloturee' | 't
 
 const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
   fiches,
+  loading,
+  onRefresh,
   onTreatFiche,
   onCancelFiche,
   onCloseFiche,
@@ -38,6 +43,9 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
   const [showRdvModal, setShowRdvModal] = useState(false);
   const [selectedFiche, setSelectedFiche] = useState<Fiche | null>(null);
   const [showRdvDetailsModal, setShowRdvDetailsModal] = useState(false);
+  // const [loading, setLoading] = useState(false);
+  // const [fiches, setFiches] = useState<Fiche[]>([]);
+
 
   // Filtrage selon rôle utilisateur
   const fichesFiltreesParRole = useMemo(() => {
@@ -63,6 +71,7 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
     }),
     [fichesFiltreesParRole]
   );
+
 
   // Filtrage affichage par filtre actif
   const filteredFiches = useMemo(() => {
@@ -92,10 +101,10 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
   };
 
 
-const handleVoirRdvDetails = (fiche: Fiche) => {
-  setSelectedFiche(fiche);
-  setShowRdvDetailsModal(true);
-};
+  const handleVoirRdvDetails = (fiche: Fiche) => {
+    setSelectedFiche(fiche);
+    setShowRdvDetailsModal(true);
+  };
 
   // Soumet la clôture depuis la modal
   const handleClotureSubmit = (data: ClotureData) => {
@@ -160,51 +169,51 @@ const handleVoirRdvDetails = (fiche: Fiche) => {
     if (!isOpen || !fiche) return null;
 
     return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-xl relative animate-fade-in">
-        {/* Bouton de fermeture */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl"
-          aria-label="Fermer"
-        >
-          &times;
-        </button>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-xl relative animate-fade-in">
+          {/* Bouton de fermeture */}
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl"
+            aria-label="Fermer"
+          >
+            &times;
+          </button>
 
-        <h2 className="text-2xl font-semibold mb-6 text-center">
-          Détails du Rendez-vous
-        </h2>
+          <h2 className="text-2xl font-semibold mb-6 text-center">
+            Détails du Rendez-vous
+          </h2>
 
-        <div className="space-y-4">
-          <div>
-            <span className="font-medium text-gray-700">Date prévue :</span>{' '}
-            <span className="text-gray-900">
-              {fiche.rendez_vous_date
-                ? new Date(fiche.rendez_vous_date).toLocaleString()
-                : 'Non définie'}
-            </span>
-          </div>
+          <div className="space-y-4">
+            <div>
+              <span className="font-medium text-gray-700">Date prévue :</span>{' '}
+              <span className="text-gray-900">
+                {fiche.rendez_vous_date
+                  ? new Date(fiche.rendez_vous_date).toLocaleString()
+                  : 'Non définie'}
+              </span>
+            </div>
 
-          <div>
-            <span className="font-medium text-gray-700">Commentaire :</span>
-            <div className="mt-1 p-3 bg-gray-100 rounded-lg text-gray-800">
-              {fiche.rendez_vous_commentaire || 'Aucun commentaire'}
+            <div>
+              <span className="font-medium text-gray-700">Commentaire :</span>
+              <div className="mt-1 p-3 bg-gray-100 rounded-lg text-gray-800">
+                {fiche.rendez_vous_commentaire || 'Aucun commentaire'}
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         <h1 className="text-2xl font-bold text-gray-900">
-            Gestion des Fiches
-          </h1>
+          Gestion des Fiches
+        </h1>
         <div className="bg-white rounded-xl shadow-sm p-6">
-          
+
           {/* <p className="text-gray-600">Suivez vos fiches clients</p> */}
 
           <div className="bg-white rounded-xl shadow-sm ">
@@ -219,22 +228,31 @@ const handleVoirRdvDetails = (fiche: Fiche) => {
                     {getFilterIcon(filter)}
                     <span>{getFilterLabel(filter)}</span>
                     <span
-                      className={`px-2 py-1 rounded-full text-xs font-bold ${
-                        activeFilter === filter
-                          ? 'bg-white/20 text-white'
-                          : 'bg-blue-100 text-blue-600'
-                      }`}
+                      className={`px-2 py-1 rounded-full text-xs font-bold ${activeFilter === filter
+                        ? 'bg-white/20 text-white'
+                        : 'bg-blue-100 text-blue-600'
+                        }`}
                     >
                       {counters[filter]}
                     </span>
                   </button>
+
                 )
               )}
+              <button onClick={onRefresh} className="flex items-center ml-6 gap-2 py-1 px-3 rounded-md border border-blue-500 text-blue-600 hover:bg-blue-100 transition" disabled={loading} aria-label="Rafraîchir les fiches">
+                <RefreshCw size={16} />
+                {loading ? 'Chargement...' : 'Rafraîchir'}
+              </button>
             </div>
 
             <div className="bg-white rounded-xl shadow-sm">
               <div className="p-6">
-                {filteredFiches.length === 0 ? (
+                {loading ? (
+                  <div className="text-center py-12">
+                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p>Chargement des fiches...</p>
+                  </div>
+                ) : filteredFiches.length === 0 ? (
                   <div className="text-center py-12">
                     <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                       {getFilterIcon(activeFilter)}
@@ -258,7 +276,7 @@ const handleVoirRdvDetails = (fiche: Fiche) => {
                           onCancelFiche={() => onCancelFiche(fiche.id)}
                           onOpenClotureModal={() => handleOpenClotureModal(fiche.id)}
                           onProgramRdv={() => handleOpenRdvModal(fiche.id)}
-                          onVoirRdvDetails={() => handleVoirRdvDetails(fiche)} 
+                          onVoirRdvDetails={() => handleVoirRdvDetails(fiche)}
                         />
 
                       </div>
