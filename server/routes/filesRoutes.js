@@ -26,5 +26,6 @@ router.get('/rendezvous/upcoming/:agentId', filesControllers.getUpcomingRendezVo
 router.get('/today-summary', auth, filesControllers.getTodayNewFilesByUniverse);
 router.get('/all_files', filesControllers.getAllFiches)
 router.put('/assigned_To', filesControllers.getAssignedFichesTo);
+router.put('/import_files', filesControllers.importFiles);
 
 module.exports = router;

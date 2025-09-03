@@ -170,7 +170,7 @@ exports.getAllFiches = async (req, res) => {
              ) AS agent_display_name
       FROM files f
       LEFT JOIN users a ON f.agent_id = a.id
-      ORDER BY f.date_creation DESC
+      ORDER BY f.date_creation ASC
     `);
 
     res.json(result.rows);
@@ -206,3 +206,77 @@ exports.getAssignedFichesTo = async (req, res ) => {
     res.status(500).json({ error: 'Erreur serveur lors de l’assignation' });
   }
 };
+
+exports.importFiles = async (req, res ) => {
+  try {
+    const { files } = req.body;
+
+    if (!files || !Array.isArray(files) || files.length === 0) {
+      return res.status(400).json({ error: 'Aucun fichier à importer' });
+    }
+
+const normalizeText = (str) => {
+  if (str === null || str === undefined) return null;
+  return String(str).normalize("NFC").trim();
+};
+    // Préparer l'insertion
+   const insertValues = files.map(f => [
+  normalizeText(f.nom_client),
+  normalizeText(f.prenom_client),
+  normalizeText(f.adresse_client),
+  normalizeText(f.code_postal),
+  normalizeText(f.mail_client),
+  normalizeText(f.numero_mobile),
+  normalizeText(f.univers),
+  f.statut || 'nouvelle',
+  new Date()
+]);
+    // Générer la requête multi-insertion
+    const queryText = `
+      INSERT 
+      INTO files 
+        (nom_client, 
+         prenom_client, 
+         adresse_client, 
+         code_postal, 
+         mail_client, 
+         numero_mobile, 
+         univers, 
+         statut, 
+         date_creation
+        )
+      VALUES
+        ${insertValues.map((_, i) => 
+          `($${i*9+1}, $${i*9+2}, $${i*9+3}, $${i*9+4}, $${i*9+5}, $${i*9+6}, $${i*9+7}, $${i*9+8}, $${i*9+9})`
+        ).join(', ')}
+      RETURNING *
+    `;
+
+    // Aplatir les valeurs
+    const flatValues = insertValues.flat();
+
+    const result = await db.query(queryText, flatValues);
+
+    res.json({ 
+      message: `✅ ${result.rowCount} fiche(s) importée(s) avec succès`,
+      addedFiches: result.rows
+    });
+  } catch (error) {
+    console.error('Erreur import:', error);
+  if (error.code === '23514') {
+    return res.status(400).json({ 
+      error: "⚠️ Univers invalide. Vérifie que la colonne 'univers' contient une valeur autorisée."
+    });
+  }
+//   if (error.code === "23505") {
+//   return res.status(400).json({ 
+//     error: "Ce client existe déjà (conflit de doublon)." });
+// }
+// if (error.code === "23502") {
+//   return res.status(400).json({ error: "Champs obligatoires manquants." });
+// }
+// if (error.code === "22P02") {
+//   return res.status(400).json({ error: "Format invalide pour certaines données." });
+// }
+  res.status(500).json({ error: 'Erreur serveur lors de l’import des fichiers' });
+}};

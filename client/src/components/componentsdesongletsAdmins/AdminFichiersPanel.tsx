@@ -39,7 +39,6 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
   onCancelFiche,
   onCloseFiche,
   onProgramRdv,
-  onImportFiches,
   onDeleteFiche,
   onRefresh,
 }) => {
@@ -81,6 +80,45 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
     }
   };
   useEffect(() => { fetchFiches(); }, []);
+
+    const handleAssignSubmit = async (agentId: number) => {
+    try {
+      const ficheIds = assignModal.ficheId ? [assignModal.ficheId] : selectedFiches;
+      const res = await axiosInstance.put('/files/assigned_To', { ficheIds, agentId });
+      console.log(res.data.message);
+
+      // Mise à jour locale
+      setFiches(prev =>
+        prev.map(f =>
+          ficheIds.includes(f.id) ? { ...f, assigned_to: agentId, statut: 'nouvelle' } : f
+        )
+      );
+
+      setSelectedFiches(prev => prev.filter(id => !ficheIds.includes(id)));
+      setAssignModal({ isOpen: false, ficheId: null, currentAgentId: null });
+    } catch (err) {
+      console.error('Erreur assignation:', err);
+    }
+  };
+
+
+const onImportFiches = async (importedData: any) => {
+  try {
+    const response = await axiosInstance.put("/files/import_files", {
+      files: importedData,
+    });
+
+    const result = response.data;
+
+    setFiches((prev) => [...prev, ...result.addedFiches]);
+    console.log("✅ Import réussi:", result);
+
+    return result; // <-- renvoyer la réponse si besoin
+  } catch (error) {
+    console.error("❌ Erreur import:", error);
+    throw error; // <-- relancer pour que l'enfant sache qu'il y a eu une erreur
+  }
+};
 
   // Filtrage fiches
   const filteredFiches = useMemo(() => {
@@ -131,25 +169,6 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
     setAssignModal({ isOpen: true, ficheId, currentAgentId: currentAgentId || null });
   };
 
-  const handleAssignSubmit = async (agentId: number) => {
-    try {
-      const ficheIds = assignModal.ficheId ? [assignModal.ficheId] : selectedFiches;
-      const res = await axiosInstance.put('/files/assigned_To', { ficheIds, agentId });
-      console.log(res.data.message);
-
-      // Mise à jour locale
-      setFiches(prev =>
-        prev.map(f =>
-          ficheIds.includes(f.id) ? { ...f, assigned_to: agentId, statut: 'nouvelle' } : f
-        )
-      );
-
-      setSelectedFiches(prev => prev.filter(id => !ficheIds.includes(id)));
-      setAssignModal({ isOpen: false, ficheId: null, currentAgentId: null });
-    } catch (err) {
-      console.error('Erreur assignation:', err);
-    }
-  };
 
   // Statut badge
   const getStatusBadge = (statut: string, assigned_to?: number) => {
@@ -271,7 +290,7 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
                   </thead>
                   <tbody>
                     {filteredFiches.map(fiche => (
-                      <tr key={fiche.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                      <tr key={fiche.id} className="border-b border-gray-100 hover:bg-blue-50 transition-colors">
                         <td>{fiche.nom_client} {fiche.prenom_client}</td>
                         <td>{fiche.numero_mobile} {fiche.mail_client}</td>
                         <td>{fiche.univers}</td>
@@ -307,7 +326,12 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
         )}
 
         {/* Modals */}
-        <ImportModal isOpen={showImportModal} onClose={() => setShowImportModal(false)} onImport={onImportFiches} />
+        <ImportModal 
+            isOpen={showImportModal} 
+            onClose={() => setShowImportModal(false)} 
+            onImport={onImportFiches} 
+        />
+
         <AssignModal
           isOpen={assignModal.isOpen}
           onClose={() => setAssignModal({ isOpen: false, ficheId: null, currentAgentId: null })}

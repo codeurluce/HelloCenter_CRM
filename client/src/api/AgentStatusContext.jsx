@@ -7,7 +7,6 @@ export const AgentStatusProvider = ({ children }) => {
   const [status, setStatus] = useState(() => localStorage.getItem("agentStatus") || "indisponible");
   const [sessionTime, setSessionTime] = useState(0);
   const [pauseTime, setPauseTime] = useState(0);
-
   const intervalRef = useRef(null);
   const lastStartTimeRef = useRef(null);
 

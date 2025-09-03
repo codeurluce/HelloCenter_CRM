@@ -3,11 +3,13 @@ import { X, Upload, FileSpreadsheet, AlertCircle, CheckCircle, Download } from '
 import Papa from 'papaparse';
 import { Fiche } from './fiche';
 import * as XLSX from "xlsx";
+import Swal from "sweetalert2";
 
 interface ImportModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onImport: (fiches: Partial<Fiche>[]) => void;
+  // onImport: (fiches: Partial<Fiche>[]) => void;
+  onImport: (fiches: any[]) => Promise<void>;
 }
 
 const ImportModal: React.FC<ImportModalProps> = ({
@@ -41,7 +43,7 @@ const ImportModal: React.FC<ImportModalProps> = ({
       adresse_client: '123 Rue de la Paix',
       code_postal: '75001',
       univers: 'Assurance Auto',
-      commentaire: 'Client intéressé par une nouvelle police'
+      // commentaire: 'Client intéressé par une nouvelle police'
     },
     {
       nom_client: 'Martin',
@@ -51,7 +53,7 @@ const ImportModal: React.FC<ImportModalProps> = ({
       adresse_client: '456 Avenue des Champs',
       code_postal: '69001',
       univers: 'Assurance Habitation',
-      commentaire: 'Demande de devis pour appartement'
+      // commentaire: 'Demande de devis pour appartement'
     }
   ];
 
@@ -125,7 +127,7 @@ const ImportModal: React.FC<ImportModalProps> = ({
           return;
         }
 
-        setPreview(data.slice(0, 5));
+        setPreview(data.slice(0, 500));
         setErrors([]);
       },
       header: true,
@@ -159,7 +161,7 @@ const ImportModal: React.FC<ImportModalProps> = ({
           return;
         }
 
-        setPreview(jsonData.slice(0, 5));
+        setPreview(jsonData.slice(0, 500));
         setErrors([]);
       } catch (err) {
         setErrors(['Erreur lors de la lecture du fichier Excel.']);
@@ -174,51 +176,71 @@ const ImportModal: React.FC<ImportModalProps> = ({
     reader.readAsArrayBuffer(file);
   };
 
-  const handleImport = () => {
-    if (!file) return;
+const handleImport = () => {
+  if (!file) return;
 
-    setIsProcessing(true);
+  setIsProcessing(true);
 
-    const fileType = file.name.split('.').pop()?.toLowerCase();
-    if (fileType === 'csv') {
-      Papa.parse(file, {
-        complete: (results) => {
-          const data = results.data as any[];
-          const validFiches = data
-            .filter(row => row.nom_client && row.prenom_client)
-            .map(row => ({
-              ...row,
-              statut: 'nouvelle',
-              date_creation: new Date().toISOString(),
-            }));
-          onImport(validFiches);
-          handleClose();
-        },
-        header: true,
-        skipEmptyLines: true,
-        encoding: 'UTF-8'
-      });
-    } else {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const data = new Uint8Array(e.target?.result as ArrayBuffer);
-        const workbook = XLSX.read(data, { type: "array" });
-        const firstSheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[firstSheetName];
-        const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
-        const validFiches = jsonData
+  const fileType = file.name.split('.').pop()?.toLowerCase();
+  const parseAndSend = (validFiches: any[]) => {
+    onImport(validFiches)
+      .then(() => {
+        Swal.fire({
+          icon: "success",
+          title: "Import réussi",
+          text: `${validFiches.length} fiche(s) importée(s) avec succès ✅`,
+          confirmButtonColor: "#2563eb"
+        });
+        handleClose();
+      })
+      .catch((err: any) => {
+        Swal.fire({
+          icon: "error",
+          title: "Erreur d'import",
+          text: err?.response?.data?.error || "Une erreur est survenue lors de l’import.",
+          confirmButtonColor: "#dc2626"
+        });
+      })
+      .finally(() => setIsProcessing(false));
+  };
+
+  if (fileType === "csv") {
+    Papa.parse(file, {
+      complete: (results) => {
+        const data = results.data as any[];
+        const validFiches = data
           .filter(row => row.nom_client && row.prenom_client)
           .map(row => ({
             ...row,
-            statut: 'nouvelle',
+            statut: "nouvelle",
             date_creation: new Date().toISOString(),
           }));
-        onImport(validFiches);
-        handleClose();
-      };
-      reader.readAsArrayBuffer(file);
-    }
-  };
+        parseAndSend(validFiches);
+      },
+      header: true,
+      skipEmptyLines: true,
+      encoding: "UTF-8",
+    });
+  } else {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const data = new Uint8Array(e.target?.result as ArrayBuffer);
+      const workbook = XLSX.read(data, { type: "array", codepage: 65001 });
+      const firstSheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[firstSheetName];
+      const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+      const validFiches = jsonData
+        .filter(row => row.nom_client && row.prenom_client)
+        .map(row => ({
+          ...row,
+          statut: "nouvelle",
+          date_creation: new Date().toISOString(),
+        }));
+      parseAndSend(validFiches);
+    };
+    reader.readAsArrayBuffer(file);
+  }
+};
 
   const handleClose = () => {
     setFile(null);
@@ -341,7 +363,7 @@ const ImportModal: React.FC<ImportModalProps> = ({
                 <div className="flex items-center gap-2 text-green-800">
                   <CheckCircle size={16} />
                   <span className="font-medium">
-                    {preview.length} lignes détectées (aperçu des 5 premières)
+                    {preview.length} lignes détectées
                   </span>
                 </div>
               </div>
