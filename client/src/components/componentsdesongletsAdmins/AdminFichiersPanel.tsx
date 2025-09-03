@@ -96,10 +96,10 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
 
             setSelectedFiches(prev => prev.filter(id => !ficheIds.includes(id)));
             setAssignModal({ isOpen: false, ficheId: null, currentAgentId: null });
-            return res.data; 
+            return res.data;
         } catch (err: any) {
             console.error('Erreur assignation:', err);
-            throw err; 
+            throw err;
         }
     }
 
@@ -267,60 +267,62 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
                             {filteredFiches.length === 0 ? (
                                 <div className="text-center py-12">Aucune fiche trouvée</div>
                             ) : (
-                                <table className="w-full">
-                                    <thead>
-                                        <tr className="border-b border-gray-200">
-                                            <th>Client</th>
-                                            <th>Contact</th>
-                                            <th>Univers</th>
-                                            <th>Statut</th>
-                                            <th>Assignée à</th>
-                                            <th>Date création</th>
-                                            <th>Actions</th>
-                                            <th>
-                                                <input
-                                                    type="checkbox"
-                                                    onChange={(e) => {
-                                                        if (e.target.checked) setSelectedFiches(filteredFiches.map(f => f.id));
-                                                        else setSelectedFiches([]);
-                                                    }}
-                                                    checked={selectedFiches.length === filteredFiches.length && filteredFiches.length > 0}
-                                                />
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {filteredFiches.map(fiche => (
-                                            <tr key={fiche.id} className="border-b border-gray-100 hover:bg-blue-50 transition-colors">
-                                                <td>{fiche.nom_client} {fiche.prenom_client}</td>
-                                                <td>{fiche.numero_mobile} {fiche.mail_client}</td>
-                                                <td>{fiche.univers}</td>
-                                                <td>{getStatusBadge(fiche.statut, fiche.assigned_to)}</td>
-                                                <td>{fiche.assigned_to_name || 'Non assignée'}</td>
-                                                <td>{new Date(fiche.date_creation).toLocaleDateString('fr-FR')}</td>
-                                                <td>
-                                                    <div className="flex gap-2">
-                                                        <button onClick={() => handleAssignFiche(fiche.id, fiche.assigned_to)} title={fiche.assigned_to ? 'Réassigner' : 'Assigner'}>
-                                                            <UserPlus size={16} />
-                                                        </button>
-                                                        <button title="Modifier"><Edit size={16} /></button>
-                                                        <button onClick={() => onDeleteFiche(fiche.id)} title="Supprimer"><Trash2 size={16} /></button>
-                                                    </div>
-                                                </td>
-                                                <td>
+                                <div className=" border border-gray-300 rounded-t-lg overflow-hidden">
+                                    <table className="w-full border-collapse" >
+                                        <thead className="bg-blue-50">
+                                            <tr>
+                                                <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700" >Client</th>
+                                                <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Contact</th>
+                                                <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Univers</th>
+                                                <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Statut</th>
+                                                <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Assignée à</th>
+                                                <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Date création</th>
+                                                <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Actions</th>
+                                                <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
                                                     <input
                                                         type="checkbox"
-                                                        checked={selectedFiches.includes(fiche.id)}
                                                         onChange={(e) => {
-                                                            if (e.target.checked) setSelectedFiches(prev => [...prev, fiche.id]);
-                                                            else setSelectedFiches(prev => prev.filter(id => id !== fiche.id));
+                                                            if (e.target.checked) setSelectedFiches(filteredFiches.map(f => f.id));
+                                                            else setSelectedFiches([]);
                                                         }}
+                                                        checked={selectedFiches.length === filteredFiches.length && filteredFiches.length > 0}
                                                     />
-                                                </td>
+                                                </th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                                        </thead>
+                                        <tbody>
+                                            {filteredFiches.map(fiche => (
+                                                <tr key={fiche.id} className={`border-t border-gray-200 transition-colors ${selectedFiches.includes(fiche.id) ? 'bg-blue-50' : 'hover:bg-blue-50'}`} >
+                                                    <td className="px-6 py-3 text-gray-800">{fiche.nom_client} {fiche.prenom_client}</td>
+                                                    <td className="px-6 py-3 text-gray-800">{fiche.numero_mobile} {fiche.mail_client}</td>
+                                                    <td className="px-6 py-3 text-gray-800">{fiche.univers}</td>
+                                                    <td className="px-6 py-3 text-gray-800">{getStatusBadge(fiche.statut, fiche.assigned_to)}</td>
+                                                    <td className="px-6 py-3 text-gray-800">{fiche.assigned_to_name || 'Non assignée'}</td>
+                                                    <td className="px-6 py-3 text-gray-800">{new Date(fiche.date_creation).toLocaleDateString('fr-FR')}</td>
+                                                    <td className="px-6 py-3 text-gray-800">
+                                                        <div className="flex gap-2">
+                                                            <button onClick={() => handleAssignFiche(fiche.id, fiche.assigned_to)} title={fiche.assigned_to ? 'Réassigner' : 'Assigner'}>
+                                                                <UserPlus size={16} />
+                                                            </button>
+                                                            <button title="Modifier"><Edit size={16} /></button>
+                                                            <button onClick={() => onDeleteFiche(fiche.id)} title="Supprimer"><Trash2 size={16} /></button>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-3 text-gray-800">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={selectedFiches.includes(fiche.id)}
+                                                            onChange={(e) => {
+                                                                if (e.target.checked) setSelectedFiches(prev => [...prev, fiche.id]);
+                                                                else setSelectedFiches(prev => prev.filter(id => id !== fiche.id));
+                                                            }}
+                                                        />
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
                             )}
                         </div>
                     </div>
