@@ -298,11 +298,11 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
                                             {filteredFiches.map(fiche => (
                                                 <tr key={fiche.id} className={`border-t border-gray-200 transition-colors ${selectedFiches.includes(fiche.id) ? 'bg-blue-50' : 'hover:bg-blue-50'}`} >
                                                     <td className="px-6 py-3 text-gray-800">{fiche.id}</td>
-                                                    <td className="px-6 py-3 text-gray-800">{fiche.nom_client} {fiche.prenom_client}</td>
-                                                    <td className="px-6 py-3 text-gray-800">{fiche.numero_mobile} {fiche.mail_client}</td>
+                                                    <td className="px-6 py-3 text-gray-800 whitespace-nowrap">{fiche.nom_client} {fiche.prenom_client}</td>
+                                                    <td className="px-6 py-3 text-gray-800 whitespace-nowrap">{fiche.numero_mobile} {fiche.mail_client}</td>
                                                     <td className="px-6 py-3 text-gray-800">{fiche.univers}</td>
                                                     <td className="px-6 py-3 text-gray-800">{getStatusBadge(fiche.statut, fiche.assigned_to)}</td>
-                                                    <td className="px-6 py-3 text-gray-800">{fiche.assigned_to_name || 'Non assignée'}</td>
+                                                    <td className="px-6 py-3 text-gray-800 whitespace-nowrap">{fiche.assigned_to_name || 'Non assignée'}</td>
                                                     <td className="px-6 py-3 text-gray-800">{new Date(fiche.date_creation).toLocaleDateString('fr-FR')}</td>
                                                     <td className="px-6 py-3 text-gray-800">
                                                         {activeFilter === 'nouvelles' && (
