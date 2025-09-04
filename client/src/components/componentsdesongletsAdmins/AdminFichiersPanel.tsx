@@ -191,7 +191,7 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
                 {/* Header */}
                 <div className="flex justify-between items-center">
                     <div>
-                         {/* Titre de section */}
+                        {/* Titre de section */}
                         <h2 className="text-2xl font-bold mb-4">Administration des Fiches</h2>
                         <p className="text-gray-600">Gestion complète et assignation aux agents</p>
                     </div>
