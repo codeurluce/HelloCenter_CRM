@@ -7,19 +7,17 @@ import isBetween from "dayjs/plugin/isBetween";
 
 dayjs.extend(isBetween);
 
-const ExportModal = ({ isOpen, onClose, sales = [] }) => {
+const ExportModal = ({ fiches, isOpen, onClose, sales = [] }) => {
     const [selectedAgents, setSelectedAgents] = useState([]);
     const [dateType, setDateType] = useState("single");
     const [singleDate, setSingleDate] = useState("");
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
     const [selectedColumns, setSelectedColumns] = useState([]);
-
     const [agentDropdownOpen, setAgentDropdownOpen] = useState(false);
     const [columnDropdownOpen, setColumnDropdownOpen] = useState(false);
     const [agentSearchTerm, setAgentSearchTerm] = useState("");
     const [columnSearchTerm, setColumnSearchTerm] = useState("");
-
     const agentDropdownRef = useRef(null);
     const columnDropdownRef = useRef(null);
 
@@ -42,20 +40,19 @@ const ExportModal = ({ isOpen, onClose, sales = [] }) => {
     ];
 
     // ---- Agents disponibles (dédoublés depuis ventes) ----
-    const uniqueAgents = Array.from(
-        new Map(
-            sales
-                .filter(s => s.agent_id || s.agent_firstname || s.agent_name)
-                .map(s => [
-                    s.agent_id || `${s.agent_firstname}-${s.agent_name}`,
-                    {
-                        id: s.agent_id || `${s.agent_firstname}-${s.agent_name}`,
-                        firstname: s.agent_firstname,
-                        lastname: s.agent_name,
-                    },
-                ])
-        ).values()
-    );
+  const uniqueAgents = Array.from(
+    new Map(
+      fiches
+        .filter(f => f.assigned_to || f.assigned_to_name)
+        .map(f => [
+          f.assigned_to || f.assigned_to_name,
+          {
+            id: f.assigned_to || f.assigned_to_name,
+            name: f.assigned_to_name || 'Inconnu',
+          },
+        ])
+    ).values()
+  );
 
     // ---- Filtres dropdown ----
     const filteredAgents = uniqueAgents.filter((a) =>
@@ -285,7 +282,7 @@ const ExportModal = ({ isOpen, onClose, sales = [] }) => {
                                             onClick={() => handleAgentSelect(a)}
                                             className="px-4 py-2 hover:bg-gray-50 cursor-pointer"
                                         >
-                                            {a.firstname} {a.lastname}
+                                            {a.name}
                                         </div>
                                     ))}
                                 </div>

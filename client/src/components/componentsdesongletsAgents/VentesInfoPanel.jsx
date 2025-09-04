@@ -204,7 +204,7 @@ const VentesInfoPanel = ({ agentId }) => {
         <h2 className="text-2xl font-bold text-gray-900 mb-4">
           Historique des ventes
         </h2>
-<FiltreSalesList
+      <FiltreSalesList
         sales={sales}
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}

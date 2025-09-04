@@ -19,6 +19,7 @@ import {
 import { Fiche, ClotureData } from '../componentsAdminFiches/fiche.ts';
 import ImportModal from '../componentsAdminFiches/ImportModal.tsx';
 import AssignModal from '../componentsAdminFiches/AssignModal.tsx';
+import ExportModalFiches from '../componentsAdminFiches/ExportMadalFiches.jsx';
 import { AuthContext } from '../../pages/AuthContext.jsx';
 import axiosInstance from '../../api/axiosInstance.js';
 
@@ -56,6 +57,7 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
         ficheId: number | null;
         currentAgentId: number | null;
     }>({ isOpen: false, ficheId: null, currentAgentId: null });
+    const [showExportModal, setShowExportModal] = useState(false);
 
     // Onglets univers
     const tabs = [
@@ -206,10 +208,14 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
                                 className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-80"
                             />
                         </div>
-                        <button onClick={() => setShowImportModal(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm">
+                        <button
+                            onClick={() => setShowImportModal(true)}
+                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm">
                             <Download size={18} /> Importer
                         </button>
-                        <button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium shadow-sm">
+                        <button
+                            onClick={() => setShowExportModal(true)}
+                            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium shadow-sm">
                             <Upload size={18} /> Exporter </button>
                     </div>
                 </div>
@@ -361,6 +367,12 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
                     currentAgentId={assignModal.currentAgentId}
                     ficheId={assignModal.ficheId}
                     selectedFiches={selectedFiches}
+                />
+
+                <ExportModalFiches
+                    isOpen={showExportModal}
+                    fiches={filteredFiches}  // seulement les fiches à exporter
+                    onClose={() => setShowExportModal(false)}
                 />
             </div>
         </div>

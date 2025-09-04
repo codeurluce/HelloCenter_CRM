@@ -226,10 +226,14 @@ exports.getAssignedFichesTo = async (req, res) => {
     // 🔄 Mise à jour des fiches
     const result = await db.query(
       `UPDATE files 
-       SET assigned_to = $1, statut = 'nouvelle', date_modification = NOW()
-       WHERE id = ANY($2::int[])
+       SET assigned_to = $1,
+          agent_id = $1, 
+           assigned_by = $2,
+           statut = 'nouvelle', 
+           date_assignation = NOW()
+       WHERE id = ANY($3::int[])
        RETURNING id`,
-      [agentId, ficheIds]
+      [agentId, adminId, ficheIds]
     );
 
     // 📝 Log dans historique_files
