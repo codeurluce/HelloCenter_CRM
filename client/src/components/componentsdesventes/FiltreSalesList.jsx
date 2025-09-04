@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Eye, Pencil, Trash2, RefreshCw, Plus, Download } from 'lucide-react';
+import { Eye, Pencil, Trash2, RefreshCw, Plus, Download, Upload } from 'lucide-react';
 import { BadgeCheck, X as BadgeX } from 'lucide-react';
 import Swal from 'sweetalert2';
 import ExportModal from '../componentsAdminVentes/ExportModal';
@@ -132,18 +132,8 @@ const FiltreSalesList = ({
           </select>
         </div>
 
-        {/* --- Bouton à droite --- */}
+        {/* --- Bouton Nouvelle Vente --- */}
         <div className="flex-1" /> 
-        {isAdmin && (
-        <button
-          onClick={() => setShowExport(true)}
-          className="flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 gap-2 rounded-lg transition-colors"
-        >
-          <Download size={16} /> Exporter
-        </button>
-        )}
-
-
         <button
           onClick={onOpenNewSale}
           className="flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 space-x-2 rounded-lg transition-colors"
@@ -151,6 +141,17 @@ const FiltreSalesList = ({
           <Plus className="w-4 h-4" />
           <span>Nouvelle vente</span>
         </button>
+
+        {/* --- Bouton à droite --- */}
+        
+        {isAdmin && (
+        <button
+          onClick={() => setShowExport(true)}
+          className="flex items-center bg-green-600 hover:bg-green-700 text-white px-4 py-2 gap-2 rounded-lg transition-colors font-medium shadow-sm"
+        >
+          <Upload size={16} /> Exporter
+        </button>
+        )}
       </div>
 
       <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm bg-white">

@@ -5,7 +5,7 @@ import socket from "../../socket";
 import SessionsTable from "../componentsAdminSessions/SessionsTable";
 import SessionFilters from "../componentsAdminSessions/SessionFilters";
 import ExportModal from "../componentsAdminSessions/ExportModal.jsx";
-import { Download } from "lucide-react";
+import { Download, Upload } from "lucide-react";
 
 export default function AdminLiveSessions() {
   const [agents, setAgents] = useState([]);
@@ -151,6 +151,7 @@ export default function AdminLiveSessions() {
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
+     {/* Titre de section */}
       <h2 className="text-2xl font-bold mb-4"> Suivi en live des agents</h2>
       <div className="flex items-center mb-4">
         <SessionFilters
@@ -163,9 +164,9 @@ export default function AdminLiveSessions() {
         <div className="flex-1" /> {/* Ceci pousse le bouton à droite */}
         <button
           onClick={() => setShowExport(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium shadow-sm"
         >
-          <Download size={16} /> Exporter
+          <Upload size={16} /> Exporter
         </button>
       </div>
 

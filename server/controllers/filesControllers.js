@@ -75,8 +75,6 @@ exports.annulerFiche = async (req, res) => {
   }
 };
 
-
-
 // export pour clôturer une fiche
 exports.cloturerFiche = async (req, res) => {
   const { id } = req.params;
@@ -95,7 +93,6 @@ exports.cloturerFiche = async (req, res) => {
     res.sendStatus(500);
   }
 };
-
 
 // Export pour prendre un rendez-vous
 exports.programRdv = async (req, res) => {
@@ -133,7 +130,6 @@ exports.getFilesToRDV = async (req, res) => {
     res.status(500).json({ error: 'Erreur serveur' });
   }
 }
-
 
 // GET /api/rendezvous/upcoming/:agentId
 exports.getUpcomingRendezVous = async (req, res) => {
@@ -196,7 +192,7 @@ exports.getAllFiches = async (req, res) => {
   }
 };
 
-
+// API pour assigner des fiches à un agent et logué l'admin qui a fait l'action dans la bd
 exports.getAssignedFichesTo = async (req, res) => {
   try {
     const { ficheIds, agentId } = req.body;
@@ -261,7 +257,7 @@ exports.getAssignedFichesTo = async (req, res) => {
   }
 };
 
-
+// API pour importer des fiches en masse
 exports.importFiles = async (req, res ) => {
   try {
     const { files } = req.body;

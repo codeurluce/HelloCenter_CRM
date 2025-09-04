@@ -191,6 +191,7 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
                 {/* Header */}
                 <div className="flex justify-between items-center">
                     <div>
+                         {/* Titre de section */}
                         <h2 className="text-2xl font-bold mb-4">Administration des Fiches</h2>
                         <p className="text-gray-600">Gestion complète et assignation aux agents</p>
                     </div>
@@ -206,10 +207,10 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
                             />
                         </div>
                         <button onClick={() => setShowImportModal(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm">
-                            <Upload size={18} /> Importer
+                            <Download size={18} /> Importer
                         </button>
                         <button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium shadow-sm">
-                            <Download size={18} /> Exporter </button>
+                            <Upload size={18} /> Exporter </button>
                     </div>
                 </div>
 

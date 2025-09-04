@@ -174,7 +174,7 @@ export default function AdministrationUsers() {
     <div className="p-6 bg-gray-50 min-h-screen">
       {/* Titre de section */}
       <h2 className="text-2xl font-bold mb-4">Gestion des utilisateurs</h2>
-
+      
       {/* Barre de recherche/filtre + bouton créer */}
       <SearchFilterBar
         q={q}
