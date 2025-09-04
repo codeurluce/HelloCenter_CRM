@@ -244,7 +244,7 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
                                     {f} <span className="px-2 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-600">{counters[f]}</span>
                                 </button>
                             ))}
-                            <button onClick={fetchFiches} className="flex items-center gap-2 py-1 px-3 rounded-md border border-blue-500 text-blue-600 hover:bg-blue-100 transition">
+                            <button onClick={fetchFiches} className="flex ml-6 items-center gap-2 py-1 px-3 rounded-md border border-blue-500 text-blue-600 hover:bg-blue-100 transition">
                                 <RefreshCw size={16} /> Rafraîchir
                             </button>
                         </div>
@@ -273,13 +273,13 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
                                     <table className="w-full border-collapse" >
                                         <thead className="bg-blue-50">
                                             <tr>
-                                                <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700" >N° fiche</th>
+                                                <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700 whitespace-nowrap" >N° fiche</th>
                                                 <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700" >Client</th>
                                                 <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Contact</th>
                                                 <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Univers</th>
                                                 <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Statut</th>
                                                 <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Assignée à</th>
-                                                <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Date création</th>
+                                                <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700 whitespace-nowrap">Date création</th>
                                                 <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Actions</th>
                                                 <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
                                                     <input

@@ -197,14 +197,37 @@ exports.getAllFiches = async (req, res) => {
 };
 
 
-exports.getAssignedFichesTo = async (req, res ) => {
- try {
+exports.getAssignedFichesTo = async (req, res) => {
+  try {
     const { ficheIds, agentId } = req.body;
+    const adminId = req.user.id; // l'admin qui fait l'action
 
     if (!ficheIds || !agentId || ficheIds.length === 0) {
       return res.status(400).json({ error: 'ficheIds et agentId sont obligatoires' });
     }
 
+    // 🔎 Récupérer le nom/prénom du manager (admin)
+    let adminName;
+    if (!req.user.firstname || !req.user.lastname) {
+      const adminRes = await db.query(
+        `SELECT firstname, lastname FROM users WHERE id = $1`,
+        [adminId]
+      );
+      const admin = adminRes.rows[0];
+      adminName = admin ? `${admin.firstname} ${admin.lastname}` : `ID ${adminId}`;
+    } else {
+      adminName = `${req.user.firstname} ${req.user.lastname}`;
+    }
+
+    // 🔎 Récupérer le nom/prénom de l’agent assigné
+    const agentRes = await db.query(
+      `SELECT firstname, lastname FROM users WHERE id = $1`,
+      [agentId]
+    );
+    const agent = agentRes.rows[0];
+    const agentName = agent ? `${agent.firstname} ${agent.lastname}` : `ID ${agentId}`;
+
+    // 🔄 Mise à jour des fiches
     const result = await db.query(
       `UPDATE files 
        SET assigned_to = $1, statut = 'nouvelle', date_modification = NOW()
@@ -213,8 +236,23 @@ exports.getAssignedFichesTo = async (req, res ) => {
       [agentId, ficheIds]
     );
 
+    // 📝 Log dans historique_files
+    for (const fiche of result.rows) {
+      await db.query(
+        `INSERT INTO historique_files (fiche_id, action, actor_id, actor_name, commentaire, created_at)
+         VALUES ($1, $2, $3, $4, $5, NOW())`,
+        [
+          fiche.id,
+          'ASSIGNATION',
+          adminId,
+          adminName,
+          `Fiche assignée à l’agent ${agentName}`,
+        ]
+      );
+    }
+
     return res.json({
-      message: `✅ ${result.rowCount} fiche(s) assignée(s) à l’agent ${agentId}`,
+      message: `✅ ${result.rowCount} fiche(s) assignée(s) à l’agent ${agentName}`,
       updated: result.rows.map(r => r.id),
     });
   } catch (error) {
@@ -222,6 +260,7 @@ exports.getAssignedFichesTo = async (req, res ) => {
     res.status(500).json({ error: 'Erreur serveur lors de l’assignation' });
   }
 };
+
 
 exports.importFiles = async (req, res ) => {
   try {
