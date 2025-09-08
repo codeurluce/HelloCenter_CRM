@@ -1,6 +1,7 @@
 const db = require('../db');
 const XLSX = require("xlsx");
 const columnOptions = require("../../client/src/shared/columnsConfig");
+const dayjs = require("dayjs");
 
 // Obtenir les nouvelles fiches par
 exports.getTodayNewFilesByUniverse = async (req, res) => {
@@ -309,11 +310,11 @@ exports.importFiles = async (req, res) => {
         (nom_client, prenom_client, adresse_client, code_postal, mail_client, numero_mobile, univers, statut, date_import, imported_by)
       VALUES
         ${insertValues.map((_, i) =>
-          `(
+      `(
             $${i * 10 + 1}, $${i * 10 + 2}, $${i * 10 + 3}, $${i * 10 + 4}, $${i * 10 + 5},
             $${i * 10 + 6}, $${i * 10 + 7}, $${i * 10 + 8}, $${i * 10 + 9}, $${i * 10 + 10}
           )`
-        ).join(', ')}
+    ).join(', ')}
       RETURNING id
     `;
 
@@ -348,7 +349,7 @@ exports.importFiles = async (req, res) => {
       message: `✅ ${result.rowCount} fiche(s) importée(s) avec succès`,
       addedFiches: result.rows.map(r => r.id)
     });
-    
+
 
   } catch (error) {
     // 🔄 Rollback si erreur
@@ -416,7 +417,7 @@ exports.exportFichesToXLSX = async (req, res) => {
     // Exécution requête
     const { rows } = await db.query(query, params);
 
-    
+
     // appliquer le mapping clé → label
     let dataToExport = rows;
     if (columns) {
@@ -424,6 +425,12 @@ exports.exportFichesToXLSX = async (req, res) => {
       dataToExport = rows.map(row =>
         columnsArray.reduce((acc, col) => {
           const label = columnLabels[col] || col;
+          let value = row[col];
+
+          // formater si c'est une date
+          if (value instanceof Date) {
+            value = value.toISOString().replace('T', ' ').substring(0, 19);
+          }
           acc[label] = row[col];
           return acc;
         }, {})

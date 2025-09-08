@@ -38,32 +38,7 @@ const ExportModalFiches: React.FC<ExportModalFichesProps> = ({ isOpen, onClose, 
   const [columnSearchTerm, setColumnSearchTerm] = useState<string>("");
   const agentDropdownRef = useRef<HTMLDivElement | null>(null);
   const columnDropdownRef = useRef<HTMLDivElement | null>(null);
-
-  // Colonnes disponibles
-// const columnOptions: ColumnOption[] = [
-//   { key: "id", label: "N° Fiche" },
-//   { key: "univers", label: "Univers" },
-//   { key: "nom_client", label: "Nom du client" },
-//   { key: "prenom_client", label: "Prénom du client" },
-//   { key: "adresse_client", label: "Adresse" },
-//   { key: "code_postal", label: "Code postal" },
-//   { key: "mail_client", label: "Email" },
-//   { key: "numero_mobile", label: "Téléphone" },
-//   { key: "statut", label: "Statut" },
-//   { key: "commentaire", label: "Notes" },
-//   { key: "assigned_to", label: "Agent assigné (ID)" },
-//   { key: "assigned_to_name", label: "Agent assigné" },
-//   { key: "assigned_by", label: "Assigné par (ID)" },
-//   { key: "assigned_by_name", label: "Assigné par" },
-//   { key: "date_assignation", label: "Date d’assignation" },
-//   { key: "date_creation", label: "Date de création" },
-//   { key: "date_modification", label: "Dernière modification" },
-//   { key: "date_import", label: "Date d’import" },
-//   { key: "tag", label: "Tag(s)" },
-//   { key: "rendez_vous_date", label: "Date du RDV" },
-//   { key: "rendez_vous_commentaire", label: "Commentaire du RDV" },
-// ];
-
+  // const [isExporting, setIsExporting] = useState(false); // pour le loader pour une grosse export
 
   // Agents uniques dédupliqués
   const uniqueAgents: Agent[] = Array.from(
@@ -125,61 +100,84 @@ const ExportModalFiches: React.FC<ExportModalFichesProps> = ({ isOpen, onClose, 
     setSelectedColumns(selectedColumns.filter(c => c.key !== key));
   };
 
-const handleExport = async () => {
-  if (selectedColumns.length === 0) {
-    alert("Veuillez sélectionner au moins une colonne à exporter.");
-    return;
-  }
 
-  try {
-    const params = new URLSearchParams();
-    if(selectedAgents.length > 0) params.append("agents", JSON.stringify(selectedAgents.map(a => a.id)));
-    params.append("columns", JSON.stringify(selectedColumns.map(c => c.key)));
-    params.append("dateType", dateType);
-    if(dateType === 'single') {
-      if(!singleDate) {
-        alert("Veuillez sélectionner une date.");
-        return;
-      }
-      params.append("singleDate", singleDate);
-    } else {
-      if(!startDate || !endDate) {
-        alert("Veuillez sélectionner une plage de dates.");
-        return;
-      }
-      params.append("startDate", startDate);
-      params.append("endDate", endDate);
-    }
-    params.append("exportClosedOnly", exportClosedOnly.toString());
+  const resetModal = () => {
+    setSelectedAgents([]);
+    setSelectedColumns([]);
+    setSingleDate("");
+    setStartDate("");
+    setEndDate("");
+    setAgentDropdownOpen(false);
+    setColumnDropdownOpen(false);
+    setAgentSearchTerm("");
+    setColumnSearchTerm("");
+    setDateType("single");
+  };
 
-    const response = await fetch(`http://localhost:5000/api/files/export_files?${params.toString()}`);
-
-
-    if(!response.ok) {
-      alert("Erreur récupération fichier.");
+  const handleExport = async () => {
+    if (selectedColumns.length === 0) {
+      alert("Veuillez sélectionner au moins une colonne à exporter.");
       return;
     }
 
-    const blob = await response.blob();
+    try {
+      // setIsExporting(true); // démarrer le loader
 
-    // Forcer le téléchargement du fichier
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "export_fiches.xlsx";
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.URL.revokeObjectURL(url);
+      const params = new URLSearchParams();
+      if (selectedAgents.length > 0) params.append("agents", JSON.stringify(selectedAgents.map(a => a.id)));
+      params.append("columns", JSON.stringify(selectedColumns.map(c => c.key)));
+      params.append("dateType", dateType);
+      if (dateType === 'single') {
+        if (!singleDate) {
+          alert("Veuillez sélectionner une date.");
+          return;
+        }
+        params.append("singleDate", singleDate);
+      } else {
+        if (!startDate || !endDate) {
+          alert("Veuillez sélectionner une plage de dates.");
+          // setIsExporting(false); 
+          return;
+        }
+        params.append("startDate", startDate);
+        params.append("endDate", endDate);
+      }
+      params.append("exportClosedOnly", exportClosedOnly.toString());
 
-  } catch(error) {
-    console.error("Erreur export:", error);
-    alert("Erreur lors de l’export.");
-  }
-};
+      const response = await fetch(`http://localhost:5000/api/files/export_files?${params.toString()}`);
 
 
-const isExportDisabled = () =>
+      if (!response.ok) {
+        alert("Erreur récupération fichier.");
+        return;
+      }
+
+      const blob = await response.blob();
+
+      // Forcer le téléchargement du fichier
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "export_fiches.xlsx";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      resetModal();
+      onClose();
+
+    } catch (error) {
+      console.error("Erreur export:", error);
+      alert("Erreur lors de l’export.");
+    }
+    // finally {
+    //   setIsExporting(false); // arrêter le loader
+    // }
+  };
+
+
+  const isExportDisabled = () =>
     selectedColumns.length === 0 || fiches.length === 0;
 
   if (!isOpen) return null;
@@ -207,6 +205,12 @@ const isExportDisabled = () =>
             <X className="h-5 w-5 text-white" />
           </button>
         </div>
+
+        {/* {isExporting && (
+      <div className="absolute inset-0 bg-white bg-opacity-70 flex items-center justify-center z-50">
+        <span className="text-gray-700">Export en cours...</span>
+      </div>
+    )} */}
 
         <div className="p-6 space-y-8">
           {/* Agents */}
@@ -239,9 +243,8 @@ const isExportDisabled = () =>
               >
                 <span className="text-gray-500">Choisir agents...</span>
                 <ChevronDown
-                  className={`h-4 w-4 text-gray-400 transition-transform ${
-                    agentDropdownOpen ? "rotate-180" : ""
-                  }`}
+                  className={`h-4 w-4 text-gray-400 transition-transform ${agentDropdownOpen ? "rotate-180" : ""
+                    }`}
                 />
               </div>
               {agentDropdownOpen && (
@@ -371,9 +374,8 @@ const isExportDisabled = () =>
               >
                 <span className="text-gray-500">Choisir colonnes...</span>
                 <ChevronDown
-                  className={`h-4 w-4 text-gray-400 transition-transform ${
-                    columnDropdownOpen ? "rotate-180" : ""
-                  }`}
+                  className={`h-4 w-4 text-gray-400 transition-transform ${columnDropdownOpen ? "rotate-180" : ""
+                    }`}
                 />
               </div>
               {columnDropdownOpen && (
