@@ -263,20 +263,33 @@ exports.getAssignedFichesTo = async (req, res) => {
   }
 };
 
-// API pour importer des fiches en masse
+// API pour importer des fiches en masse et logué l'admin qui a fait l'import dans la bd
 exports.importFiles = async (req, res) => {
   try {
     const { files } = req.body;
+    const adminId = req.user?.id;
 
     if (!files || !Array.isArray(files) || files.length === 0) {
       return res.status(400).json({ error: 'Aucun fichier à importer' });
     }
 
-    const normalizeText = (str) => {
-      if (str === null || str === undefined) return null;
-      return String(str).normalize("NFC").trim();
-    };
-    // Préparer l'insertion
+    // 🔎 Récupérer le nom/prénom exact du manager (admin)
+    let adminName;
+    if (!req.user?.firstname || !req.user?.lastname) {
+      const adminRes = await db.query(
+        `SELECT firstname, lastname FROM users WHERE id = $1`,
+        [adminId]
+      );
+      const admin = adminRes.rows[0];
+      adminName = admin ? `${admin.firstname} ${admin.lastname}` : `ID ${adminId}`;
+    } else {
+      adminName = `${req.user.firstname} ${req.user.lastname}`;
+    }
+
+    // Normalisation des textes
+    const normalizeText = (str) => (str == null ? null : String(str).normalize("NFC").trim());
+
+    // Préparer les valeurs pour l'insertion
     const insertValues = files.map(f => [
       normalizeText(f.nom_client),
       normalizeText(f.prenom_client),
@@ -286,40 +299,62 @@ exports.importFiles = async (req, res) => {
       normalizeText(f.numero_mobile),
       normalizeText(f.univers),
       f.statut || 'nouvelle',
-      new Date()
+      new Date(),
+      adminId
     ]);
+
     // Générer la requête multi-insertion
     const queryText = `
-      INSERT 
-      INTO files 
-        (nom_client, 
-         prenom_client, 
-         adresse_client, 
-         code_postal, 
-         mail_client, 
-         numero_mobile, 
-         univers, 
-         statut, 
-         date_import
-        )
+      INSERT INTO files
+        (nom_client, prenom_client, adresse_client, code_postal, mail_client, numero_mobile, univers, statut, date_import, imported_by)
       VALUES
         ${insertValues.map((_, i) =>
-      `($${i * 9 + 1}, $${i * 9 + 2}, $${i * 9 + 3}, $${i * 9 + 4}, $${i * 9 + 5}, $${i * 9 + 6}, $${i * 9 + 7}, $${i * 9 + 8}, $${i * 9 + 9})`
-    ).join(', ')}
-      RETURNING *
+          `(
+            $${i * 10 + 1}, $${i * 10 + 2}, $${i * 10 + 3}, $${i * 10 + 4}, $${i * 10 + 5},
+            $${i * 10 + 6}, $${i * 10 + 7}, $${i * 10 + 8}, $${i * 10 + 9}, $${i * 10 + 10}
+          )`
+        ).join(', ')}
+      RETURNING id
     `;
 
-    // Aplatir les valeurs
     const flatValues = insertValues.flat();
 
+    // 🔄 Début transaction
+    await db.query('BEGIN');
+
+    // Insertion des fichiers
     const result = await db.query(queryText, flatValues);
 
-    res.json({
+    // Insertion dans historique_files
+    for (const fiche of result.rows) {
+      await db.query(
+        `INSERT INTO historique_files (
+           fiche_id, action, actor_id, actor_name, commentaire, created_at
+         ) VALUES ($1, $2, $3, $4, $5, NOW())`,
+        [
+          fiche.id,
+          'IMPORTATION',
+          adminId,
+          adminName,
+          `Fiche importée par ${adminName}`
+        ]
+      );
+    }
+
+    // ✅ Commit transaction
+    await db.query('COMMIT');
+
+    return res.json({
       message: `✅ ${result.rowCount} fiche(s) importée(s) avec succès`,
-      addedFiches: result.rows
+      addedFiches: result.rows.map(r => r.id)
     });
+    
+
   } catch (error) {
+    // 🔄 Rollback si erreur
+    await db.query('ROLLBACK');
     console.error('Erreur import:', error);
+
     if (error.code === '23514') {
       return res.status(400).json({
         error: "⚠️ Univers invalide. Vérifie que la colonne 'univers' contient une valeur autorisée."

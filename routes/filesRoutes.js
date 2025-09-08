@@ -27,7 +27,7 @@ router.get('/today-summary', auth, filesControllers.getTodayNewFilesByUniverse);
 router.get('/files_by_agents', filesControllers.getFilesbyAgent);// => GET    /api/files/AssignedTo/agentId
 router.get('/all_files', filesControllers.getAllFiches)
 router.put('/assigned_To', auth, filesControllers.getAssignedFichesTo);
-router.put('/import_files', filesControllers.importFiles);
+router.put('/import_files', auth, filesControllers.importFiles);
 router.get('/export_files', filesControllers.exportFichesToXLSX); // => GET    /api/files/export_files
 
 module.exports = router;
