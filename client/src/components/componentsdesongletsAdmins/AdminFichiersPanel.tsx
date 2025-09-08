@@ -288,6 +288,7 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
                                                 <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Assignée à</th>
                                                 <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700 whitespace-nowrap">Date création</th>
                                                 <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Actions</th>
+                                                {activeFilter === 'nouvelles' && ( 
                                                 <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
                                                     <input
                                                         type="checkbox"
@@ -298,6 +299,7 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
                                                         checked={selectedFiches.length === filteredFiches.length && filteredFiches.length > 0}
                                                     />
                                                 </th>
+                                                )}
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -324,7 +326,7 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
                                                         )}
 
                                                         {/* Si besoin, tu peux aussi mettre d’autres actions visibles partout */}
-                                                        {activeFilter !== 'nouvelles' && (
+                                                        {activeFilter !== 'nouvelles' && (   
                                                             <div className="flex items-center gap-2">
                                                                 <button title="Voir fiche" className="text-blue-600 hover:text-gray-800 px-6 py-3">
                                                                     <FileText size={16} />
@@ -332,6 +334,7 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
                                                             </div>
                                                         )}
                                                     </td>
+                                                    {activeFilter === 'nouvelles' && ( 
                                                     <td className="px-6 py-3 text-gray-800">
                                                         <input
                                                             type="checkbox"
@@ -342,6 +345,7 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
                                                             }}
                                                         />
                                                     </td>
+                                                    )}
                                                 </tr>
                                             ))}
                                         </tbody>
