@@ -3,6 +3,7 @@
 const columnOptions = [
     { key: "id", label: "N° Fiche" },
     { key: "date_import", label: "Date d’import" },
+    // { key: "imported_by", label: "Importé par (ID)" },
     // { key: "imported_by_name", label: "Importé par" },
     { key: "univers", label: "Univers" },
     { key: "nom_client", label: "Nom du client" },
