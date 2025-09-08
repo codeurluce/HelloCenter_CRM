@@ -1,5 +1,4 @@
 export interface Fiche {
-  fiche(assigned_to: number, assigned_to_name: string | undefined): import("react").ReactNode;
   id: number;
   nom_client: string;
   prenom_client: string;
@@ -11,6 +10,11 @@ export interface Fiche {
   statut: 'nouvelle' | 'en_traitement' | 'rendez_vous' | 'cloturee';
   assigned_to?: number;
   assigned_to_name?: string;
+  agent_id?: number;
+  agent_firstname?: string;
+  agent_lastname?: string;
+  ref_fiche?: string;
+  client_name?: string;
   date_creation: string;
   date_traitement?: string;
   date_cloture?: string;
@@ -18,6 +22,9 @@ export interface Fiche {
   tag?: string;
   rendez_vous_date?: string;
   rendez_vous_commentaire?: string;
+  assigned_by?: number;
+  assigned_by_name?: string;
+  date_assignation?: string;
 }
 
 export interface ClotureData {

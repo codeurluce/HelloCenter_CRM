@@ -19,7 +19,7 @@ import {
 import { Fiche, ClotureData } from '../componentsAdminFiches/fiche.ts';
 import ImportModal from '../componentsAdminFiches/ImportModal.tsx';
 import AssignModal from '../componentsAdminFiches/AssignModal.tsx';
-import ExportModalFiches from '../componentsAdminFiches/ExportMadalFiches.jsx';
+import ExportModalFiches from '../componentsAdminFiches/ExportMadalFiches.tsx';
 import { AuthContext } from '../../pages/AuthContext.jsx';
 import axiosInstance from '../../api/axiosInstance.js';
 
@@ -83,7 +83,7 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
             setLoading(false);
         }
     };
-    useEffect(() => { fetchFiches(); }, []);
+    useEffect(() => { fetchFiches(); console.log(fiches)}, []);
 
     const handleAssignSubmit = async (agentId: number) => {
         try {
@@ -371,12 +371,11 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
 
                 <ExportModalFiches
                     isOpen={showExportModal}
-                    fiches={filteredFiches}  // seulement les fiches à exporter
+                    fiches={fiches} // envoie toutes les fiches
                     onClose={() => setShowExportModal(false)}
                 />
             </div>
         </div>
     );
 };
-
 export default AdminFichiersPanel;

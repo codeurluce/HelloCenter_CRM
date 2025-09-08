@@ -1,4 +1,6 @@
 const db = require('../db');
+const XLSX = require("xlsx");
+const columnOptions = require("../../client/src/shared/columnsConfig");
 
 // Obtenir les nouvelles fiches par
 exports.getTodayNewFilesByUniverse = async (req, res) => {
@@ -156,7 +158,7 @@ exports.getUpcomingRendezVous = async (req, res) => {
 // GET API pour obtenir les fiches assignées à l'agent connecté
 exports.getFilesbyAgent = async (req, res) => {
   try {
-    const agentId = req.user.id; 
+    const agentId = req.user.id;
     const result = await db.query(
       `SELECT * FROM files 
         WHERE assigned_to = $1 
@@ -262,7 +264,7 @@ exports.getAssignedFichesTo = async (req, res) => {
 };
 
 // API pour importer des fiches en masse
-exports.importFiles = async (req, res ) => {
+exports.importFiles = async (req, res) => {
   try {
     const { files } = req.body;
 
@@ -270,22 +272,22 @@ exports.importFiles = async (req, res ) => {
       return res.status(400).json({ error: 'Aucun fichier à importer' });
     }
 
-const normalizeText = (str) => {
-  if (str === null || str === undefined) return null;
-  return String(str).normalize("NFC").trim();
-};
+    const normalizeText = (str) => {
+      if (str === null || str === undefined) return null;
+      return String(str).normalize("NFC").trim();
+    };
     // Préparer l'insertion
-   const insertValues = files.map(f => [
-  normalizeText(f.nom_client),
-  normalizeText(f.prenom_client),
-  normalizeText(f.adresse_client),
-  normalizeText(f.code_postal),
-  normalizeText(f.mail_client),
-  normalizeText(f.numero_mobile),
-  normalizeText(f.univers),
-  f.statut || 'nouvelle',
-  new Date()
-]);
+    const insertValues = files.map(f => [
+      normalizeText(f.nom_client),
+      normalizeText(f.prenom_client),
+      normalizeText(f.adresse_client),
+      normalizeText(f.code_postal),
+      normalizeText(f.mail_client),
+      normalizeText(f.numero_mobile),
+      normalizeText(f.univers),
+      f.statut || 'nouvelle',
+      new Date()
+    ]);
     // Générer la requête multi-insertion
     const queryText = `
       INSERT 
@@ -298,12 +300,12 @@ const normalizeText = (str) => {
          numero_mobile, 
          univers, 
          statut, 
-         date_creation
+         date_import
         )
       VALUES
-        ${insertValues.map((_, i) => 
-          `($${i*9+1}, $${i*9+2}, $${i*9+3}, $${i*9+4}, $${i*9+5}, $${i*9+6}, $${i*9+7}, $${i*9+8}, $${i*9+9})`
-        ).join(', ')}
+        ${insertValues.map((_, i) =>
+      `($${i * 9 + 1}, $${i * 9 + 2}, $${i * 9 + 3}, $${i * 9 + 4}, $${i * 9 + 5}, $${i * 9 + 6}, $${i * 9 + 7}, $${i * 9 + 8}, $${i * 9 + 9})`
+    ).join(', ')}
       RETURNING *
     `;
 
@@ -312,26 +314,127 @@ const normalizeText = (str) => {
 
     const result = await db.query(queryText, flatValues);
 
-    res.json({ 
+    res.json({
       message: `✅ ${result.rowCount} fiche(s) importée(s) avec succès`,
       addedFiches: result.rows
     });
   } catch (error) {
     console.error('Erreur import:', error);
-  if (error.code === '23514') {
-    return res.status(400).json({ 
-      error: "⚠️ Univers invalide. Vérifie que la colonne 'univers' contient une valeur autorisée."
-    });
+    if (error.code === '23514') {
+      return res.status(400).json({
+        error: "⚠️ Univers invalide. Vérifie que la colonne 'univers' contient une valeur autorisée."
+      });
+    }
+    //   if (error.code === "23505") {
+    //   return res.status(400).json({ 
+    //     error: "Ce client existe déjà (conflit de doublon)." });
+    // }
+    // if (error.code === "23502") {
+    //   return res.status(400).json({ error: "Champs obligatoires manquants." });
+    // }
+    // if (error.code === "22P02") {
+    //   return res.status(400).json({ error: "Format invalide pour certaines données." });
+    // }
+    res.status(500).json({ error: 'Erreur serveur lors de l’import des fichiers' });
   }
-//   if (error.code === "23505") {
-//   return res.status(400).json({ 
-//     error: "Ce client existe déjà (conflit de doublon)." });
-// }
-// if (error.code === "23502") {
-//   return res.status(400).json({ error: "Champs obligatoires manquants." });
-// }
-// if (error.code === "22P02") {
-//   return res.status(400).json({ error: "Format invalide pour certaines données." });
-// }
-  res.status(500).json({ error: 'Erreur serveur lors de l’import des fichiers' });
-}};
+};
+
+
+// exports.exportFichesToXLSX = async (req, res) => { 
+//   try {
+//     const query = "SELECT * FROM files WHERE statut != $1"; 
+//     const params = ["nouvelle"];
+//     const { rows } = await db.query(query, params);
+
+//     const worksheet = XLSX.utils.json_to_sheet(rows);
+//     const workbook = XLSX.utils.book_new();
+//     XLSX.utils.book_append_sheet(workbook, worksheet, "Fiches");
+
+//     const buffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
+
+//     res.setHeader(
+//       "Content-Disposition",
+//       'attachment; filename="export_fiches.xlsx"'
+//     );
+//     res.setHeader(
+//       "Content-Type",
+//       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+//     );
+
+//     res.send(buffer);
+//   } catch (error) {
+//     console.error("Erreur export fiches:", error);
+//     res.status(500).json({ error: "Erreur lors de l’export des fiches" });
+//   }
+// };
+// Fonction d'export des fichiers avec filtres
+exports.exportFichesToXLSX = async (req, res) => {
+  const columnLabels = Object.fromEntries(columnOptions.map(c => [c.key, c.label]));
+  try {
+    const {
+      agents,     // JSON stringifié: [1, 2, 3]
+      columns,    // JSON stringifié: ['id', 'nom_client', ...]
+      dateType,   // 'single' | 'range'
+      singleDate,
+      startDate,
+      endDate,
+    } = req.query;
+
+    // Requête de base : exclure "nouvelle"
+    let query = 'SELECT * FROM files WHERE statut != $1';
+    const params = ['nouvelle'];
+    let paramIndex = 2;
+
+    // Filtre agents
+    if (agents) {
+      let agentsArray = JSON.parse(agents).filter(a => a !== null); // enlève null
+      if (agentsArray.length > 0) {
+        const placeholders = agentsArray.map(() => `$${paramIndex++}`).join(',');
+        query += ` AND assigned_to IN (${placeholders})`;
+        params.push(...agentsArray);
+      }
+    }
+
+    // Filtre dates
+    if (dateType === 'single' && singleDate) {
+      query += ` AND date_creation::date = $${paramIndex}`;
+      params.push(singleDate);
+      paramIndex++;
+    } else if (dateType === 'range' && startDate && endDate) {
+      query += ` AND date_creation::date BETWEEN $${paramIndex} AND $${paramIndex + 1}`;
+      params.push(startDate, endDate);
+      paramIndex += 2;
+    }
+
+    // Exécution requête
+    const { rows } = await db.query(query, params);
+
+    
+    // appliquer le mapping clé → label
+    let dataToExport = rows;
+    if (columns) {
+      const columnsArray = JSON.parse(columns);
+      dataToExport = rows.map(row =>
+        columnsArray.reduce((acc, col) => {
+          const label = columnLabels[col] || col;
+          acc[label] = row[col];
+          return acc;
+        }, {})
+      );
+    }
+
+    // Génération Excel
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Fiches");
+
+    const buffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
+    res.setHeader("Content-Disposition", 'attachment; filename="export_fiches.xlsx"');
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.send(buffer);
+
+  } catch (error) {
+    console.error("Erreur export fiches:", error);
+    res.status(500).json({ error: "Erreur lors de l’export des fiches" });
+  }
+};
