@@ -339,35 +339,7 @@ exports.importFiles = async (req, res) => {
   }
 };
 
-
-// exports.exportFichesToXLSX = async (req, res) => { 
-//   try {
-//     const query = "SELECT * FROM files WHERE statut != $1"; 
-//     const params = ["nouvelle"];
-//     const { rows } = await db.query(query, params);
-
-//     const worksheet = XLSX.utils.json_to_sheet(rows);
-//     const workbook = XLSX.utils.book_new();
-//     XLSX.utils.book_append_sheet(workbook, worksheet, "Fiches");
-
-//     const buffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
-
-//     res.setHeader(
-//       "Content-Disposition",
-//       'attachment; filename="export_fiches.xlsx"'
-//     );
-//     res.setHeader(
-//       "Content-Type",
-//       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-//     );
-
-//     res.send(buffer);
-//   } catch (error) {
-//     console.error("Erreur export fiches:", error);
-//     res.status(500).json({ error: "Erreur lors de l’export des fiches" });
-//   }
-// };
-// Fonction d'export des fichiers avec filtres
+// API pour exporter des fiches en XLSX
 exports.exportFichesToXLSX = async (req, res) => {
   const columnLabels = Object.fromEntries(columnOptions.map(c => [c.key, c.label]));
   try {
