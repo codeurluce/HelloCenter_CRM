@@ -19,7 +19,7 @@ console.log('Route POST /api/historique appelée')
 });
 
 // 🧪 (Optionnel) récupérer l'historique d'une fiche
-router.post('/:ficheId', async (req, res) => {
+router.get('/:ficheId', async (req, res) => {
   const ficheId = req.params.ficheId;
 
   try {
