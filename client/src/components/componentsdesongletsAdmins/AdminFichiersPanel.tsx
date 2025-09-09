@@ -7,6 +7,7 @@ import {
     Download,
     RefreshCw,
     FileUp,
+    Eye,
 } from 'lucide-react';
 import { Fiche, ClotureData } from '../componentsAdminFiches/fiche.ts';
 import ImportModal from '../componentsAdminFiches/ImportModal.tsx';
@@ -15,6 +16,7 @@ import ExportModalFiches from '../componentsAdminFiches/ExportMadalFiches.tsx';
 import { AuthContext } from '../../pages/AuthContext.jsx';
 import axiosInstance from '../../api/axiosInstance.js';
 import HistoriqueFilesModal from '../componentsAdminFiches/HistoriqueFilesModal.tsx';
+import DetailModal from '../componentsAdminFiches/DetailModal.tsx';
 
 interface AdminFichiersPanelProps {
     agents: Array<{ id: number; name: string; email: string }>;
@@ -44,10 +46,22 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
     const [searchTerm, setSearchTerm] = useState('');
     const [showImportModal, setShowImportModal] = useState(false);
     const [selectedFiches, setSelectedFiches] = useState<number[]>([]);
+    const [selectedFiche, setSelectedFiche] = useState<Fiche | null>(null);
     const [batchSize, setBatchSize] = useState<number | ''>('');
     const [assignModal, setAssignModal] = useState<{ isOpen: boolean; ficheId: number | null; currentAgentId: number | null; }>({ isOpen: false, ficheId: null, currentAgentId: null });
     const [showExportModal, setShowExportModal] = useState(false);
     const [historiqueModal, setHistoriqueModal] = useState({ isOpen: false, ficheId: null as number | null, });
+    const [modalOpen, setModalOpen] = useState(false);
+  
+    const openDetailModal = (fiche) => {
+    setSelectedFiche(fiche);
+    setModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setModalOpen(false);
+    setSelectedFiche(null);
+  };
 
 
     // Onglets univers
@@ -132,7 +146,9 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
                 f.nom_client.toLowerCase().includes(term) ||
                 f.prenom_client.toLowerCase().includes(term) ||
                 (f.numero_mobile || '').includes(term) ||
+                (f.numero_fixe || '').includes(term) ||
                 (f.mail_client || '').toLowerCase().includes(term) ||
+                (f.ville_client || '').toLowerCase().includes(term) ||
                 (f.univers || '').toLowerCase().includes(term)
             );
         }
@@ -274,12 +290,13 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
                                             <tr>
                                                 <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700 whitespace-nowrap" >N° fiche</th>
                                                 <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700" >Client</th>
-                                                <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Contact</th>
-                                                <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Univers</th>
+                                                <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700 whitespace-nowrap">Numéro mobile</th>
+                                                {/* <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Mail client</th> */}
+                                                {/* <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Adresse</th> */}
                                                 <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Statut</th>
                                                 <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Assignée à</th>
-                                                <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700 whitespace-nowrap">Date création</th>
-                                                <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Actions</th>
+                                                <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700 whitespace-nowrap">Date import</th>
+                                                <th className="px-6 py-3 text-center text-sm font-semibold text-blue-700">Actions</th>
                                                 {activeFilter === 'nouvelles' && (
                                                     <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
                                                         <input
@@ -299,40 +316,75 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
                                                 <tr key={fiche.id} className={`border-t border-gray-200 transition-colors ${selectedFiches.includes(fiche.id) ? 'bg-blue-50' : 'hover:bg-blue-50'}`} >
                                                     <td className="px-6 py-3 text-gray-800">{fiche.id}</td>
                                                     <td className="px-6 py-3 text-gray-800 whitespace-nowrap">{fiche.nom_client} {fiche.prenom_client}</td>
-                                                    <td className="px-6 py-3 text-gray-800 whitespace-nowrap">{fiche.numero_mobile} {fiche.mail_client}</td>
-                                                    <td className="px-6 py-3 text-gray-800">{fiche.univers}</td>
+                                                    <td className="px-6 py-3 text-gray-800 whitespace-nowrap">{fiche.numero_mobile}</td>
+                                                    {/* <td className="px-6 py-3 text-gray-800 whitespace-nowrap">{fiche.mail_client}</td> */}
+                                                    {/* <td className="px-6 py-3 text-gray-800 whitespace-nowrap">{fiche.ville_client}</td> */}
+                                                    {/* <td className="px-6 py-3 text-gray-800">{fiche.univers}</td> */}
                                                     <td className="px-6 py-3 text-gray-800">{getStatusBadge(fiche.statut, fiche.assigned_to)}</td>
-                                                    <td className="px-6 py-3 text-gray-800 whitespace-nowrap">{fiche.assigned_to_name || 'Non assignée'}</td>
-                                                    <td className="px-6 py-3 text-gray-800">{new Date(fiche.date_creation).toLocaleDateString('fr-FR')}</td>
+                                                    <td className="px-6 py-3 text-gray-800 whitespace-nowrap">{fiche.assigned_to_name || 'Non Assignée'}</td>
+                                                    <td className="px-6 py-3 text-gray-800">{new Date(fiche.date_import).toLocaleDateString('fr-FR')}</td>
                                                     <td className="px-6 py-3 text-gray-800">
                                                         {activeFilter === 'nouvelles' && (
-                                                            <div className="relative group">
-                                                                <button
-                                                                    onClick={() => handleAssignFiche(fiche.id, fiche.assigned_to)}
-                                                                    title=""
-                                                                    className=" px-3 py-1.5 rounded-lg border border-green-100 text-blue-600 hover:bg-blue-600 hover:text-white
+                                                            <div className="flex justify-end gap-2 items-center">
+                                                                <div className="relative group">
+                                                                    <button
+                                                                        onClick={() => handleAssignFiche(fiche.id, fiche.assigned_to)}
+                                                                        title=""
+                                                                        className=" px-3 py-1.5 rounded-lg border border-green-100 text-blue-600 hover:bg-blue-600 hover:text-white
                                                                                 transition-transform transform focus:outline-none focus:ring-2 focus:ring-offset-1 hover:scale-105">
-                                                                    <FileUp className="w-4 h-4" />
-                                                                </button>
-                                                                <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-blue-600 text-white text-xs whitespace-nowrap">
-                                                                    Assigner
-                                                                </span>
+                                                                        <FileUp className="w-4 h-4" />
+                                                                    </button>
+                                                                    <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-blue-600 text-white text-xs whitespace-nowrap">
+                                                                        Assigner
+                                                                    </span>
+                                                                </div>
+
+                                                                <div className="relative group">
+                                                                    <button
+                                                                        onClick={() => openDetailModal(fiche)}
+                                                                        title="Consulter"
+                                                                        className="px-3 py-1.5 rounded-lg border border-green-100 text-green-600 hover:bg-green-600 hover:text-white 
+                                                                                                  transition-transform transform focus:outline-none focus:ring-2 focus:ring-offset-1 hover:scale-105"
+                                                                    >
+                                                                        <Eye className="w-4 h-4" />
+                                                                    </button>
+                                                                    <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-green-600 text-white text-xs whitespace-nowrap">
+                                                                        Détails
+                                                                    </span>
+                                                                </div>
                                                             </div>
+
                                                         )}
 
                                                         {/* Si besoin, tu peux aussi mettre d’autres actions visibles partout */}
                                                         {activeFilter !== 'nouvelles' && (
-                                                            <div className="relative group">
-                                                                <button
-                                                                    onClick={() => setHistoriqueModal({ isOpen: true, ficheId: fiche.id })}
-                                                                    title=""
-                                                                    className=" px-3 py-1.5 rounded-lg border border-green-100 text-blue-600 hover:bg-blue-600 hover:text-white
+                                                            <div className="flex justify-end gap-2 items-center">
+                                                                <div className="relative group">
+                                                                    <button
+                                                                        onClick={() => setHistoriqueModal({ isOpen: true, ficheId: fiche.id })}
+                                                                        title=""
+                                                                        className=" px-3 py-1.5 rounded-lg border border-green-100 text-blue-600 hover:bg-blue-600 hover:text-white
                                                                                 transition-transform transform focus:outline-none focus:ring-2 focus:ring-offset-1 hover:scale-105">
-                                                                    <FileText className="w-4 h-4" />
-                                                                </button>
-                                                                <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-blue-600 text-white text-xs whitespace-nowrap">
-                                                                    Voir l'historique
-                                                                </span>
+                                                                        <FileText className="w-4 h-4" />
+                                                                    </button>
+                                                                    <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-blue-600 text-white text-xs whitespace-nowrap">
+                                                                        Voir l'historique
+                                                                    </span>
+                                                                </div>
+
+                                                                <div className="relative group">
+                                                                    <button
+                                                                        onClick={() => openDetailModal(fiche)}
+                                                                        title="Consulter"
+                                                                        className="px-3 py-1.5 rounded-lg border border-green-100 text-green-600 hover:bg-green-600 hover:text-white 
+                                                                                                  transition-transform transform focus:outline-none focus:ring-2 focus:ring-offset-1 hover:scale-105"
+                                                                    >
+                                                                        <Eye className="w-4 h-4" />
+                                                                    </button>
+                                                                    <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-green-600 text-white text-xs whitespace-nowrap">
+                                                                        Détails
+                                                                    </span>
+                                                                </div>
                                                             </div>
                                                         )}
                                                     </td>
@@ -386,6 +438,14 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
                     ficheId={historiqueModal.ficheId}
                     onClose={() => setHistoriqueModal({ isOpen: false, ficheId: null })}
                 />
+
+                {selectedFiche && (
+        <DetailModal 
+          isOpen={modalOpen} 
+          onClose={closeModal} 
+          fiche={selectedFiche} 
+        />
+      )}
             </div>
         </div>
     );

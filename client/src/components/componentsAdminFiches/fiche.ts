@@ -3,6 +3,8 @@ export interface Fiche {
   nom_client: string;
   prenom_client: string;
   numero_mobile: string;
+  numero_fixe: string;
+  ville_client: string;
   mail_client: string;
   adresse_client: string;
   code_postal: string;
@@ -25,6 +27,7 @@ export interface Fiche {
   assigned_by?: number;
   assigned_by_name?: string;
   date_assignation?: string;
+  date_import: string;
 }
 
 export interface ClotureData {
