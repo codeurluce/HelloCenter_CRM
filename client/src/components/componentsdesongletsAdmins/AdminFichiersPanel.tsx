@@ -1,19 +1,11 @@
 import React, { useState, useMemo, useEffect, useContext } from 'react';
 import {
     Upload,
-    Filter,
-    Edit,
-    Trash2,
     UserPlus,
     FileText,
-    Clock,
-    CheckCircle,
-    CalendarClock,
-    UserCheck,
     Search,
     Download,
     RefreshCw,
-    UserPlus2,
     FileUp,
 } from 'lucide-react';
 import { Fiche, ClotureData } from '../componentsAdminFiches/fiche.ts';
@@ -22,6 +14,7 @@ import AssignModal from '../componentsAdminFiches/AssignModal.tsx';
 import ExportModalFiches from '../componentsAdminFiches/ExportMadalFiches.tsx';
 import { AuthContext } from '../../pages/AuthContext.jsx';
 import axiosInstance from '../../api/axiosInstance.js';
+import HistoriqueFilesModal from '../componentsAdminFiches/HistoriqueFilesModal.tsx';
 
 interface AdminFichiersPanelProps {
     agents: Array<{ id: number; name: string; email: string }>;
@@ -52,12 +45,10 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
     const [showImportModal, setShowImportModal] = useState(false);
     const [selectedFiches, setSelectedFiches] = useState<number[]>([]);
     const [batchSize, setBatchSize] = useState<number | ''>('');
-    const [assignModal, setAssignModal] = useState<{
-        isOpen: boolean;
-        ficheId: number | null;
-        currentAgentId: number | null;
-    }>({ isOpen: false, ficheId: null, currentAgentId: null });
+    const [assignModal, setAssignModal] = useState<{ isOpen: boolean; ficheId: number | null; currentAgentId: number | null;  }>({ isOpen: false, ficheId: null, currentAgentId: null });
     const [showExportModal, setShowExportModal] = useState(false);
+    const [historiqueModal, setHistoriqueModal] = useState({ isOpen: false, ficheId: null as number | null,});
+
 
     // Onglets univers
     const tabs = [
@@ -328,7 +319,10 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
                                                         {/* Si besoin, tu peux aussi mettre d’autres actions visibles partout */}
                                                         {activeFilter !== 'nouvelles' && (   
                                                             <div className="flex items-center gap-2">
-                                                                <button title="Voir fiche" className="text-blue-600 hover:text-gray-800 px-6 py-3">
+                                                                <button 
+                                                                    title="Voir fiche" 
+                                                                    className="text-blue-600 hover:text-gray-800 px-6 py-3"
+                                                                     onClick={() => setHistoriqueModal({ isOpen: true, ficheId: fiche.id })}>
                                                                     <FileText size={16} />
                                                                 </button>
                                                             </div>
@@ -378,6 +372,12 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
                     fiches={fiches} // envoie toutes les fiches
                     onClose={() => setShowExportModal(false)}
                 />
+
+                <HistoriqueFilesModal
+                    isOpen={historiqueModal.isOpen}
+                    ficheId={historiqueModal.ficheId}
+                    onClose={() => setHistoriqueModal({ isOpen: false, ficheId: null })}
+/>
             </div>
         </div>
     );

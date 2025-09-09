@@ -77,7 +77,7 @@ export const onCancelFiche = async (ficheId, fetchFiches) => {
       action: 'ANNULATION',
       actorId: user.id,
       actorName: `${user.firstname} ${user.lastname}`,
-      commentaire: 'Fiche remise en "nouvelle"',
+      commentaire: 'Prise en charge annulée',
     });
 
     fetchFiches();
@@ -108,7 +108,7 @@ export const handleCloture = async (ficheId, data, user, fetchFiches) => {
       action: 'CLOTURE',
       actorId: user.id,
       actorName: `${user.firstname} ${user.lastname}`,
-      commentaire: `Fiche clôturée avec tag "${data.tag}"`,
+      commentaire: `Fiche clôturée avec le tag "${data.tag}"`,
     });
 
     fetchFiches();
@@ -127,7 +127,7 @@ export const handleProgramRdv = async (ficheId, rdvDate, commentaire, fetchFiche
 
   const formattedDate = dayjs(rdvDate).format('DD/MM/YYYY à HH:mm');
   const fullCommentaire = commentaire
-    ? `${commentaire} (RDV prévu le ${formattedDate})`
+    ? `(RDV prévu le ${formattedDate}) ${commentaire} `
     : `Rendez-vous programmé le ${formattedDate}`;
 
   try {
@@ -142,7 +142,7 @@ export const handleProgramRdv = async (ficheId, rdvDate, commentaire, fetchFiche
       action: 'PROGRAMMATION_RDV',
       actorId: user.id,
       actorName: `${user.firstname} ${user.lastname}`,
-      commentaire: fullCommentaire,
+      commentaire: `RDV programmé : ${fullCommentaire}` ,
     });
 
     if (fetchFiches) fetchFiches(); // ✅ rafraîchir uniquement si la fonction est passée
