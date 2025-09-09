@@ -299,6 +299,8 @@ exports.importFiles = async (req, res) => {
       normalizeText(f.mail_client),
       normalizeText(f.numero_mobile),
       normalizeText(f.univers),
+      normalizeText(f.numero_fixe),
+      normalizeText(f.ville_client),
       f.statut || 'nouvelle',
       new Date(),
       adminId
@@ -307,12 +309,13 @@ exports.importFiles = async (req, res) => {
     // Générer la requête multi-insertion
     const queryText = `
       INSERT INTO files
-        (nom_client, prenom_client, adresse_client, code_postal, mail_client, numero_mobile, univers, statut, date_import, imported_by)
+        (nom_client, prenom_client, adresse_client, code_postal, mail_client, numero_mobile, univers, numero_fixe, ville_client, statut, date_import, imported_by)
       VALUES
         ${insertValues.map((_, i) =>
       `(
-            $${i * 10 + 1}, $${i * 10 + 2}, $${i * 10 + 3}, $${i * 10 + 4}, $${i * 10 + 5},
-            $${i * 10 + 6}, $${i * 10 + 7}, $${i * 10 + 8}, $${i * 10 + 9}, $${i * 10 + 10}
+            $${i * 12 + 1}, $${i * 12 + 2}, $${i * 12 + 3}, $${i * 12 + 4}, $${i * 12 + 5},
+            $${i * 12 + 6}, $${i * 12 + 7}, $${i * 12 + 8}, $${i * 12 + 9}, $${i * 12 + 10},
+            $${i * 12 + 11}, $${i * 12 + 12}
           )`
     ).join(', ')}
       RETURNING id

@@ -26,21 +26,25 @@ const ImportModal: React.FC<ImportModalProps> = ({
 
   const requiredColumns = [
     'nom_client',
-    'prenom_client', 
-    'numero_mobile',
-    'mail_client',
     'adresse_client',
+    'numero_mobile',
+    'prenom_client', 
+    'ville_client',
+    'numero_fixe',
+    'mail_client',
     'code_postal',
-    'univers'
+    'univers',
   ];
 
   const sampleData = [
     {
       nom_client: 'Dupont',
       prenom_client: 'Jean',
-      numero_mobile: '0123456789',
+      numero_mobile: '0623456789',
+      numero_fixe: '3347258369',
       mail_client: 'jean.dupont@email.com',
       adresse_client: '123 Rue de la Paix',
+      ville_client: 'Paris',
       code_postal: '75001',
       univers: 'Assurance Auto',
       // commentaire: 'Client intéressé par une nouvelle police'
@@ -49,8 +53,10 @@ const ImportModal: React.FC<ImportModalProps> = ({
       nom_client: 'Martin',
       prenom_client: 'Marie',
       numero_mobile: '0987654321',
+      numero_fixe: '3347258390',
       mail_client: 'marie.martin@email.com',
       adresse_client: '456 Avenue des Champs',
+      ville_client: 'Lyon',
       code_postal: '69001',
       univers: 'Assurance Habitation',
       // commentaire: 'Demande de devis pour appartement'
