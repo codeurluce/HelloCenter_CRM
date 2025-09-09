@@ -45,13 +45,13 @@ if (!isOpen) return null;
   const renderIcon = (action: string) => {
     switch (action) {
       case "ASSIGNATION":
-        return <Redo className="text-blue-500" size={18} />;
+        return <Redo className="text-purple-500" size={18} />;
       case "IMPORTATION":
-        return <Import className="text-green-500" size={18} />;
+        return <Import className="text-blue-500" size={18} />;
       case "CLOTURE":
-        return <CheckCircle className="text-green-500" size={18} />;
+        return <CheckCircle className="text-red-500" size={18} />;
       case "PRISE_EN_CHARGE":
-        return <PlayCircle className="text-blue-500" size={18} />;
+        return <PlayCircle className="text-green-500" size={18} />;
     //   case "ANNULATION":
     //     return <RotateCcw className="text-orange-500" size={18} />;
       case "PROGRAMMATION_RDV":
@@ -90,7 +90,7 @@ if (!isOpen) return null;
                     <span className="font-semibold">{h.actor_name}</span> – {h.commentaire}
                   </p>
                   <p className="text-xs text-gray-400">
-                    {dayjs(h.date_action || h.created_at).format("DD/MM/YYYY HH:mm")}
+                    {dayjs(h.date_action || h.created_at).format("DD/MM/YYYY HH:mm:ss")}
                   </p>
                 </div>
               </li>

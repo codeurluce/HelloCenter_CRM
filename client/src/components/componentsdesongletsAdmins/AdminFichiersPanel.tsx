@@ -45,9 +45,9 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
     const [showImportModal, setShowImportModal] = useState(false);
     const [selectedFiches, setSelectedFiches] = useState<number[]>([]);
     const [batchSize, setBatchSize] = useState<number | ''>('');
-    const [assignModal, setAssignModal] = useState<{ isOpen: boolean; ficheId: number | null; currentAgentId: number | null;  }>({ isOpen: false, ficheId: null, currentAgentId: null });
+    const [assignModal, setAssignModal] = useState<{ isOpen: boolean; ficheId: number | null; currentAgentId: number | null; }>({ isOpen: false, ficheId: null, currentAgentId: null });
     const [showExportModal, setShowExportModal] = useState(false);
-    const [historiqueModal, setHistoriqueModal] = useState({ isOpen: false, ficheId: null as number | null,});
+    const [historiqueModal, setHistoriqueModal] = useState({ isOpen: false, ficheId: null as number | null, });
 
 
     // Onglets univers
@@ -74,7 +74,7 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
             setLoading(false);
         }
     };
-    useEffect(() => { fetchFiches(); console.log(fiches)}, []);
+    useEffect(() => { fetchFiches(); console.log(fiches) }, []);
 
     const handleAssignSubmit = async (agentId: number) => {
         try {
@@ -256,7 +256,8 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
                             </select>
 
                             {selectedFiches.length > 0 && (
-                                <button onClick={() => setAssignModal({ isOpen: true, ficheId: null, currentAgentId: null })} className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium shadow-sm">
+                                <button onClick={() => setAssignModal({ isOpen: true, ficheId: null, currentAgentId: null })}
+                                    className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium shadow-sm">
                                     <UserPlus size={18} /> Assigner {selectedFiches.length} fiches
                                 </button>
                             )}
@@ -279,17 +280,17 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
                                                 <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Assignée à</th>
                                                 <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700 whitespace-nowrap">Date création</th>
                                                 <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Actions</th>
-                                                {activeFilter === 'nouvelles' && ( 
-                                                <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
-                                                    <input
-                                                        type="checkbox"
-                                                        onChange={(e) => {
-                                                            if (e.target.checked) setSelectedFiches(filteredFiches.map(f => f.id));
-                                                            else setSelectedFiches([]);
-                                                        }}
-                                                        checked={selectedFiches.length === filteredFiches.length && filteredFiches.length > 0}
-                                                    />
-                                                </th>
+                                                {activeFilter === 'nouvelles' && (
+                                                    <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
+                                                        <input
+                                                            type="checkbox"
+                                                            onChange={(e) => {
+                                                                if (e.target.checked) setSelectedFiches(filteredFiches.map(f => f.id));
+                                                                else setSelectedFiches([]);
+                                                            }}
+                                                            checked={selectedFiches.length === filteredFiches.length && filteredFiches.length > 0}
+                                                        />
+                                                    </th>
                                                 )}
                                             </tr>
                                         </thead>
@@ -305,40 +306,47 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
                                                     <td className="px-6 py-3 text-gray-800">{new Date(fiche.date_creation).toLocaleDateString('fr-FR')}</td>
                                                     <td className="px-6 py-3 text-gray-800">
                                                         {activeFilter === 'nouvelles' && (
-                                                            <div className="flex items-center gap-2">
+                                                            <div className="relative group">
                                                                 <button
                                                                     onClick={() => handleAssignFiche(fiche.id, fiche.assigned_to)}
-                                                                    title={fiche.assigned_to ? 'Réassigner' : 'Assigner'}
-                                                                    className="text-blue-600 hover:text-gray-800 px-6 py-3"
-                                                                >
-                                                                    <FileUp size={16} />
+                                                                    title=""
+                                                                    className=" px-3 py-1.5 rounded-lg border border-green-100 text-blue-600 hover:bg-blue-600 hover:text-white
+                                                                                transition-transform transform focus:outline-none focus:ring-2 focus:ring-offset-1 hover:scale-105">
+                                                                    <FileUp className="w-4 h-4" />
                                                                 </button>
+                                                                <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-blue-600 text-white text-xs whitespace-nowrap">
+                                                                    Assigner
+                                                                </span>
                                                             </div>
                                                         )}
 
                                                         {/* Si besoin, tu peux aussi mettre d’autres actions visibles partout */}
-                                                        {activeFilter !== 'nouvelles' && (   
-                                                            <div className="flex items-center gap-2">
-                                                                <button 
-                                                                    title="Voir fiche" 
-                                                                    className="text-blue-600 hover:text-gray-800 px-6 py-3"
-                                                                     onClick={() => setHistoriqueModal({ isOpen: true, ficheId: fiche.id })}>
-                                                                    <FileText size={16} />
+                                                        {activeFilter !== 'nouvelles' && (
+                                                            <div className="relative group">
+                                                                <button
+                                                                    onClick={() => setHistoriqueModal({ isOpen: true, ficheId: fiche.id })}
+                                                                    title=""
+                                                                    className=" px-3 py-1.5 rounded-lg border border-green-100 text-blue-600 hover:bg-blue-600 hover:text-white
+                                                                                transition-transform transform focus:outline-none focus:ring-2 focus:ring-offset-1 hover:scale-105">
+                                                                    <FileText className="w-4 h-4" />
                                                                 </button>
+                                                                <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-blue-600 text-white text-xs whitespace-nowrap">
+                                                                    Voir l'historique
+                                                                </span>
                                                             </div>
                                                         )}
                                                     </td>
-                                                    {activeFilter === 'nouvelles' && ( 
-                                                    <td className="px-6 py-3 text-gray-800">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={selectedFiches.includes(fiche.id)}
-                                                            onChange={(e) => {
-                                                                if (e.target.checked) setSelectedFiches(prev => [...prev, fiche.id]);
-                                                                else setSelectedFiches(prev => prev.filter(id => id !== fiche.id));
-                                                            }}
-                                                        />
-                                                    </td>
+                                                    {activeFilter === 'nouvelles' && (
+                                                        <td className="px-6 py-3 text-gray-800">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={selectedFiches.includes(fiche.id)}
+                                                                onChange={(e) => {
+                                                                    if (e.target.checked) setSelectedFiches(prev => [...prev, fiche.id]);
+                                                                    else setSelectedFiches(prev => prev.filter(id => id !== fiche.id));
+                                                                }}
+                                                            />
+                                                        </td>
                                                     )}
                                                 </tr>
                                             ))}
@@ -377,7 +385,7 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
                     isOpen={historiqueModal.isOpen}
                     ficheId={historiqueModal.ficheId}
                     onClose={() => setHistoriqueModal({ isOpen: false, ficheId: null })}
-/>
+                />
             </div>
         </div>
     );
