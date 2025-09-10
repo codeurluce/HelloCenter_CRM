@@ -274,7 +274,6 @@ ORDER BY u.lastname, u.firstname, ct.session_date;
   }
 };
 
-
 exports.getUserStatusToday = async (req, res) => {
   const { id } = req.params;
 
@@ -346,6 +345,33 @@ exports.splitSessionsAtMidnight = async () => {
   }
 };
 
+/**
+ * Récupère le dernier statut actif d’un agent
+ * @param {number|string} userId 
+ * @returns {Promise<string|null>} statut ou null si rien trouvé
+ */
+
+exports.getLastAgentStatus = async (userId)  =>{
+  try {
+    const result = await db.query(
+      `SELECT status
+       FROM session_agents
+       WHERE user_id = $1
+       ORDER BY start_time DESC
+       LIMIT 1`,
+      [userId]
+    );
+
+    if (result.rows.length > 0) {
+      return result.rows[0].status;
+    } else {
+      return null; // aucun enregistrement trouvé
+    }
+  } catch (err) {
+    console.error("❌ Erreur getLastAgentStatus:", err);
+    return null;
+  }
+}
 
 
 
