@@ -168,22 +168,40 @@ exports.createSale = async (req, res) => {
       etatContrat: etat_contrat,
       status = 'pending',
       product_type,
+
+       // Champs spécifiques pour les offres Mobile
+      free_agent_account,
+      ancienOperateur,
+      pto,
+      optionSmartphone,
+      autresOptions,
+      engagement,
+      typeTechnologie,
+      prixOffre,
+      provenanceFichier
     } = req.body;
+
     const fichier = req.file ? req.file.filename : null;
+    const engagementBool = engagement === true || engagement === 'true';
 
     const result = await db.query(
-      `
+     `
       INSERT INTO sales (
         agent_id, status, partenaire, civilite, client_name, client_firstname, client_email,
         client_phone, client_phone_fix, ville_client, adresse_client, code_postal_client, ref_client, ref_contrat,
-        energie, pdl, pce, nature_offre, puissance_compteur, etat_contrat, fichier, product_type
+        energie, pdl, pce, nature_offre, puissance_compteur, etat_contrat, fichier, product_type, free_agent_account,
+        ancien_operateur, pto, option_smartphone, autres_options, engagement, type_technologie, prix_offre, provenance_fichier
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,
+        $11,$12,$13,$14,$15,$16,$17,$18,$19,$20,
+        $21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31
       ) RETURNING *;
     `,
-      [agentId, status, partenaire, civilite, client_name, client_firstname, client_email,
+      [
+        agentId, status, partenaire, civilite, client_name, client_firstname, client_email,
         client_phone, client_phone_fix || null, ville_client, adresse_client, code_postal_client, ref_client, ref_contrat || null,
-        energie, pdl || null, pce || null, nature_offre, puissance_compteur, etat_contrat, fichier, product_type
+        energie, pdl || null, pce || null, nature_offre, puissance_compteur, etat_contrat, fichier, product_type, free_agent_account,
+        ancienOperateur, pto, optionSmartphone, autresOptions, engagementBool, typeTechnologie, prixOffre, provenanceFichier
       ]
     );
 
