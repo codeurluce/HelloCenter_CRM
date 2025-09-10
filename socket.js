@@ -1,5 +1,5 @@
 // sockets.js
-const { closeSessionForce } = require('./controllers/sessionControllers');
+const { closeSessionForce, getLastAgentStatus  } = require('./controllers/sessionControllers');
 
 let activeSockets = {};
 
@@ -12,10 +12,12 @@ function initSockets(io) {
       if (!activeSockets[userId]) activeSockets[userId] = [];
       activeSockets[userId].push(socket.id);
        // Sécurité : ferme toute session restée "ouverte" avant d'en créer une nouvelle
-  await closeSessionForce(userId);
+  // await closeSessionForce(userId);
       console.log(`✅ Agent ${userId} lié au socket ${socket.id}`);
-    });
-
+      const lastStatus = await getLastAgentStatus(userId); // à implémenter dans ton controller
+      // Restaure le dernier statut si disponible
+      socket.emit("restore_status", { status: lastStatus || 'En_ligne' });
+});
     socket.on('disconnect', async () => {
       if (!socket.userId) return;
       const { userId } = socket;

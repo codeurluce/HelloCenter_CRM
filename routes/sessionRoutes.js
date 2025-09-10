@@ -34,6 +34,19 @@ router.post('/close-force', async (req, res) => {
   }
 });
 
+// 📌 Récupérer le dernier statut d’un agent (pour restauration après reconnexion)
+router.get("/last-status/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const status = await getLastAgentStatus(userId);
+    res.json({ status });
+  } catch (err) {
+    console.error("Erreur route /last-status:", err);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+
 // 📌 Sessions en ligne (agents actifs)
 router.get('/user/live', sessionControllers.getLiveSessionAgents);
 
