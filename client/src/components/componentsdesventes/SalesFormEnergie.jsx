@@ -285,7 +285,7 @@ const SalesFormEnergie = ({ formData, setFormData, onSubmit, onClose }) => {
           >
             <option value="">Sélectionner état</option>
             <option value="CHF">CHF</option>
-            <option value="MSV">MSV</option>
+            <option value="MES">MES</option>
           </select>
         </div>
 
