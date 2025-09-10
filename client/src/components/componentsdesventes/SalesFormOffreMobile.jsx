@@ -25,7 +25,7 @@ const SalesFormOffreMobile = ({ formData, setFormData, onSubmit, onClose }) => {
       !formData.prenomClient ||
       !formData.emailClient ||
       !formData.numMobile ||
-      !formData.engagement ||
+      formData.engagement === undefined ||
       !formData.typeTechnologie ||
       !formData.prixOffre ||
       !formData.ancienOperateur ||
@@ -189,7 +189,7 @@ const SalesFormOffreMobile = ({ formData, setFormData, onSubmit, onClose }) => {
           <label className="block text-sm font-medium text-gray-700 mb-2">Engagement *</label>
           <select
             name="engagement"
-            value={formData.engagement !== undefined ? (formData.engagement ? 'Oui' : 'Non') : 'Sélectionner'}
+            value={formData.engagement === undefined ? '': (formData.engagement ? 'Oui' : 'Non') }
             onChange={handleChange}
             required
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -301,8 +301,8 @@ const SalesFormOffreMobile = ({ formData, setFormData, onSubmit, onClose }) => {
           <label className="block text-sm font-medium text-gray-700 mb-2">Etat CMD</label>
           <input
             type="text"
-            name="etatCmd"
-            value={formData.etatCmd || ''}
+            name="etat_cmd"
+            value={formData.etat_cmd || ''}
             onChange={handleChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
@@ -313,8 +313,8 @@ const SalesFormOffreMobile = ({ formData, setFormData, onSubmit, onClose }) => {
           <label className="block text-sm font-medium text-gray-700 mb-2">Réf CMD</label>
           <input
             type="text"
-            name="refCmd"
-            value={formData.refCmd || ''}
+            name="ref_cmd"
+            value={formData.ref_cmd || ''}
             onChange={handleChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
