@@ -7,7 +7,7 @@ import isBetween from "dayjs/plugin/isBetween";
 
 dayjs.extend(isBetween);
 
-const ExportModal = ({ fiches, isOpen, onClose, sales = [] }) => {
+const ExportModal = ({ isOpen, onClose, sales = [] }) => {
     const [selectedAgents, setSelectedAgents] = useState([]);
     const [dateType, setDateType] = useState("single");
     const [singleDate, setSingleDate] = useState("");
@@ -28,37 +28,49 @@ const ExportModal = ({ fiches, isOpen, onClose, sales = [] }) => {
         { key: "agent", label: "Agent" },
         { key: "ref_client", label: "Réf Client" },
         { key: "ref_contrat", label: "Réf Contrat" },
+        { key: "partenaire", label: "Partenaire" },
+        { key: "civilite", label: "Civilité" },
         { key: "client", label: "Client" },
-        { key: "client_phone", label: "Téléphone" },
+        { key: "client_phone", label: "Téléphone mobile" },
+        { key: "client_phone_fix", label: "Téléphone fixe" },
         { key: "client_email", label: "Email" },
         { key: "ville_client", label: "Ville" },
         { key: "adresse_client", label: "Adresse" },
         { key: "code_postal_client", label: "Code Postal" },
         { key: "nature_offre", label: "Offre" },
         { key: "energie", label: "Energie" },
-        { key: "status", label: "Statut" },
+        { key: "pdl", label: "PDL" },
+        { key: "pce", label: "PCE" },
+        { key: "etat_contrat", label: "État contrat" },
+        { key: "puissance_compteur", label: "Puissance compteur" },
+        { key: "status", label: "Statut vente" },
+        { key: "cancelled_reason", label: "commentaire annulation" },
     ];
 
     // ---- Agents disponibles (dédoublés depuis ventes) ----
-  const uniqueAgents = Array.from(
-    new Map(
-      fiches
-        .filter(f => f.assigned_to || f.assigned_to_name)
-        .map(f => [
-          f.assigned_to || f.assigned_to_name,
-          {
-            id: f.assigned_to || f.assigned_to_name,
-            name: f.assigned_to_name || 'Inconnu',
-          },
-        ])
-    ).values()
-  );
+    const uniqueAgents = Array.from(
+        new Map(
+            (sales || [])
+                .filter(sale => sale.agent_id) // On garde juste les ventes avec agent_id
+                .map(sale => [
+                    sale.agent_id,
+                    {
+                        id: sale.agent_id,
+                        name: sale.name_agent || "Inconnu", // On utilise la colonne name_agent
+                    },
+                ])
+        ).values()
+    );
+
+    const statusMap = {
+        pending: "Vente",
+        cancelled: "Annulé",
+        validated: "Payée",
+    };
 
     // ---- Filtres dropdown ----
     const filteredAgents = uniqueAgents.filter((a) =>
-        `${a.firstname || ""} ${a.lastname || ""}`
-            .toLowerCase()
-            .includes(agentSearchTerm.toLowerCase())
+        a.name.toLowerCase().includes(agentSearchTerm.toLowerCase())
     );
 
     const filteredColumns = columnOptions.filter((col) =>
@@ -141,11 +153,17 @@ const ExportModal = ({ fiches, isOpen, onClose, sales = [] }) => {
                     case "ref_contrat":
                         row[col.label] = s.ref_contrat;
                         break;
+                    case "civilite":
+                        row[col.label] = `${s.civilite || ""}`;
+                        break;
                     case "client":
-                        row[col.label] = `${s.civilite || ""} ${s.client_name || ""} ${s.client_firstname || ""}`.trim();
+                        row[col.label] = `${s.client_name || ""} ${s.client_firstname || ""}`.trim();
                         break;
                     case "client_phone":
                         row[col.label] = s.client_phone;
+                        break;
+                    case "client_phone_fix":
+                        row[col.label] = s.client_phone_fix;
                         break;
                     case "client_email":
                         row[col.label] = s.client_email;
@@ -168,12 +186,15 @@ const ExportModal = ({ fiches, isOpen, onClose, sales = [] }) => {
                     case "energie":
                         row[col.label] = s.energie;
                         break;
+                    case "partenaire":
+                        row[col.label] = s.partenaire;
+                        break;
                     case "status":
-                        row[col.label] = s.status;
+                        row[col.label] = statusMap[s.status] || s.status;
                         break;
                     case "created_at":
                         row[col.label] = s.created_at
-                            ? new Date(s.created_at).toLocaleDateString("fr-FR")
+                            ? dayjs(s.created_at).format("DD/MM/YYYY HH:mm:ss")
                             : "";
                         break;
                     case "agent":
@@ -181,6 +202,21 @@ const ExportModal = ({ fiches, isOpen, onClose, sales = [] }) => {
                             s.agent_firstname && s.agent_name
                                 ? `${s.agent_firstname} ${s.agent_name}`
                                 : "Inconnu";
+                        break;
+                    case "cancelled_reason":
+                        row[col.label] = s.cancelled_reason || "";
+                        break;
+                    case "puissance_compteur":
+                        row[col.label] = s.puissance_compteur || "";
+                        break;
+                    case "etat_contrat":
+                        row[col.label] = s.etat_contrat || "";
+                        break;
+                    case "pdl":
+                        row[col.label] = s.pdl || "";
+                        break;
+                    case "pce":
+                        row[col.label] = s.pce || "";
                         break;
                     default:
                         row[col.label] = "";
@@ -243,7 +279,7 @@ const ExportModal = ({ fiches, isOpen, onClose, sales = [] }) => {
                                         key={a.id}
                                         className="flex items-center bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm"
                                     >
-                                        <span>{`${a.firstname || ""} ${a.lastname || ""}`}</span>
+                                        <span>{`${a.name}` || ""}</span>
                                         <button
                                             onClick={() => handleAgentRemove(a.id)}
                                             className="ml-2 hover:bg-blue-200 rounded-full p-0.5"
