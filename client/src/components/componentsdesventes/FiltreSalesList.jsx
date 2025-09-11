@@ -75,7 +75,7 @@ const FiltreSalesList = ({
   };
 
   const filteredSales = sales.filter((sale) => {
-    const searchFields  = [
+    const searchFields = [
       sale.client_name || "",
       sale.client_firstname || "",
       sale.ref_client || "",
@@ -93,13 +93,13 @@ const FiltreSalesList = ({
       sale.status || "",
       sale.energie || "",
       sale.free_agent_account || "",
-  sale.ancienOperateur || "",
-  sale.typeTechnologie || "",
-  sale.prixOffre || "",
-  sale.provenanceFichier || "",
-  sale.iban || "",
-  sale.rio || "",
-];
+      sale.ancienOperateur || "",
+      sale.typeTechnologie || "",
+      sale.prixOffre || "",
+      sale.provenanceFichier || "",
+      sale.iban || "",
+      sale.rio || "",
+    ];
     const matchesSearch = searchFields.some((field) =>
       field.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -184,241 +184,254 @@ const FiltreSalesList = ({
 
         {/* Tableau */}
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead className="bg-blue-50">
-              <tr>
-                {/* Colonnes selon univers */}
-                {!isAdmin && univers === "Energie" && (
-                  <>
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p>Chargement des ventes...</p>
+            </div>
+          ) : filteredSales.length === 0 ? (
+            <div className="text-center py-12 text-gray-500">
+              Aucune vente trouvée
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm bg-white">
+              <table className="w-full border-collapse">
+                <thead className="bg-blue-50">
+                  <tr>
+                    {/* Colonnes selon univers */}
+                    {!isAdmin && univers === "Energie" && (
+                      <>
+                        <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
+                          Réf. Client
+                        </th>
+                        <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
+                          Réf. Contrat
+                        </th>
+                      </>
+                    )}
+
+                    {!isAdmin && univers === "OffreMobile" && (
+                      <>
+                        <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
+                          Réf. CMD
+                        </th>
+                        <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
+                          État CMD
+                        </th>
+                      </>
+                    )}
+
+                    {/* Colonnes Admin */}
+                    {isAdmin && (
+                      <>
+                        <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
+                          Type de vente
+                        </th>
+                        <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
+                          Référence
+                        </th>
+                      </>
+                    )}
+
+                    {/* Colonnes communes */}
                     <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
-                      Réf. Client
+                      Client
                     </th>
                     <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
-                      Réf. Contrat
-                    </th>
-                  </>
-                )}
-
-                {!isAdmin && univers === "OffreMobile" && (
-                  <>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
-                      Réf. CMD
+                      Date
                     </th>
                     <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
-                      État CMD
+                      Statut
                     </th>
-                  </>
-                )}
-
-                {/* Colonnes Admin */}
-                {isAdmin && (
-                  <>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
-                      Type de vente
+                    {isAdmin && (
+                      <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
+                        Agent
+                      </th>
+                    )}
+                    <th className="px-6 py-3 text-center text-sm font-semibold text-blue-700">
+                      Actions
                     </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
-                      Référence
-                    </th>
-                  </>
-                )}
+                  </tr>
+                </thead>
 
-                {/* Colonnes communes */}
-                <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
-                  Client
-                </th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
-                  Date
-                </th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
-                  Statut
-                </th>
-                {isAdmin && (
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
-                    Agent
-                  </th>
-                )}
-                <th className="px-6 py-3 text-center text-sm font-semibold text-blue-700">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {filteredSales.map((sale) => (
-                <tr
-                  key={sale.id}
-                  className="border-b border-gray-100 hover:bg-blue-50"
-                >
-                  {/* Colonnes selon univers */}
-                  {!isAdmin && univers === "Energie" && (
-                    <>
-                      <td className="py-3 px-4 font-medium">
-                        {sale.ref_client || "-"}
-                      </td>
-                      <td className="py-3 px-4 font-medium">
-                        {sale.ref_contrat || "-"}
-                      </td>
-                    </>
-                  )}
-
-                  {!isAdmin && univers === "OffreMobile" && (
-                    <>
-                      <td className="py-3 px-4 font-medium">
-                        {sale.ref_cmd || "-"}
-                      </td>
-                      <td className="py-3 px-4 font-medium">
-                        {sale.etat_cmd || "-"}
-                      </td>
-                    </>
-                  )}
-
-                  {/* Colonnes Admin */}
-                  {isAdmin && (
-                    <>
-                      <td className="py-3 px-4 font-medium">{sale.product_type || "-"}</td>
-                      <td className="py-3 px-4 font-medium">
-                        {sale.ref_client || sale.ref_cmd || sale.ref_contrat || "-"}
-                      </td>
-                    </>
-                  )}
-
-                  {/* Colonnes communes */}
-                  <td className="py-3 px-4">
-                    {`${sale.civilite ? sale.civilite + " " : ""}${sale.client_name || ""
-                      } ${sale.client_firstname || ""}`.trim()}
-                  </td>
-                  <td className="py-3 px-4">
-                    {sale.created_at
-                      ? new Date(sale.created_at).toLocaleDateString("fr-FR")
-                      : "-"}
-                  </td>
-                  <td className="py-3 px-4">{getStatusText(sale.status)}</td>
-                  {isAdmin && (
-                    <td className="py-3 px-4">
-                      {sale.agent_firstname && sale.agent_name
-                        ? `${sale.agent_firstname} ${sale.agent_name}`
-                        : "Inconnu"}
-                    </td>
-                  )}
-                  {/* Actions */}
-                  <td className="py-3 px-4">
-                    <div className="flex justify-center gap-2 items-center">
-                      {/* Voir */}
-                      <button
-                        title="Voir"
-                        type="button"
-                        onClick={() => {
-                          if (!onViewSale) return;
-
-                          // Condition selon le type de vente
-                          if (sale.product_type === "energie") {
-                            onViewSale(sale, "energie"); // tu passes un paramètre pour savoir quel modal ouvrir
-                          } else if (sale.product_type === "offreMobile") {
-                            onViewSale(sale, "offremobile");
-                          } else {
-                            console.warn("Type de vente inconnu :", sale.product_type);
-                          }
-                        }}
-                        className="px-3 py-1.5 rounded-lg border border-blue-100 text-blue-600 hover:bg-blue-600 hover:text-white transition-transform hover:scale-105"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-
-                      {/* Modifier / Supprimer seulement si vente en attente */}
-                      {(isAdmin) && (
+                <tbody>
+                  {filteredSales.map((sale) => (
+                    <tr
+                      key={sale.id}
+                      className="border-b border-gray-100 hover:bg-blue-50"
+                    >
+                      {/* Colonnes selon univers */}
+                      {!isAdmin && univers === "Energie" && (
                         <>
-                          <button
-                            title="Modifier"
-                            type="button"
-                            onClick={onEditSale && (() => onEditSale(sale))}
-                            className="px-3 py-1.5 rounded-lg border border-green-100 text-green-600 hover:bg-green-600 hover:text-white transition-transform hover:scale-105"
-                          >
-                            <Pencil className="w-4 h-4" />
-                          </button>
-
-                          <button
-                            title="Supprimer"
-                            type="button"
-                            onClick={() => onDeleteSale(sale.id)}
-                            className="px-3 py-1.5 rounded-lg border border-yellow-100 text-yellow-600 hover:bg-yellow-600 hover:text-white transition-transform hover:scale-105"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          <td className="py-3 px-4 font-medium">
+                            {sale.ref_client || "-"}
+                          </td>
+                          <td className="py-3 px-4 font-medium">
+                            {sale.ref_contrat || "-"}
+                          </td>
                         </>
                       )}
 
-                      {/* Actions admin */}
-                      {isAdmin && onUpdateStatus && (
+                      {!isAdmin && univers === "OffreMobile" && (
                         <>
+                          <td className="py-3 px-4 font-medium">
+                            {sale.ref_cmd || "-"}
+                          </td>
+                          <td className="py-3 px-4 font-medium">
+                            {sale.etat_cmd || "-"}
+                          </td>
+                        </>
+                      )}
+
+                      {/* Colonnes Admin */}
+                      {isAdmin && (
+                        <>
+                          <td className="py-3 px-4 font-medium">{sale.product_type || "-"}</td>
+                          <td className="py-3 px-4 font-medium">
+                            {sale.ref_client || sale.ref_cmd || sale.ref_contrat || "-"}
+                          </td>
+                        </>
+                      )}
+
+                      {/* Colonnes communes */}
+                      <td className="py-3 px-4">
+                        {`${sale.civilite ? sale.civilite + " " : ""}${sale.client_name || ""
+                          } ${sale.client_firstname || ""}`.trim()}
+                      </td>
+                      <td className="py-3 px-4">
+                        {sale.created_at
+                          ? new Date(sale.created_at).toLocaleDateString("fr-FR")
+                          : "-"}
+                      </td>
+                      <td className="py-3 px-4">{getStatusText(sale.status)}</td>
+                      {isAdmin && (
+                        <td className="py-3 px-4">
+                          {sale.agent_firstname && sale.agent_name
+                            ? `${sale.agent_firstname} ${sale.agent_name}`
+                            : "Inconnu"}
+                        </td>
+                      )}
+                      {/* Actions */}
+                      <td className="py-3 px-4">
+                        <div className="flex justify-center gap-2 items-center">
+                          {/* Voir */}
                           <button
-                            className="px-3 py-1.5 rounded-lg border border-green-100 text-green-600 hover:bg-green-400 hover:text-white transition-transform hover:scale-105"
-                            title="Marquer comme payée"
+                            title="Voir"
+                            type="button"
                             onClick={() => {
-                              Swal.fire({
-                                title: "Confirmer",
-                                text:
-                                  "Voulez-vous vraiment marquer cette vente comme payée ?",
-                                icon: "warning",
-                                showCancelButton: true,
-                                confirmButtonColor: "#22c55e",
-                                cancelButtonColor: "#ef4444",
-                                confirmButtonText: "Oui, payer",
-                                cancelButtonText: "Fermer",
-                              }).then((result) => {
-                                if (result.isConfirmed) {
-                                  onUpdateStatus(sale.id, "validated");
-                                  Swal.fire(
-                                    "Payée !",
-                                    "La vente a été marquée comme payée.",
-                                    "success"
-                                  );
-                                }
-                              });
-                            }}
-                          >
-                            <BadgeCheck className="w-4 h-4" />
-                          </button>
+                              if (!onViewSale) return;
 
-                          <button
-                            className="px-3 py-1.5 rounded-lg border border-red-100 text-red-600 hover:bg-red-400 hover:text-white transition-transform hover:scale-105"
-                            title="Annuler la vente"
-                            onClick={async () => {
-                              const { value: motif } = await Swal.fire({
-                                title: "Annuler cette vente",
-                                input: "textarea",
-                                inputPlaceholder: "Motif de l’annulation...",
-                                text: "Voulez-vous vraiment annuler cette vente ?",
-                                icon: "warning",
-                                showCancelButton: true,
-                                confirmButtonColor: "#22c55e",
-                                cancelButtonColor: "#ef4444",
-                                confirmButtonText: "Oui, annuler",
-                                cancelButtonText: "Fermer",
-                                inputValidator: (value) => {
-                                  if (!value) return "Vous devez renseigner un motif !";
-                                },
-                              });
-
-                              if (motif) {
-                                onUpdateStatus(sale.id, "cancelled", motif);
-                                Swal.fire(
-                                  "Annulée !",
-                                  "La vente a été annulée.",
-                                  "success"
-                                );
+                              // Condition selon le type de vente
+                              if (sale.product_type === "energie") {
+                                onViewSale(sale, "energie"); // tu passes un paramètre pour savoir quel modal ouvrir
+                              } else if (sale.product_type === "offreMobile") {
+                                onViewSale(sale, "offremobile");
+                              } else {
+                                console.warn("Type de vente inconnu :", sale.product_type);
                               }
                             }}
+                            className="px-3 py-1.5 rounded-lg border border-blue-100 text-blue-600 hover:bg-blue-600 hover:text-white transition-transform hover:scale-105"
                           >
-                            <BadgeX className="w-4 h-4" />
+                            <Eye className="w-4 h-4" />
                           </button>
-                        </>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+
+                          {/* Modifier / Supprimer seulement si vente en attente */}
+                          {(isAdmin) && (
+                            <>
+                              <button
+                                title="Modifier"
+                                type="button"
+                                onClick={onEditSale && (() => onEditSale(sale))}
+                                className="px-3 py-1.5 rounded-lg border border-green-100 text-green-600 hover:bg-green-600 hover:text-white transition-transform hover:scale-105"
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </button>
+
+                              <button
+                                title="Supprimer"
+                                type="button"
+                                onClick={() => onDeleteSale(sale.id)}
+                                className="px-3 py-1.5 rounded-lg border border-yellow-100 text-yellow-600 hover:bg-yellow-600 hover:text-white transition-transform hover:scale-105"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </>
+                          )}
+
+                          {/* Actions admin */}
+                          {isAdmin && onUpdateStatus && (
+                            <>
+                              <button
+                                className="px-3 py-1.5 rounded-lg border border-green-100 text-green-600 hover:bg-green-400 hover:text-white transition-transform hover:scale-105"
+                                title="Marquer comme payée"
+                                onClick={() => {
+                                  Swal.fire({
+                                    title: "Confirmer",
+                                    text:
+                                      "Voulez-vous vraiment marquer cette vente comme payée ?",
+                                    icon: "warning",
+                                    showCancelButton: true,
+                                    confirmButtonColor: "#22c55e",
+                                    cancelButtonColor: "#ef4444",
+                                    confirmButtonText: "Oui, payer",
+                                    cancelButtonText: "Fermer",
+                                  }).then((result) => {
+                                    if (result.isConfirmed) {
+                                      onUpdateStatus(sale.id, "validated");
+                                      Swal.fire(
+                                        "Payée !",
+                                        "La vente a été marquée comme payée.",
+                                        "success"
+                                      );
+                                    }
+                                  });
+                                }}
+                              >
+                                <BadgeCheck className="w-4 h-4" />
+                              </button>
+
+                              <button
+                                className="px-3 py-1.5 rounded-lg border border-red-100 text-red-600 hover:bg-red-400 hover:text-white transition-transform hover:scale-105"
+                                title="Annuler la vente"
+                                onClick={async () => {
+                                  const { value: motif } = await Swal.fire({
+                                    title: "Annuler cette vente",
+                                    input: "textarea",
+                                    inputPlaceholder: "Motif de l’annulation...",
+                                    text: "Voulez-vous vraiment annuler cette vente ?",
+                                    icon: "warning",
+                                    showCancelButton: true,
+                                    confirmButtonColor: "#22c55e",
+                                    cancelButtonColor: "#ef4444",
+                                    confirmButtonText: "Oui, annuler",
+                                    cancelButtonText: "Fermer",
+                                    inputValidator: (value) => {
+                                      if (!value) return "Vous devez renseigner un motif !";
+                                    },
+                                  });
+
+                                  if (motif) {
+                                    onUpdateStatus(sale.id, "cancelled", motif);
+                                    Swal.fire(
+                                      "Annulée !",
+                                      "La vente a été annulée.",
+                                      "success"
+                                    );
+                                  }
+                                }}
+                              >
+                                <BadgeX className="w-4 h-4" />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
 

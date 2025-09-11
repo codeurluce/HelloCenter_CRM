@@ -239,7 +239,10 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
 
                 )
               )}
-              <button onClick={onRefresh} className="flex items-center ml-6 gap-2 py-1 px-3 rounded-md border border-blue-500 text-blue-600 hover:bg-blue-100 transition" disabled={loading} aria-label="Rafraîchir les fiches">
+              <button onClick={onRefresh} 
+                      className="flex items-center ml-6 gap-2 py-1 px-3 rounded-md border border-blue-500 text-blue-600 hover:bg-blue-100 transition" 
+                      disabled={loading} 
+                      aria-label="Rafraîchir les fiches">
                 <RefreshCw size={16} />
                 {loading ? 'Chargement...' : 'Rafraîchir'}
               </button>
