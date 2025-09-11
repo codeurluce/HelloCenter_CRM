@@ -11,7 +11,15 @@ import SaleDetailsModal from "../componentsdesventes/SaleDetailsModal";
 import { deleteSale, updateSale, createSale } from "../../api/salesActions";
 import axiosInstance from "../../api/axiosInstance";
 
+
 const VentesInfoPanel = ({ agentId }) => {
+  // Lecture hors React des valeurs dans localStorage pour initialisation immédiate
+  const role = localStorage.getItem("role");
+  const isAdminRole = role === "Admin";
+  const isAdmin = localStorage.getItem("role") === "Admin";
+
+  // États avec valeurs initiales calculées hors React
+  const [univers, setUnivers] = useState(null);
   const [sales, setSales] = useState([]);
   const [showSelector, setShowSelector] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -23,10 +31,24 @@ const VentesInfoPanel = ({ agentId }) => {
   const [saleToView, setSaleToView] = useState(null);
   const [saleToEdit, setSaleToEdit] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [connectedAgent, setConnectedAgent] = useState(null);
 
-  const role = localStorage.getItem("role");
-  const isAdminRole = role === "Admin";
-  const [isAdmin, setIsAdmin] = useState(isAdminRole);
+
+  useEffect(() => {
+  const storedAgent = localStorage.getItem("user");
+  if (storedAgent) {
+    const parsedAgent = JSON.parse(storedAgent);
+    setConnectedAgent(parsedAgent);
+    setUnivers(parsedAgent.univers || null); // 🔑 récup univers
+  }
+}, []);
+
+// Charger les ventes une fois l'agent connu
+useEffect(() => {
+  if (connectedAgent) {
+    fetchSales();
+  }
+}, [connectedAgent]);
 
   // Charger les ventes au montage
   const fetchSales = async () => {
@@ -34,8 +56,6 @@ const VentesInfoPanel = ({ agentId }) => {
     try {
       const endpoint = isAdminRole ? "/sales/admin" : "/sales";
       const response = await axiosInstance.get(endpoint);
-
-      // ✅ force un nouveau tableau pour obliger React à re-render
       setSales([...response.data]);
     } catch (error) {
       console.error("Erreur chargement ventes:", error);
@@ -44,12 +64,6 @@ const VentesInfoPanel = ({ agentId }) => {
       setLoading(false);
     }
   };
-
-  // Chargement initial
-  useEffect(() => {
-    setIsAdmin(isAdminRole);
-    fetchSales();
-  }, []);
 
   // Sélecteur de type de formulaire
   const handleOpenSelector = () => setShowSelector(true);
@@ -84,7 +98,7 @@ const VentesInfoPanel = ({ agentId }) => {
       fichier: sale.fichier || null,
     };
     setSaleToEdit(sale);
-    setFormType(sale.product_type === "energie" ? "energie" : "offreMobile");
+    setFormType(sale.product_type?.toLowerCase() === "energie" ? "energie" : "offreMobile");
     setFormData(mappedFormData);
     setShowForm(true);
     setSaleToView(null);
@@ -197,13 +211,13 @@ const VentesInfoPanel = ({ agentId }) => {
         return status || "Inconnu";
     }
   };
+console.log("Univers détecté:", univers);
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-      
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">
-          Historique des ventes
-        </h2>
+      <h2 className="text-2xl font-bold text-gray-900 mb-4">
+        Historique des ventes
+      </h2>
       <FiltreSalesList
         sales={sales}
         searchTerm={searchTerm}
@@ -218,9 +232,10 @@ const VentesInfoPanel = ({ agentId }) => {
         onEditSale={handleEditSale}
         isAdmin={isAdmin}
         getStatusText={getStatusText}
-        onRefresh={fetchSales}   
-        loading={loading} 
+        onRefresh={fetchSales}
+        loading={loading}
         onOpenNewSale={handleOpenSelector}
+        univers={univers}
       />
 
       <SaleDetailsModal

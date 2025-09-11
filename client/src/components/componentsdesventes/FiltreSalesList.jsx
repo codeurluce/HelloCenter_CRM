@@ -1,8 +1,15 @@
-import React, { useState } from 'react';
-import { Eye, Pencil, Trash2, RefreshCw, Plus, Download, Upload } from 'lucide-react';
-import { BadgeCheck, X as BadgeX } from 'lucide-react';
-import Swal from 'sweetalert2';
-import ExportModal from '../componentsAdminVentes/ExportModal';
+import React, { useState } from "react";
+import {
+  Eye,
+  Pencil,
+  Trash2,
+  RefreshCw,
+  Plus,
+  Upload,
+} from "lucide-react";
+import { BadgeCheck, X as BadgeX } from "lucide-react";
+import Swal from "sweetalert2";
+import ExportModal from "../componentsAdminVentes/ExportModal";
 
 const FiltreSalesList = ({
   sales,
@@ -21,11 +28,10 @@ const FiltreSalesList = ({
   onRefresh,
   loading,
   onOpenNewSale,
-  
+  univers,
 }) => {
-  
   const [showExport, setShowExport] = useState(false);
-  // --- Filtrage par date
+
   const filterByDate = (saleDate) => {
     if (!saleDate) return false;
     const saleTime = new Date(saleDate).setHours(0, 0, 0, 0);
@@ -33,9 +39,9 @@ const FiltreSalesList = ({
     const today = new Date().setHours(0, 0, 0, 0);
 
     switch (dateFilter) {
-      case 'today':
+      case "today":
         return saleTime === today;
-      case 'week': {
+      case "week": {
         const firstDayOfWeek = new Date(now);
         firstDayOfWeek.setDate(now.getDate() - now.getDay() + 1);
         firstDayOfWeek.setHours(0, 0, 0, 0);
@@ -44,44 +50,48 @@ const FiltreSalesList = ({
         lastDayOfWeek.setDate(firstDayOfWeek.getDate() + 6);
         lastDayOfWeek.setHours(23, 59, 59, 999);
 
-        return saleTime >= firstDayOfWeek.getTime() && saleTime <= lastDayOfWeek.getTime();
+        return (
+          saleTime >= firstDayOfWeek.getTime() &&
+          saleTime <= lastDayOfWeek.getTime()
+        );
       }
-      case 'month': {
-        const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).setHours(0, 0, 0, 0);
-        const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).setHours(23, 59, 59, 999);
+      case "month": {
+        const firstDayOfMonth = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          1
+        ).setHours(0, 0, 0, 0);
+        const lastDayOfMonth = new Date(
+          now.getFullYear(),
+          now.getMonth() + 1,
+          0
+        ).setHours(23, 59, 59, 999);
         return saleTime >= firstDayOfMonth && saleTime <= lastDayOfMonth;
       }
-      case 'all':
+      case "all":
       default:
         return true;
     }
   };
 
-  // --- Format numéro
-  const formatPhone = (phone) => {
-    if (!phone) return '-';
-    return phone.replace(/\D/g, '').replace(/(\d{2})(?=\d)/g, '$1 ').trim();
-  };
-
-  // --- Filtrage global
   const filteredSales = sales.filter((sale) => {
     const searchFields = [
-      sale.client_name || '',
-      sale.client_firstname || '',
-      sale.ref_client || '',
-      sale.ref_contrat || '',
-      sale.client_phone || '',
-      sale.client_email || '',
-      sale.ville_client || '',
-      sale.adresse_client || '',
-      sale.code_postal_client || '',
-      sale.product_type || '',
-      sale.nature_offre || '',
-      sale.puissance_compteur || '',
-      sale.partenaire || '',
-      sale.etat_contrat || '',
-      sale.status || '',
-      sale.energie || '',
+      sale.client_name || "",
+      sale.client_firstname || "",
+      sale.ref_client || "",
+      sale.ref_contrat || "",
+      sale.client_phone || "",
+      sale.client_email || "",
+      sale.ville_client || "",
+      sale.adresse_client || "",
+      sale.code_postal_client || "",
+      sale.product_type || "",
+      sale.nature_offre || "",
+      sale.puissance_compteur || "",
+      sale.partenaire || "",
+      sale.etat_contrat || "",
+      sale.status || "",
+      sale.energie || "",
     ];
 
     const matchesSearch = searchFields.some((field) =>
@@ -89,29 +99,33 @@ const FiltreSalesList = ({
     );
 
     const matchesStatus =
-      statusFilter === 'all' || sale.status === statusFilter || sale.etat_contrat === statusFilter;
+      statusFilter === "all" ||
+      sale.status === statusFilter ||
+      sale.etat_contrat === statusFilter;
 
     const matchesDate = filterByDate(sale.created_at);
 
     return matchesSearch && matchesStatus && matchesDate;
   });
 
+  console.log("univers dans FiltreSalesList:", univers);
+
   return (
     <div>
-      {/* --- Barre filtres --- */}
+      {/* Barre filtres */}
       <div className="flex flex-wrap items-center justify-between gap-2 mb-8">
         <div className="flex flex-wrap items-center gap-2">
           <input
             type="text"
             placeholder="Rechercher client, réf, tel, mail..."
             value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
+            onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-3 pr-3 py-2 rounded-lg border border-gray-200 w-64"
           />
 
           <select
             value={statusFilter}
-            onChange={e => setStatusFilter(e.target.value)}
+            onChange={(e) => setStatusFilter(e.target.value)}
             className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="all">Tous les statuts</option>
@@ -122,7 +136,7 @@ const FiltreSalesList = ({
 
           <select
             value={dateFilter}
-            onChange={e => setDateFilter(e.target.value)}
+            onChange={(e) => setDateFilter(e.target.value)}
             className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="all">Toutes les dates</option>
@@ -132,8 +146,8 @@ const FiltreSalesList = ({
           </select>
         </div>
 
-        {/* --- Bouton Nouvelle Vente --- */}
-        <div className="flex-1" /> 
+        {/* Bouton Nouvelle Vente */}
+        <div className="flex-1" />
         <button
           onClick={onOpenNewSale}
           className="flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 space-x-2 rounded-lg transition-colors"
@@ -142,15 +156,13 @@ const FiltreSalesList = ({
           <span>Nouvelle vente</span>
         </button>
 
-        {/* --- Bouton à droite --- */}
-        
         {isAdmin && (
-        <button
-          onClick={() => setShowExport(true)}
-          className="flex items-center bg-green-600 hover:bg-green-700 text-white px-4 py-2 gap-2 rounded-lg transition-colors font-medium shadow-sm"
-        >
-          <Upload size={16} /> Exporter
-        </button>
+          <button
+            onClick={() => setShowExport(true)}
+            className="flex items-center bg-green-600 hover:bg-green-700 text-white px-4 py-2 gap-2 rounded-lg transition-colors font-medium shadow-sm"
+          >
+            <Upload size={16} /> Exporter
+          </button>
         )}
       </div>
 
@@ -164,168 +176,243 @@ const FiltreSalesList = ({
           </button>
         </div>
 
-        {/* --- Tableau --- */}
+        {/* Tableau */}
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead className="bg-blue-50">
               <tr>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Réf. Client</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Réf. Contrat</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Client</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Téléphone</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Date</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Statut</th>
-                {isAdmin && (
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Agent</th>
+                {/* Colonnes selon univers */}
+                {!isAdmin && univers === "Energie" && (
+                  <>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
+                      Réf. Client
+                    </th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
+                      Réf. Contrat
+                    </th>
+                  </>
                 )}
-                <th className="px-6 py-3 text-center text-sm font-semibold text-blue-700">Actions</th>
+
+                {!isAdmin && univers === "OffreMobile" && (
+                  <>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
+                      Réf. CMD
+                    </th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
+                      État CMD
+                    </th>
+                  </>
+                )}
+
+                {/* Colonnes Admin */}
+                {isAdmin && (
+                  <>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
+                      Type de vente
+                    </th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
+                      Référence
+                    </th>
+                  </>
+                )}
+
+                {/* Colonnes communes */}
+                <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
+                  Client
+                </th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
+                  Date
+                </th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
+                  Statut
+                </th>
+                {isAdmin && (
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
+                    Agent
+                  </th>
+                )}
+                <th className="px-6 py-3 text-center text-sm font-semibold text-blue-700">
+                  Actions
+                </th>
               </tr>
             </thead>
+
             <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan="7" className="text-center py-6 text-gray-600 font-medium">
-                    Chargement des ventes...
-                  </td>
-                </tr>
-              ) : filteredSales.length === 0 ? (
-                <tr>
-                  <td colSpan="7" className="text-center py-12 text-gray-500">
-                    Aucune vente trouvée avec ces critères
-                  </td>
-                </tr>
-              ) : (
-                filteredSales.map(sale => (
-                  <tr key={sale.id} className="border-b border-gray-100 hover:bg-blue-50">
-                    <td className="py-3 px-4 font-medium">{sale.ref_client || '-'}</td>
-                    <td className="py-3 px-4 font-medium">{sale.ref_contrat || '-'}</td>
-                    <td className="py-3 px-4">
-                      {`${sale.civilite ? sale.civilite + ' ' : ''}${sale.client_name || ''} ${sale.client_firstname || ''}`.trim()}
-                    </td>
-                    <td className="py-3 px-4">{formatPhone(sale.client_phone)}</td>
-                    <td className="py-3 px-4">
-                      {sale.created_at ? new Date(sale.created_at).toLocaleDateString('fr-FR') : '-'}
-                    </td>
-                    <td className="py-3 px-4">{getStatusText(sale.status)}</td>
-
-                    {isAdmin && (
-                      <td className="py-3 px-4">
-                        {sale.agent_firstname && sale.agent_name
-                          ? `${sale.agent_firstname} ${sale.agent_name}`
-                          : "Inconnu"}
+              {filteredSales.map((sale) => (
+                <tr
+                  key={sale.id}
+                  className="border-b border-gray-100 hover:bg-blue-50"
+                >
+                  {/* Colonnes selon univers */}
+                  {!isAdmin && univers === "Energie" && (
+                    <>
+                      <td className="py-3 px-4 font-medium">
+                        {sale.ref_client || "-"}
                       </td>
-                    )}
+                      <td className="py-3 px-4 font-medium">
+                        {sale.ref_contrat || "-"}
+                      </td>
+                    </>
+                  )}
 
+                  {!isAdmin && univers === "OffreMobile" && (
+                    <>
+                      <td className="py-3 px-4 font-medium">
+                        {sale.ref_cmd || "-"}
+                      </td>
+                      <td className="py-3 px-4 font-medium">
+                        {sale.etat_cmd || "-"}
+                      </td>
+                    </>
+                  )}
+
+                  {/* Colonnes Admin */}
+                  {isAdmin && (
+                    <>
+                      <td className="py-3 px-4 font-medium">{sale.product_type || "-"}</td>
+                      <td className="py-3 px-4 font-medium">
+                        {sale.ref_client || sale.ref_cmd || sale.ref_contrat || "-"}
+                      </td>
+                    </>
+                  )}
+
+                  {/* Colonnes communes */}
+                  <td className="py-3 px-4">
+                    {`${sale.civilite ? sale.civilite + " " : ""}${
+                      sale.client_name || ""
+                    } ${sale.client_firstname || ""}`.trim()}
+                  </td>
+                  <td className="py-3 px-4">
+                    {sale.created_at
+                      ? new Date(sale.created_at).toLocaleDateString("fr-FR")
+                      : "-"}
+                  </td>
+                  <td className="py-3 px-4">{getStatusText(sale.status)}</td>
+                  {isAdmin && (
                     <td className="py-3 px-4">
-                      <div className="flex justify-end gap-2 items-center">
-                        {/* Voir */}
-                        <button
-                          title="Voir"
-                          type="button"
-                          onClick={() => onViewSale && onViewSale(sale)}
-                          className="px-3 py-1.5 rounded-lg border border-blue-100 text-blue-600 hover:bg-blue-600 hover:text-white transition-transform hover:scale-105"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
-
-                        {/* Modifier / Supprimer seulement si vente en attente */}
-                        {(isAdmin || sale.status === "pending") && (
-                          <>
-                            <button
-                              title="Modifier"
-                              type="button"
-                              onClick={onEditSale && (() => onEditSale(sale))}
-                              className="px-3 py-1.5 rounded-lg border border-green-100 text-green-600 hover:bg-green-600 hover:text-white transition-transform hover:scale-105"
-                            >
-                              <Pencil className="w-4 h-4" />
-                            </button>
-
-                            <button
-                              title="Supprimer"
-                              type="button"
-                              onClick={() => onDeleteSale(sale.id)}
-                              className="px-3 py-1.5 rounded-lg border border-yellow-100 text-yellow-600 hover:bg-yellow-600 hover:text-white transition-transform hover:scale-105"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </>
-                        )}
-
-                        {/* Actions admin : marquer payée / annulée */}
-                        {isAdmin && onUpdateStatus && (
-                          <>
-                            <button
-                              className="px-3 py-1.5 rounded-lg border border-green-100 text-green-600 hover:bg-green-400 hover:text-white transition-transform hover:scale-105"
-                              title="Marquer comme payée"
-                              onClick={() => {
-                                Swal.fire({
-                                  title: 'Confirmer',
-                                  text: 'Voulez-vous vraiment marquer cette vente comme payée ?',
-                                  icon: 'warning',
-                                  showCancelButton: true,
-                                  confirmButtonColor: '#22c55e',
-                                  cancelButtonColor: '#ef4444',
-                                  confirmButtonText: 'Oui, payer',
-                                  cancelButtonText: 'Fermer'
-                                }).then((result) => {
-                                  if (result.isConfirmed) {
-                                    onUpdateStatus(sale.id, "validated");
-                                    Swal.fire('Payée !', 'La vente a été marquée comme payée.', 'success');
-                                  }
-                                });
-                              }}
-                            >
-                              <BadgeCheck className="w-4 h-4" />
-                            </button>
-
-                            <button
-                              className="px-3 py-1.5 rounded-lg border border-red-100 text-red-600 hover:bg-red-400 hover:text-white transition-transform hover:scale-105"
-                              title="Annuler la vente"
-                              onClick={async () => {
-                                const { value: motif } = await Swal.fire({
-                                  title: 'Annuler cette vente',
-                                  input: 'textarea',
-                                  inputPlaceholder: 'Motif de l’annulation...',
-                                  text: 'Voulez-vous vraiment annuler cette vente ?',
-                                  icon: 'warning',
-                                  showCancelButton: true,
-                                  confirmButtonColor: '#22c55e',
-                                  cancelButtonColor: '#ef4444',
-                                  confirmButtonText: 'Oui, annuler',
-                                  cancelButtonText: 'Fermer',
-                                  inputValidator: (value) => {
-                                    if (!value) return 'Vous devez renseigner un motif !';
-                                  }
-                                });
-
-                                if (motif) {
-                                  onUpdateStatus(sale.id, "cancelled", motif);
-                                  Swal.fire('Annulée !', 'La vente a été annulée.', 'success');
-                                }
-                              }}
-                            >
-                              <BadgeX className="w-4 h-4" />
-                            </button>
-                          </>
-                        )}
-                      </div>
+                      {sale.agent_firstname && sale.agent_name
+                        ? `${sale.agent_firstname} ${sale.agent_name}`
+                        : "Inconnu"}
                     </td>
-                  </tr>
-                ))
-              )}
+                  )}
+                  {/* Actions */}
+                  <td className="py-3 px-4">
+                    <div className="flex justify-center gap-2 items-center">
+                      {/* Voir */}
+                      <button
+                        title="Voir"
+                        type="button"
+                        onClick={() => onViewSale && onViewSale(sale)}
+                        className="px-3 py-1.5 rounded-lg border border-blue-100 text-blue-600 hover:bg-blue-600 hover:text-white transition-transform hover:scale-105"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+
+                      {/* Modifier / Supprimer seulement si vente en attente */}
+                      {(isAdmin) && (
+                        <>
+                          <button
+                            title="Modifier"
+                            type="button"
+                            onClick={onEditSale && (() => onEditSale(sale))}
+                            className="px-3 py-1.5 rounded-lg border border-green-100 text-green-600 hover:bg-green-600 hover:text-white transition-transform hover:scale-105"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+
+                          <button
+                            title="Supprimer"
+                            type="button"
+                            onClick={() => onDeleteSale(sale.id)}
+                            className="px-3 py-1.5 rounded-lg border border-yellow-100 text-yellow-600 hover:bg-yellow-600 hover:text-white transition-transform hover:scale-105"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </>
+                      )}
+
+                      {/* Actions admin */}
+                      {isAdmin && onUpdateStatus && (
+                        <>
+                          <button
+                            className="px-3 py-1.5 rounded-lg border border-green-100 text-green-600 hover:bg-green-400 hover:text-white transition-transform hover:scale-105"
+                            title="Marquer comme payée"
+                            onClick={() => {
+                              Swal.fire({
+                                title: "Confirmer",
+                                text:
+                                  "Voulez-vous vraiment marquer cette vente comme payée ?",
+                                icon: "warning",
+                                showCancelButton: true,
+                                confirmButtonColor: "#22c55e",
+                                cancelButtonColor: "#ef4444",
+                                confirmButtonText: "Oui, payer",
+                                cancelButtonText: "Fermer",
+                              }).then((result) => {
+                                if (result.isConfirmed) {
+                                  onUpdateStatus(sale.id, "validated");
+                                  Swal.fire(
+                                    "Payée !",
+                                    "La vente a été marquée comme payée.",
+                                    "success"
+                                  );
+                                }
+                              });
+                            }}
+                          >
+                            <BadgeCheck className="w-4 h-4" />
+                          </button>
+
+                          <button
+                            className="px-3 py-1.5 rounded-lg border border-red-100 text-red-600 hover:bg-red-400 hover:text-white transition-transform hover:scale-105"
+                            title="Annuler la vente"
+                            onClick={async () => {
+                              const { value: motif } = await Swal.fire({
+                                title: "Annuler cette vente",
+                                input: "textarea",
+                                inputPlaceholder: "Motif de l’annulation...",
+                                text: "Voulez-vous vraiment annuler cette vente ?",
+                                icon: "warning",
+                                showCancelButton: true,
+                                confirmButtonColor: "#22c55e",
+                                cancelButtonColor: "#ef4444",
+                                confirmButtonText: "Oui, annuler",
+                                cancelButtonText: "Fermer",
+                                inputValidator: (value) => {
+                                  if (!value) return "Vous devez renseigner un motif !";
+                                },
+                              });
+
+                              if (motif) {
+                                onUpdateStatus(sale.id, "cancelled", motif);
+                                Swal.fire(
+                                  "Annulée !",
+                                  "La vente a été annulée.",
+                                  "success"
+                                );
+                              }
+                            }}
+                          >
+                            <BadgeX className="w-4 h-4" />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
       </div>
 
-
       {showExport && (
-  <ExportModal
-    isOpen={showExport}
-    sales={filteredSales}   // ✅ on passe la liste filtrée
-    onClose={() => setShowExport(false)}
-  />
-)}
+        <ExportModal
+          isOpen={showExport}
+          sales={filteredSales}
+          onClose={() => setShowExport(false)}
+        />
+      )}
     </div>
   );
 };
