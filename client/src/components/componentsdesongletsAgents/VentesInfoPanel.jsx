@@ -243,6 +243,7 @@ console.log("Univers détecté:", univers);
         onClose={() => setSaleToView(null)}
         onEdit={() => handleEditSale(saleToView)}
         getStatusText={getStatusText}
+        isAdmin={isAdmin}
       />
 
       {showSelector && (

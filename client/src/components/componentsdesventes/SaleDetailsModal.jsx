@@ -1,7 +1,7 @@
 import React, { useEffect, useCallback } from "react";
 import { X, Edit3, FileText } from "lucide-react";
 
-const SaleDetailsModal = ({ sale, onClose, onEdit, getStatusText }) => {
+const SaleDetailsModal = ({ sale, onClose, onEdit, getStatusText, isAdmin }) => {
     // Hooks en premier
     useEffect(() => {
         const handleKeyDown = (e) => {
@@ -150,7 +150,7 @@ const SaleDetailsModal = ({ sale, onClose, onEdit, getStatusText }) => {
 
 
                 {/* Footer : bouton Modifier si statut pending */}
-                {statusKey === "default" && (
+                {isAdmin && statusKey === "default" && (
                     <div className="flex justify-end bg-gray-100 px-6 py-4">
                         <button
                             onClick={onEdit}
