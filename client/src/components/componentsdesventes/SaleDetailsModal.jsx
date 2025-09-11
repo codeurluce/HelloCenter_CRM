@@ -79,9 +79,9 @@ const SaleDetailsModal = ({ sale, onClose, onEdit, getStatusText, isAdmin }) => 
                             <Detail label="Téléphone" value={sale.client_phone || "-"} />
                             <Detail label="Num Fixe" value={sale.client_phone_fix || "-"} />
                             <Detail label="Email" value={sale.client_email || "-"} />
+                            <Detail label="Ville" value={sale.ville_client || "-"} />
                             <Detail label="Adresse" value={sale.adresse_client || "-"} />
                             <Detail label="Code Postal" value={sale.code_postal_client || "-"} />
-                            <Detail label="Ville" value={sale.ville_client || "-"} />
                         </div>
 
                         {/* Colonne droite - Vente */}

@@ -75,7 +75,7 @@ const FiltreSalesList = ({
   };
 
   const filteredSales = sales.filter((sale) => {
-    const searchFields = [
+    const searchFields  = [
       sale.client_name || "",
       sale.client_firstname || "",
       sale.ref_client || "",
@@ -92,8 +92,14 @@ const FiltreSalesList = ({
       sale.etat_contrat || "",
       sale.status || "",
       sale.energie || "",
-    ];
-
+      sale.free_agent_account || "",
+  sale.ancienOperateur || "",
+  sale.typeTechnologie || "",
+  sale.prixOffre || "",
+  sale.provenanceFichier || "",
+  sale.iban || "",
+  sale.rio || "",
+];
     const matchesSearch = searchFields.some((field) =>
       field.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -278,9 +284,8 @@ const FiltreSalesList = ({
 
                   {/* Colonnes communes */}
                   <td className="py-3 px-4">
-                    {`${sale.civilite ? sale.civilite + " " : ""}${
-                      sale.client_name || ""
-                    } ${sale.client_firstname || ""}`.trim()}
+                    {`${sale.civilite ? sale.civilite + " " : ""}${sale.client_name || ""
+                      } ${sale.client_firstname || ""}`.trim()}
                   </td>
                   <td className="py-3 px-4">
                     {sale.created_at
@@ -302,7 +307,18 @@ const FiltreSalesList = ({
                       <button
                         title="Voir"
                         type="button"
-                        onClick={() => onViewSale && onViewSale(sale)}
+                        onClick={() => {
+                          if (!onViewSale) return;
+
+                          // Condition selon le type de vente
+                          if (sale.product_type === "energie") {
+                            onViewSale(sale, "energie"); // tu passes un paramètre pour savoir quel modal ouvrir
+                          } else if (sale.product_type === "offreMobile") {
+                            onViewSale(sale, "offremobile");
+                          } else {
+                            console.warn("Type de vente inconnu :", sale.product_type);
+                          }
+                        }}
                         className="px-3 py-1.5 rounded-lg border border-blue-100 text-blue-600 hover:bg-blue-600 hover:text-white transition-transform hover:scale-105"
                       >
                         <Eye className="w-4 h-4" />

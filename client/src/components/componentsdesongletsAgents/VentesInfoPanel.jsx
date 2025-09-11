@@ -10,6 +10,7 @@ import FiltreSalesList from "../componentsdesventes/FiltreSalesList";
 import SaleDetailsModal from "../componentsdesventes/SaleDetailsModal";
 import { deleteSale, updateSale, createSale } from "../../api/salesActions";
 import axiosInstance from "../../api/axiosInstance";
+import SaleDetailsModalOffreMobile from "../componentsdesventes/SaleDetailsModalOffreMobile";
 
 
 const VentesInfoPanel = ({ agentId }) => {
@@ -28,10 +29,11 @@ const VentesInfoPanel = ({ agentId }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState("all");
-  const [saleToView, setSaleToView] = useState(null);
   const [saleToEdit, setSaleToEdit] = useState(null);
   const [loading, setLoading] = useState(false);
   const [connectedAgent, setConnectedAgent] = useState(null);
+  const [selectedSale, setSelectedSale] = useState(null);
+  const [modalType, setModalType] = useState(null);
 
 
   useEffect(() => {
@@ -65,6 +67,11 @@ useEffect(() => {
     }
   };
 
+  const handleViewSale = (sale, type) => {
+  setSelectedSale(sale);
+  setModalType(type);
+};
+
   // Sélecteur de type de formulaire
   const handleOpenSelector = () => setShowSelector(true);
   const handleSelectFormType = (type) => {
@@ -96,12 +103,26 @@ useEffect(() => {
       puissanceCompteur: sale.puissance_compteur || "",
       etatContrat: sale.etat_contrat || "",
       fichier: sale.fichier || null,
+
+      // Champs Offre Mobile
+      free_agent_account: sale.free_agent_account || "",
+      ancienOperateur: sale.ancien_operateur || "",
+      pto: sale.pto || "",
+      optionSmartphone: sale.option_smartphone || "",
+      autresOptions: sale.autres_options || "",
+      engagement: sale.engagement,
+      typeTechnologie: sale.type_technologie || "",
+      prixOffre: sale.prix_offre || "",
+      provenanceFichier: sale.provenance_fichier || "",
+      iban: sale.iban || "",
+      rio: sale.rio || "",
+      etat_cmd: sale.etat_cmd || "",
+      ref_cmd: sale.ref_cmd || "",
     };
     setSaleToEdit(sale);
     setFormType(sale.product_type?.toLowerCase() === "energie" ? "energie" : "offreMobile");
     setFormData(mappedFormData);
     setShowForm(true);
-    setSaleToView(null);
   };
 
   const handleCloseForm = () => {
@@ -228,7 +249,7 @@ console.log("Univers détecté:", univers);
         setDateFilter={setDateFilter}
         onDeleteSale={handleDeleteSale}
         onUpdateStatus={handleUpdateStatus}
-        onViewSale={setSaleToView}
+        onViewSale={handleViewSale}
         onEditSale={handleEditSale}
         isAdmin={isAdmin}
         getStatusText={getStatusText}
@@ -238,14 +259,25 @@ console.log("Univers détecté:", univers);
         univers={univers}
       />
 
-      <SaleDetailsModal
-        sale={saleToView}
-        onClose={() => setSaleToView(null)}
-        onEdit={() => handleEditSale(saleToView)}
-        getStatusText={getStatusText}
-        isAdmin={isAdmin}
-      />
+      {selectedSale && modalType === "energie" && (
+  <SaleDetailsModal
+    sale={selectedSale}
+    onClose={() => setSelectedSale(null)}
+    onEdit={() => handleEditSale(selectedSale)}
+    getStatusText={getStatusText}
+    isAdmin={isAdmin}
+  />
+)}
 
+{selectedSale && modalType === "offremobile" && (
+  <SaleDetailsModalOffreMobile
+    sale={selectedSale}
+    onClose={() => setSelectedSale(null)}
+    onEdit={() => handleEditSale(selectedSale)}
+    getStatusText={getStatusText}
+    isAdmin={isAdmin}
+  />
+)}
       {showSelector && (
         <FormTypeSelector
           onSelect={handleSelectFormType}
@@ -283,7 +315,7 @@ console.log("Univers détecté:", univers);
                 setFormData={setFormData}
                 onSubmit={handleSubmitSale}
                 onClose={handleCloseForm}
-              />
+              /> 
             )}
           </div>
         </div>
