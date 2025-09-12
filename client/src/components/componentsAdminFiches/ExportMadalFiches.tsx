@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { X, Download, Calendar, Users, FileText, ChevronDown } from "lucide-react";
 import columnOptions from "../../shared/columnsConfig";
-import * as XLSX from "xlsx";
 import dayjs from "dayjs";
 import { Fiche } from "./fiche";
 import isBetween from 'dayjs/plugin/isBetween';

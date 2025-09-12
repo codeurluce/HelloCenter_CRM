@@ -93,12 +93,14 @@ const FiltreSalesList = ({
       sale.status || "",
       sale.energie || "",
       sale.free_agent_account || "",
-      sale.ancienOperateur || "",
-      sale.typeTechnologie || "",
-      sale.prixOffre || "",
-      sale.provenanceFichier || "",
+      sale.ancien_operateur || "",
+      sale.type_technologie || "",
+      sale.prix_offre || "",
+      sale.provenance_fichier || "",
       sale.iban || "",
       sale.rio || "",
+      sale.ref_cmd || "",
+      sale.etat_cmd || "",
     ];
     const matchesSearch = searchFields.some((field) =>
       field.toLowerCase().includes(searchTerm.toLowerCase())

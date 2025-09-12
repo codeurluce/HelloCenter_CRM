@@ -1,6 +1,6 @@
 // src/componentsSales/ExportModal.jsx
 import React, { useState, useRef, useEffect } from "react";
-import { X, Download, Calendar, Users, FileText, ChevronDown, Search } from "lucide-react";
+import { X, Download, Calendar, Users, FileText, ChevronDown } from "lucide-react";
 import * as XLSX from "xlsx";
 import dayjs from "dayjs";
 import isBetween from "dayjs/plugin/isBetween";
@@ -23,12 +23,10 @@ const ExportModal = ({ isOpen, onClose, sales = [] }) => {
 
     // ---- Colonnes disponibles ----
     const columnOptions = [
+        // colone commune
+        { key: "agent", label: "Agent" },
         { key: "product_type", label: "Type_vente" },
         { key: "created_at", label: "Date" },
-        { key: "agent", label: "Agent" },
-        { key: "ref_client", label: "Réf Client" },
-        { key: "ref_contrat", label: "Réf Contrat" },
-        { key: "partenaire", label: "Partenaire" },
         { key: "civilite", label: "Civilité" },
         { key: "client", label: "Client" },
         { key: "client_phone", label: "Téléphone mobile" },
@@ -37,6 +35,11 @@ const ExportModal = ({ isOpen, onClose, sales = [] }) => {
         { key: "ville_client", label: "Ville" },
         { key: "adresse_client", label: "Adresse" },
         { key: "code_postal_client", label: "Code Postal" },
+
+        // Energie
+        { key: "ref_client", label: "Réf Client" },
+        { key: "ref_contrat", label: "Réf Contrat" },
+        { key: "partenaire", label: "Partenaire" },
         { key: "nature_offre", label: "Offre" },
         { key: "energie", label: "Energie" },
         { key: "pdl", label: "PDL" },
@@ -45,6 +48,21 @@ const ExportModal = ({ isOpen, onClose, sales = [] }) => {
         { key: "puissance_compteur", label: "Puissance compteur" },
         { key: "status", label: "Statut vente" },
         { key: "cancelled_reason", label: "commentaire annulation" },
+
+        // Offre Box et Mobile
+        { key: "engagement", label: "Engagement" },
+        { key: "type_technologie", label: "Type technologie" },
+        { key: "prix_offre", label: "Prix Offre" },
+        { key: "ancien_operateur", label: "engagement" },
+        { key: "pto", label: "engagement" },
+        { key: "option_smartphone", label: "Option smartphone" },
+        { key: "autres_options", label: "Autres Options" },
+        { key: "rio", label: "rio" },
+        { key: "iban", label: "iban" },
+        { key: "provenance_fichier", label: "provenance fichier" },
+        { key: "free_agent_account", label: "Compte free agent" },
+        { key: "etat_cmd", label: "Etat cmd" },
+        { key: "ref_cmd", label: "Ref cmd" },
     ];
 
     // ---- Agents disponibles (dédoublés depuis ventes) ----
@@ -218,6 +236,45 @@ const ExportModal = ({ isOpen, onClose, sales = [] }) => {
                     case "pce":
                         row[col.label] = s.pce || "";
                         break;
+                    case "engagement":
+                        row[col.label] = s.engagement || "";
+                        break;
+                    case "type_technologie":
+                        row[col.label] = s.type_technologie || "";
+                        break;
+                    case "prix_offre":
+                        row[col.label] = s.prix_offre || "";
+                        break;
+                    case "ancien_operateur":
+                        row[col.label] = s.ancien_operateur || "";
+                        break;
+                    case "pto":
+                        row[col.label] = s.pto || "";
+                        break;
+                    case "option_smartphone":
+                        row[col.label] = s.option_smartphone || "";
+                        break;
+                    case "autres_options":
+                        row[col.label] = s.autres_options || "";
+                        break;
+                    case "rio":
+                        row[col.label] = s.rio || "";
+                        break;
+                    case "iban":
+                        row[col.label] = s.iban || "";
+                        break;
+                    case "provenance_fichier":
+                        row[col.label] = s.provenance_fichier || "";
+                        break;
+                    case "free_agent_account":
+                        row[col.label] = s.free_agent_account || "";
+                        break;
+                    case "etat_cmd":
+                        row[col.label] = s.etat_cmd || "";
+                        break;
+                    case "ref_cmd":
+                        row[col.label] = s.ref_cmd || "";
+                        break;
                     default:
                         row[col.label] = "";
                 }
@@ -233,7 +290,7 @@ const ExportModal = ({ isOpen, onClose, sales = [] }) => {
         const ws = XLSX.utils.json_to_sheet(data);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Ventes");
-        XLSX.writeFile(wb, "ventes_export.xlsx");
+        XLSX.writeFile(wb, "ventes_export.xlsx", { cellStyles: true });
 
         onClose();
     };

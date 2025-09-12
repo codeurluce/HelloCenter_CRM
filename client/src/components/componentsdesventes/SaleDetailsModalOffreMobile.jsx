@@ -47,6 +47,7 @@ const SaleDetailsModalOffreMobile = ({ sale, onClose, onEdit, getStatusText, isA
             <FileText size={22} />
             <h3 className="text-lg font-bold">Détails de la vente N° : {sale.id}</h3>
           </div>
+          <p className="text-lg font-bold">Type de vente : {sale.product_type}</p>
           <button
             onClick={onClose}
             aria-label="Fermer"
@@ -86,7 +87,7 @@ const SaleDetailsModalOffreMobile = ({ sale, onClose, onEdit, getStatusText, isA
               </h3>
               <Detail label="Réf. CMD" value={sale.ref_cmd || "-"} />
               <Detail label="État CMD" value={sale.etat_cmd || "-"} />
-              <Detail label="Type de vente" value={sale.product_type || "-"} />
+              {/* <Detail label="Type de vente" value={sale.product_type || "-"} /> */}
               <Detail label="Opt Smartphone" value={sale.option_smartphone || "-"} />
               <Detail label="Autres Options" value={sale.autres_options || "-"} />
               <Detail label="Engagement" value={sale.engagement ? "Oui" : "Non"} />

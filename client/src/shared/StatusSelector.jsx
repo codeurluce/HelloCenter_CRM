@@ -1,12 +1,12 @@
 // client/src/shared/StatusSelector.jsx
 import React from 'react';
-import { Coffee, Utensils, BookOpenCheck, UserCheck, UserX, Clock5, NotebookPen, BookOpenText, CoffeeIcon, Armchair } from 'lucide-react';
+import { Utensils, UserCheck, NotebookPen, BookOpenText, CoffeeIcon, Armchair } from 'lucide-react';
 import { GrGroup } from 'react-icons/gr';
 
 export const statuses = [
     {
         key: 'disponible',              // clé unique interne
-        statusFr: 'Disponible',   // texte FR à afficher et comparer
+        statusFr: 'Disponible',         // texte FR à afficher et comparer
         iconLabel: 'Disponible',        // légende tooltip
         buttonLabel: 'Disponible',      // texte bouton
         icon: UserCheck,                // icône react-lucide
@@ -81,17 +81,7 @@ export const statuses = [
     //     buttonLabel: 'Autre Pause',
     //     icon: Clock5,
     //     color: 'text-gray-500',
-    //     activeBg: '#9b59b6',
-    //     activeText: '#fff'
-    //   },
-    //   {
-    //     key: 'indisponible',
-    //     statusFr: 'Indisponible',
-    //     iconLabel: 'Indisponible',
-    //     buttonLabel: 'Indisponible',
-    //     icon: UserX,
-    //     color: 'text-red-500',
-    //     activeBg: '#e74c3c',
+    //     activeBg: '#9b59b9',
     //     activeText: '#fff'
     //   },
 ];

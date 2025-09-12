@@ -53,6 +53,7 @@ const SaleDetailsModal = ({ sale, onClose, onEdit, getStatusText, isAdmin }) => 
                         <FileText size={22} />
                         <h3 className="text-lg font-bold">Détails de la vente N° : {sale.id} </h3>
                     </div>
+                    <p className="text-lg font-bold">Type de vente : {sale.product_type}</p>
                     <button
                         onClick={onClose}
                         aria-label="Fermer"
@@ -90,7 +91,7 @@ const SaleDetailsModal = ({ sale, onClose, onEdit, getStatusText, isAdmin }) => 
                                 Informations Vente
                             </h3>
                             <Detail label="Réf. Contrat" value={sale.ref_contrat || "-"} />
-                            <Detail label="Type de vente" value={sale.product_type || "-"} />
+                            {/* <Detail label="Type de vente" value={sale.product_type || "-"} /> */}
                             <Detail label="Partenaire" value={sale.partenaire || "-"} />
                             <Detail label="Nature Offre" value={sale.nature_offre || "-"} />
 
