@@ -1,9 +1,13 @@
-// components/dashbords/DashbordHeader.jsx
+// components/dashbords/DashboardHeader.jsx
 import React, { useEffect, useState, useRef } from 'react';
 import { Bell, CalendarDays, User } from 'lucide-react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import SimpleTimer from './SimpleTimer';
+import StatusSelector, {
+  statuses,
+  formatTime,
+} from "../../shared/StatusSelector.jsx";
 
 const DashboardHeader = ({
   activePage,
@@ -11,10 +15,7 @@ const DashboardHeader = ({
   timers,
   elapsed,
   onStatusChange,
-  currentAgent,
   pauseType,
-  sessionTime,
-  pauseTime,
 }) => {
   const [connectedAgent, setConnectedAgent] = useState(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -71,7 +72,7 @@ const DashboardHeader = ({
             id: fiche.id,
             nom: `${fiche.nom_client} ${fiche.prenom_client}`,
             commentaire: fiche.rendez_vous_commentaire,
-            message: `\u23F0 RDV avec ${fiche.prenom_client} ${fiche.nom_client} dans ${diffMin} minute(s)`,
+            message: `⏰ RDV avec ${fiche.prenom_client} ${fiche.nom_client} dans ${diffMin} minute(s)`,
           });
           notifiedIdsRef.current.add(`${fiche.id}_${diffMin}`);
           shouldNotify = true;
@@ -99,13 +100,14 @@ const DashboardHeader = ({
     checkRDVs();
     const interval = setInterval(checkRDVs, 60000);
     return () => clearInterval(interval);
-  }, [rdvNotifications]);
+  }, []);
 
   useEffect(() => {
     const storedAgent = localStorage.getItem('user');
     const storedNotifFlag = localStorage.getItem('hasNewRDVNotif') === 'true';
     const storedNotifications = JSON.parse(localStorage.getItem('rdvNotifications')) || [];
     if (storedAgent) setConnectedAgent(JSON.parse(storedAgent));
+
     if (storedNotifFlag && storedNotifications.length > 0) {
       setHasNewRDVNotif(true);
       setRdvNotifications(storedNotifications);
@@ -131,6 +133,30 @@ const DashboardHeader = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Mappage timers avec clés technique (key) pour cohérence
+  const timersByKey = timers;
+  const currentKey = statuses.find((s) => s.statusFr === etat)?.key || null;
+
+  // Clés utilisées dans les calculs de totaux
+  const pauseKeys = ["pause_cafe_1", "pause_dejeuner", "pause_cafe_2"];
+  const indispoKeys = ["reunion", "pause_formation", "brief"];
+
+  // Exemple du calcul des totaux (correspondants aux clés dans AgentInfoPanel)
+  const totalDispo =
+    (timers["disponible"] || 0) + (etat === "Disponible" ? elapsed : 0);
+
+  const totalPause = pauseKeys.reduce(
+    (sum, key) =>
+      sum + (timersByKey[key] || 0) + (currentKey === key ? elapsed : 0),
+    0
+  );
+
+  const totalIndispo = indispoKeys.reduce(
+    (sum, key) =>
+      sum + (timersByKey[key] || 0) + (currentKey === key ? elapsed : 0),
+    0
+  );
+
   const pageTitles = {
     dashboard: 'Tableau de bord',
     files: 'Fichiers',
@@ -144,17 +170,6 @@ const DashboardHeader = ({
 
   const displayTitle = pageTitles[activePage] || 'Page';
 
-  // Calcule sessionTime et pauseTime selon timers et elapsed
-  const totalDispo = (timers["Disponible"] || 0) + (etat === "Disponible" ? elapsed : 0);
-  const totalPause =
-    (timers["Pause Café"] || 0) +
-    (timers["Pause Déjeuner"] || 0) +
-    (timers["Formation"] || 0) +
-    (timers["Autre Pause"] || 0) +
-    (["Pause Café", "Pause Déjeuner", "Formation", "Autre Pause"].includes(etat) ? elapsed : 0);
-  const totalIndispo = (timers["Indisponible"] || 0) + (etat === "Indisponible" ? elapsed : 0);
-
-  // Passe à SimpleTimer
   return (
     <div className="flex items-center justify-between p-4 bg-white shadow rounded-lg sticky top-0 z-50">
       <div className="flex items-center space-x-4">
@@ -235,7 +250,8 @@ const DashboardHeader = ({
           userId={connectedAgent?.id || null}
           status={etat}
           sessionTime={totalDispo}
-          pauseTime={totalPause}
+          totalPause={totalPause}
+          totalIndispo={totalIndispo}
           pauseType={pauseType}
           onStatusChange={onStatusChange}
         />
