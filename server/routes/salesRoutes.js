@@ -10,6 +10,7 @@ const {
     deleteSale,  
     getAllSales,
     updateSaleStatus,
+    updateSaleMobile
     } = require('../controllers/salesControllers');
 const auth = require('../middlewares/authMiddleware');
 
@@ -22,7 +23,8 @@ router.get('/', auth, getSales); // Récupérer tous les ventes de l'agent
 
 router.put('/:id/change-status', auth, updateSaleStatus);
 router.get('/:id', auth, getSaleById); // Recuperer une vente par son ID (protégé)
-router.put('/:id', auth, updateSale); // Modifier une vente (protégé)
+router.put('/energie/:id', auth, updateSale); // Modifier une vente Energie (protégé)
+router.put('/offre-mobile/:id', auth, updateSaleMobile); // Modifier une vente OffreMobile (protégé)
 router.delete('/:id', auth, deleteSale); // Supprimer une vente (protégé)
 
 

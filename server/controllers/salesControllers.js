@@ -239,8 +239,7 @@ exports.deleteSale = async (req, res) => {
   }
 };
 
-
-// Export pour mettre à jour une vente
+// Export pour mettre à jour une vente energie
 exports.updateSale = async (req, res) => {
   try {
     const saleId = req.params.id;
@@ -329,6 +328,106 @@ exports.updateSale = async (req, res) => {
   }
 };
 
+// Export pour mettre à jour une vente Mobile
+exports.updateSaleMobile = async (req, res) => {
+  try {
+    const saleId = req.params.id;
+
+    const {
+      civilite,
+      nomClient,
+      prenomClient,
+      emailClient,
+      numMobile,
+      numFixe,
+      villeClient,
+      adresseClient,
+      codePostal,
+      engagement,
+      typeTechnologie,
+      prixOffre,
+      prixOffreAutre,
+      ancienOperateur,
+      pto,
+      optionSmartphone,
+      autresOptions,
+      rio,
+      iban,
+      provenanceFichier,
+      free_agent_account,
+      etat_cmd,
+      ref_cmd,
+      status = "pending",
+    } = req.body;
+
+    const finalPrixOffre = prixOffre === "Autre" ? prixOffreAutre : prixOffre;
+
+    const result = await db.query(
+      `UPDATE sales SET 
+        civilite = $1,
+        client_name = $2,
+        client_firstname = $3,
+        client_email = $4,
+        client_phone = $5,
+        client_phone_fix = $6,
+        ville_client = $7,
+        adresse_client = $8,
+        code_postal_client = $9,
+        engagement = $10,
+        type_technologie = $11,
+        prix_offre = $12,
+        ancien_operateur = $13,
+        pto = $14,
+        option_smartphone = $15,
+        autres_options = $16,
+        rio = $17,
+        iban = $18,
+        provenance_fichier = $19,
+        free_agent_account = $20,
+        etat_cmd = $21,
+        ref_cmd = $22,
+        status = $23,
+        updated_at = NOW()
+      WHERE id = $24
+      RETURNING *`,
+      [
+        civilite,
+        nomClient,
+        prenomClient,
+        emailClient,
+        numMobile,
+        numFixe,
+        villeClient,
+        adresseClient,
+        codePostal,
+        engagement,
+        typeTechnologie,
+        finalPrixOffre,
+        ancienOperateur,
+        pto,
+        optionSmartphone,
+        autresOptions,
+        rio,
+        iban,
+        provenanceFichier,
+        free_agent_account,
+        etat_cmd,
+        ref_cmd,
+        status,
+        saleId,
+      ]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Vente Mobile non trouvée" });
+    }
+
+    res.status(200).json(result.rows[0]);
+  } catch (error) {
+    console.error("Erreur lors de la mise à jour de la vente mobile :", error);
+    res.status(500).json({ message: "Erreur serveur", error });
+  }
+};
 
 // Mettre à jour le statut d'une vente by Admin
 exports.updateSaleStatus = async (req, res) => {

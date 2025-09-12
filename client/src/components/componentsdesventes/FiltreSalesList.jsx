@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { BadgeCheck, X as BadgeX } from "lucide-react";
 import Swal from "sweetalert2";
-import ExportModal from "../componentsAdminVentes/ExportModal";
+import ExportModal from "../componentsAdminVentes/ExportModalVentes";
 
 const FiltreSalesList = ({
   sales,
@@ -368,13 +368,13 @@ const FiltreSalesList = ({
                                 title="Marquer comme payée"
                                 onClick={() => {
                                   Swal.fire({
-                                    title: "Confirmer",
+                                    title: "Payer cette vente",
                                     text:
                                       "Voulez-vous vraiment marquer cette vente comme payée ?",
                                     icon: "warning",
                                     showCancelButton: true,
                                     confirmButtonColor: "#22c55e",
-                                    cancelButtonColor: "#ef4444",
+                                    cancelButtonColor: "#9ca3af",
                                     confirmButtonText: "Oui, payer",
                                     cancelButtonText: "Fermer",
                                   }).then((result) => {
@@ -399,12 +399,12 @@ const FiltreSalesList = ({
                                   const { value: motif } = await Swal.fire({
                                     title: "Annuler cette vente",
                                     input: "textarea",
-                                    inputPlaceholder: "Motif de l’annulation...",
+                                    inputPlaceholder: "Saisissez le motif de l’annulation...",
                                     text: "Voulez-vous vraiment annuler cette vente ?",
                                     icon: "warning",
                                     showCancelButton: true,
                                     confirmButtonColor: "#22c55e",
-                                    cancelButtonColor: "#ef4444",
+                                    cancelButtonColor: "#9ca3af",
                                     confirmButtonText: "Oui, annuler",
                                     cancelButtonText: "Fermer",
                                     inputValidator: (value) => {

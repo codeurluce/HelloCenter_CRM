@@ -22,10 +22,21 @@ export const getSaleById = async (saleId) => {
   }
 };
 
-// 🔹 Mettre à jour une vente
+// 🔹 Mettre à jour une vente energie
 export const updateSale = async (id, saleData) => {
   try {
-    const res = await axiosInstance.put(`/sales/${id}`, saleData);
+    const res = await axiosInstance.put(`/sales/energie/${id}`, saleData);
+    return res.data;
+  } catch (error) {
+    console.error(`Erreur lors de la mise à jour de la vente ID ${id} :`, error);
+    throw error;
+  }
+};
+
+// 🔹 Mettre à jour une vente Offre Mobile
+export const updateSaleMobile = async (id, saleData) => {
+  try {
+    const res = await axiosInstance.put(`/sales/offre-mobile/${id}`, saleData);
     return res.data;
   } catch (error) {
     console.error(`Erreur lors de la mise à jour de la vente ID ${id} :`, error);

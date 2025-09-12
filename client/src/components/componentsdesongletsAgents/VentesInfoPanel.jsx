@@ -8,7 +8,7 @@ import SalesFormOffreMobile from "../componentsdesventes/SalesFormOffreMobile";
 import FormTypeSelector from "../componentsdesventes/FormTypeSelector";
 import FiltreSalesList from "../componentsdesventes/FiltreSalesList";
 import SaleDetailsModal from "../componentsdesventes/SaleDetailsModal";
-import { deleteSale, updateSale, createSale } from "../../api/salesActions";
+import { deleteSale, updateSale, updateSaleMobile, createSale } from "../../api/salesActions";
 import axiosInstance from "../../api/axiosInstance";
 import SaleDetailsModalOffreMobile from "../componentsdesventes/SaleDetailsModalOffreMobile";
 
@@ -137,12 +137,24 @@ useEffect(() => {
     try {
       let response;
       if (saleToEdit) {
+          // On choisit la bonne méthode selon le type de vente
+      if (saleToEdit.product_type === "energie") {
         response = await updateSale(saleToEdit.id, data);
+      } else if (saleToEdit.product_type === "offreMobile") {
+         response = await updateSaleMobile(saleToEdit.id, data);
+      }
+
+        // Mise à jour du state
         setSales((prev) =>
           prev.map((s) => (s.id === response.id ? response : s))
         );
+
+        // Mettre à jour selectedSale si le modal est ouvert
+      setSelectedSale(response);
+
         toast.success("✅ Vente modifiée avec succès !");
         setSaleToEdit(null);
+
       } else {
         response = await createSale(data);
         setSales((prev) => [response, ...prev]);
