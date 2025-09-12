@@ -4,7 +4,7 @@ import axiosInstance from "../../api/axiosInstance";
 import socket from "../../socket";
 import SessionsTable from "../componentsAdminSessions/SessionsTable";
 import SessionFilters from "../componentsAdminSessions/SessionFilters";
-import ExportModal from "../componentsAdminSessions/ExportModal.jsx";
+import ExportModal from "../componentsAdminSessions/ExportModalSessions.jsx";
 import { Download, Upload } from "lucide-react";
 
 export default function AdminLiveSessions() {
