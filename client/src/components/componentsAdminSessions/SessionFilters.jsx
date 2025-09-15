@@ -1,4 +1,28 @@
 import React from "react";
+import { statuses } from '../../shared/StatusSelector';
+
+
+
+// Statuts spécifiques à ajouter manuellement
+const additionalOptions = [
+  { value: "", label: "Tous les statuts" },
+  { value: "En ligne", label: "En ligne" },
+  { value: "Hors ligne", label: "Hors connexion" },
+];
+
+// Extraire les statuts depuis statuses, en utilisant statusFr (texte français)
+const dynamicOptions = statuses.map((s) => ({
+  value: s.statusFr,
+  label: s.statusFr,
+}));
+
+// Fusionner et éviter doublons avec Set
+const uniqueOptionsMap = new Map();
+[...additionalOptions, ...dynamicOptions].forEach(opt => {
+  uniqueOptionsMap.set(opt.value, opt);
+});
+
+const sessionStatusFilterOptions = Array.from(uniqueOptionsMap.values());
 
 export default function SessionFilters({
   q,
@@ -7,18 +31,7 @@ export default function SessionFilters({
   setSessionStatusFilter,
   onResetPage,
 }) {
-  const sessionStatusFilterOptions = [
-    { value: "", label: "Tous les statuts" },
-    { value: "En ligne", label: "En ligne" },
-    { value: "Disponible", label: "Disponible" },
-    { value: "Pause Café", label: "Pause Café" },
-    { value: "Pause Déjeuner", label: "Pause Déjeuner" },
-    { value: "Autre Pause", label: "Autre Pause" },
-    { value: "Formation", label: "Formation" },
-    { value: "Indisponible", label: "Indisponible" },
-    { value: "Hors ligne", label: "Hors connexion" },
-  ];
-
+  
   return (
     <div className="flex flex-wrap items-center gap-2 mb-4">
       <input
@@ -46,8 +59,6 @@ export default function SessionFilters({
           </option>
         ))}
       </select>
-
-
     </div>
   );
 }

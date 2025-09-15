@@ -77,16 +77,25 @@ export default function SessionsTable({ sessions, loading, refresh }) {
                 <td className="px-6 py-3">
                   <span
                     className={`inline-block px-3 py-1 rounded-full text-xs font-semibold cursor-default ${getDisplayStatus(s) === "Disponible"
-                      ? "bg-green-100 text-green-800"
-                      : getDisplayStatus(s).includes("Pause")
-                        ? "bg-yellow-100 text-yellow-800"
-                        : getDisplayStatus(s).includes("Formation")
-                          ? "bg-yellow-100 text-yellow-800"
-                          : getDisplayStatus(s).includes("En ligne")
-                            ? "bg-green-50 text-green-500"
-                            : getDisplayStatus(s).includes("Indisponible")
-                              ? "bg-red-100 text-red-800"
-                              : "bg-gray-100 text-gray-800"
+                        ? "bg-green-200 text-green-900"
+                        : getDisplayStatus(s).includes("Pause") || getDisplayStatus(s).includes("Pausette")
+                          ? "bg-yellow-200 text-yellow-900"
+                          : getDisplayStatus(s).includes("Déjeuner")
+                            ? "bg-yellow-200 text-yellow-900"
+                            : getDisplayStatus(s).includes("Formation")
+                              ? "bg-red-200 text-red-900"
+                              : getDisplayStatus(s).includes("Réunion")
+                                ? "bg-red-200 text-red-900"
+                                : getDisplayStatus(s).includes("Brief")
+                                  ? "bg-red-200 text-red-900"
+                             //   ? "bg-teal-200 text-teal-900"
+                                  : getDisplayStatus(s).includes("En ligne")
+                                    ? "bg-green-50 text-green-500"
+                                    // : getDisplayStatus(s).includes("Indisponible")
+                                    //   ? "bg-red-100 text-red-800"
+                                      : getDisplayStatus(s).includes("Hors ligne") || getDisplayStatus(s).includes("Déconnecté")
+                                        ? "bg-gray-300 text-gray-700"
+                                        : "bg-gray-100 text-gray-800"
                       }`}
                     title={renderTooltip(s.cumul_statuts)}
                   >
