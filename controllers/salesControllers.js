@@ -1,4 +1,5 @@
 const db = require('../db');
+const { logSaleHistory, getActorName } = require('../salesHistory');
 
 // Notez bien que:
 //   pending: 'signifie les ventes de l'agent',
@@ -141,11 +142,8 @@ const upload = multer({ storage });
 //Export pour creer et enregistrer une vente
 exports.createSale = async (req, res) => {
   try {
-    {
-      // Simule une sauvegarde de vente
-      console.log('Requête reçue:', req.body);
-    }
     const agentId = req.user.id;
+    const actorName = await getActorName(req); // récupère le nom de l’agent/admin
 
     const {
       civilite,
@@ -211,6 +209,15 @@ exports.createSale = async (req, res) => {
         iban || null, rio || null, etat_cmd || null, ref_cmd || null
       ]
     );
+    
+    // log dans sales_history
+    await logSaleHistory({
+      saleId: result.rows[0].id,
+      action: 'CREATION',
+      actorId: agentId,
+      actorName,
+      commentaire: 'Vente créée'
+    });
 
     res.status(201).json(result.rows[0]);
   } catch (error) {
@@ -244,6 +251,12 @@ exports.updateSale = async (req, res) => {
   try {
     const saleId = req.params.id;
 
+    const oldSaleRes = await db.query('SELECT * FROM sales WHERE id=$1', [saleId]);
+    if (oldSaleRes.rows.length === 0) {
+      return res.status(404).json({ message: "Vente non trouvée" });
+    }
+    const oldSale = oldSaleRes.rows[0];
+
     const {
       civilite,
       nomClient: client_name,
@@ -270,27 +283,13 @@ exports.updateSale = async (req, res) => {
     const result = await db.query(
       `UPDATE sales 
        SET 
-         civilite = $1,
-         client_name = $2,
-         client_firstname = $3,
-         client_email = $4,
-         client_phone = $5,
-         client_phone_fix = $6,
-         ville_client = $7,
-         adresse_client = $8,
-         code_postal_client = $9,
-         ref_client = $10,
-         ref_contrat = $11,
-         energie = $12,
-         pdl = $13,
-         pce = $14,
-         nature_offre = $15,
-         puissance_compteur = $16,
-         partenaire = $17,
-         etat_contrat = $18,
-         status = $19,
-         fichier = $20,
-         updated_at = NOW()
+         civilite = $1,        client_name = $2,          client_firstname = $3,         client_email = $4,
+         client_phone = $5,         client_phone_fix = $6,         ville_client = $7,
+         adresse_client = $8,         code_postal_client = $9,         ref_client = $10,
+         ref_contrat = $11,         energie = $12,         pdl = $13,
+         pce = $14,         nature_offre = $15,         puissance_compteur = $16,
+         partenaire = $17,         etat_contrat = $18,         status = $19,
+         fichier = $20,         updated_at = NOW()
        WHERE id = $21
        RETURNING *`,
       [
@@ -318,20 +317,72 @@ exports.updateSale = async (req, res) => {
       ]
     );
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: "Vente non trouvée" });
+    const newSale = result.rows[0];
+
+
+    // Champs à vérifier pour le log
+    const fieldsToCheck = [
+      'civilite','nomClient','prenomClient','emailClient','numMobile','numFixe',
+      'villeClient','adresseClient','codePostal','refClient','refContrat',
+      'energie','pdl','pce','natureOffre','puissanceCompteur','partenaire','etatContrat','status','fichier'
+    ];
+
+    const keyMap = {
+      nomClient: 'client_name',
+      prenomClient: 'client_firstname',
+      emailClient: 'client_email',
+      numMobile: 'client_phone',
+      numFixe: 'client_phone_fix',
+      villeClient: 'ville_client',
+      adresseClient: 'adresse_client',
+      codePostal: 'code_postal_client',
+      refClient: 'ref_client',
+      refContrat: 'ref_contrat',
+      natureOffre: 'nature_offre',
+      puissanceCompteur: 'puissance_compteur',
+      etatContrat: 'etat_contrat'
+    };
+
+    // Calculer les champs modifiés
+    const modifiedFields = fieldsToCheck
+      .map(f => {
+        const dbKey = keyMap[f] || f;
+        if (oldSale[dbKey] != req.body[f]) {
+          return `${f}: "${oldSale[dbKey]}" → "${req.body[f]}"`;
+        }
+        return null;
+      })
+      .filter(Boolean);
+
+// Log dans sales_history si champs modifiés
+    if (modifiedFields.length) {
+      await logSaleHistory({
+        saleId,
+        action: 'MODIFICATION',
+        actorId: req.user.id,
+        actorName: await getActorName(req),
+        commentaire: modifiedFields.join(', '),
+      });
     }
-    res.status(200).json(result.rows[0]);
+    res.status(200).json(newSale);
+
   } catch (error) {
     console.error("Erreur lors de la mise à jour de la vente :", error);
     res.status(500).json({ message: "Erreur serveur", error });
   }
 };
 
+
 // Export pour mettre à jour une vente Mobile
 exports.updateSaleMobile = async (req, res) => {
   try {
     const saleId = req.params.id;
+
+    const oldSaleRes = await db.query('SELECT * FROM sales WHERE id=$1', [saleId]);
+    if (oldSaleRes.rows.length === 0) {
+      return res.status(404).json({ message: "Vente non trouvée" });
+    }
+    const oldSale = oldSaleRes.rows[0];
 
     const {
       civilite,
@@ -418,10 +469,57 @@ exports.updateSaleMobile = async (req, res) => {
       ]
     );
 
+    // Définir les champs à vérifier pour le log
+ const fieldsToCheck = [
+      'civilite', 'nomClient', 'prenomClient', 'emailClient', 'numMobile', 'numFixe',
+      'villeClient', 'adresseClient', 'codePostal', 'engagement', 'typeTechnologie',
+      'prixOffre', 'ancienOperateur', 'pto', 'optionSmartphone', 'autresOptions',
+      'rio', 'iban', 'provenanceFichier', 'free_agent_account', 'etat_cmd', 'ref_cmd', 'status'
+    ];
+
+    const keyMap = {
+      nomClient: 'client_name',
+      prenomClient: 'client_firstname',
+      emailClient: 'client_email',
+      numMobile: 'client_phone',
+      numFixe: 'client_phone_fix',
+      villeClient: 'ville_client',
+      adresseClient: 'adresse_client',
+      codePostal: 'code_postal_client',
+      typeTechnologie: 'type_technologie',
+      prixOffre: 'prix_offre',
+      ancienOperateur: 'ancien_operateur',
+      optionSmartphone: 'option_smartphone',
+      autresOptions: 'autres_options',
+      provenanceFichier: 'provenance_fichier',
+    };
+
+    // 3️⃣ Calculer les champs modifiés
+    const modifiedFields = fieldsToCheck
+      .map(f => {
+        const dbKey = keyMap[f] || f;
+        const newValue = f === 'prixOffre' ? finalPrixOffre : req.body[f];
+        if (oldSale[dbKey] != newValue) {
+          return `${f}: "${oldSale[dbKey]}" → "${newValue}"`;
+        }
+        return null;
+      })
+      .filter(Boolean);
+
+// 4️⃣ Log dans sales_history si des modifications
+    if (modifiedFields.length) {
+      await logSaleHistory({
+        saleId,
+        action: 'MODIFICATION',
+        actorId: req.user.id,
+        actorName: await getActorName(req),
+        commentaire: modifiedFields.join(', '),
+      });
+    }
+
     if (result.rows.length === 0) {
       return res.status(404).json({ message: "Vente Mobile non trouvée" });
     }
-
     res.status(200).json(result.rows[0]);
   } catch (error) {
     console.error("Erreur lors de la mise à jour de la vente mobile :", error);
