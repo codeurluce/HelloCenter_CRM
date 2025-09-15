@@ -136,7 +136,7 @@ const statusOptions = [
               exportRow['Pausette 1'] = formatSeconds(row.cumul_statuts?.['Pausette 1'] || 0);
               break;
             case 'pause_dejeuner':
-              exportRow['Pause Déjeuner'] = formatSeconds(row.cumul_statuts?.['Pause Déjeuner'] || 0);
+              exportRow['Pause Déjeuner'] = formatSeconds(row.cumul_statuts?.['Déjeuner'] || 0);
               break;
             case 'pause_cafe_2':
               exportRow['Pausette 2'] = formatSeconds(row.cumul_statuts?.['Pausette 2'] || 0);
@@ -144,7 +144,7 @@ const statusOptions = [
             case 'TotalPause':
               exportRow['Total des pauses'] = formatSeconds(
                 (row.cumul_statuts?.['Pausette 1'] || 0) +
-                (row.cumul_statuts?.['Pause Déjeuner'] || 0) +
+                (row.cumul_statuts?.['Déjeuner'] || 0) +
                 (row.cumul_statuts?.['Pausette 2'] || 0)
               );
               break;

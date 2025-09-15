@@ -1,10 +1,8 @@
 // src/components/admin/SessionAgentDetailsModal.jsx
 import React, { useEffect, useCallback, useState } from "react";
 import axios from "../../api/axiosInstance";
-import {
-    X, Clock, CheckCircle2, Coffee, Utensils, BookOpen,
-    MoreHorizontal, XCircle, Timer, ClockPlus, LogOut
-} from "lucide-react";
+import { X, Clock, CheckCircle2, ClockPlus, LogOut } from "lucide-react";
+import { statuses } from '../../shared/StatusSelector';
 import { exportData } from "../utils/exportUtils";
 
 // Helper format
@@ -15,16 +13,6 @@ const formatTime = (seconds) => {
     const s = String(seconds % 60).padStart(2, "0");
     return `${h}:${m}:${s}`;
 };
-
-// Liste des statuts suivis
-const STATUS_CONFIG = [
-    { key: "Disponible", label: "Disponible", icon: CheckCircle2, color: "text-green-600" },
-    { key: "Pause Café", label: "Pause Café", icon: Coffee, color: "text-yellow-600" },
-    { key: "Pause Déjeuner", label: "Pause Déjeuner", icon: Utensils, color: "text-orange-600" },
-    { key: "Pause Formation", label: "Formation", icon: BookOpen, color: "text-blue-600" },
-    { key: "Autre Pause", label: "Autre Pause", icon: MoreHorizontal, color: "text-purple-600" },
-    { key: "Indisponible", label: "Indisponible", icon: XCircle, color: "text-red-600" },
-];
 
 export default function SessionAgentDetailsModal({ agent, onClose }) {
     const [liveCounters, setLiveCounters] = useState({});
@@ -78,19 +66,32 @@ export default function SessionAgentDetailsModal({ agent, onClose }) {
     if (!agent) return null;
 
     // 🟡 Calcul total des pauses
-    const totalPauses = ["Pause Café", "Pause Déjeuner", "Pause Formation", "Autre Pause"]
-        .reduce((acc, key) => {
-            const base = agent.cumul_statuts?.[key] || 0;
-            const live = agent.statut_actuel === key ? (liveCounters[key] || 0) : 0;
-            return acc + base + live;
-        }, 0);
+      const pauseKeys = ['pause_cafe_1', 'pause_dejeuner', 'pause_cafe_2', 'pause_autre'];
+  const totalPauses = pauseKeys.reduce((acc, key) => {
+    const statusObj = statuses.find(s => s.key === key);
+    if (!statusObj) return acc;
+    const base = agent.cumul_statuts?.[statusObj.statusFr] || 0;
+    const live = agent.statut_actuel === statusObj.statusFr ? (liveCounters[agent.statut_actuel] || 0) : 0;
+    return acc + base + live;
+  }, 0);
+
+  // 🟡 Calcul total des indisponibilités
+  const indispoKeys = ['reunion', 'pause_formation', 'brief'];
+  const totalIndispo = indispoKeys.reduce((acc, key) => {
+    const statusObj = statuses.find(s => s.key === key);
+    if (!statusObj) return acc;
+    const base = agent.cumul_statuts?.[statusObj.statusFr] || 0;
+    const live = agent.statut_actuel === statusObj.statusFr ? (liveCounters[agent.statut_actuel] || 0) : 0;
+    return acc + base + live;
+  }, 0);
+
 
     // 🟡 Calcul présence totale
-    const totalPresence = STATUS_CONFIG.reduce((acc, { key }) => {
-        const base = agent.cumul_statuts?.[key] || 0;
-        const live = agent.statut_actuel === key ? (liveCounters[key] || 0) : 0;
-        return acc + base + live;
-    }, 0);
+      const totalPresence = statuses.reduce((acc, { statusFr, key }) => {
+    const base = agent.cumul_statuts?.[statusFr] || 0;
+    const live = agent.statut_actuel === statusFr ? (liveCounters[agent.statut_actuel] || 0) : 0;
+    return acc + base + live;
+  }, 0);
 
     // 🟡 Connexion / Déconnexion du jour
     const heureConnexion = connectionTimes.first_connection || "—";
@@ -133,21 +134,28 @@ export default function SessionAgentDetailsModal({ agent, onClose }) {
                             <Detail
                                 label="Heure de connexion"
                                 value={formatConnectionTime(connectionTimes.first_connection)}
-                                icon={<Clock size={18} className="text-gray-600" />}
+                                icon={<Clock size={18} className="text-green-500" />}
                             />
                             <Detail label="Statut actuel" value={agent.statut_actuel || "—"} icon={<CheckCircle2 size={18} className="text-blue-600" />} />
-                            <Detail label="Présence totale" value={formatTime(totalPresence)} icon={<Clock size={18} className="text-gray-500" />} />
+                            <Detail label="Présence totale" value={formatTime(totalPresence)} icon={<Clock size={18} className="text-green-700" />} />
                             {totalPauses > 0 && (
                                 <Detail
                                     label="Total pauses"
                                     value={formatTime(totalPauses)}
-                                    icon={<ClockPlus size={18} className="text-pink-600" />}
+                                    icon={<ClockPlus size={18} className="text-pink-700" />}
+                                />
+                            )}
+                            {totalIndispo > 0 && (
+                                <Detail
+                                    label="Total indispo"
+                                    value={formatTime(totalIndispo)}
+                                    icon={<ClockPlus size={18} className="text-pink-700" />}
                                 />
                             )}
                             <Detail
                                 label="Heure de déconnexion"
                                 value={formatConnectionTime(connectionTimes.last_disconnection)}
-                                icon={<LogOut size={18} className="text-gray-600" />}
+                                icon={<LogOut size={18} className="text-red-500" />}
                             />
                         </div>
 
@@ -156,9 +164,9 @@ export default function SessionAgentDetailsModal({ agent, onClose }) {
                             <h3 className="text-lg font-bold text-gray-900 border-b pb-1">
                                 Temps par statut
                             </h3>
-                            {STATUS_CONFIG.map(({ key, label, icon: Icon, color }) => {
-                                const baseSeconds = agent.cumul_statuts?.[key] || 0;
-                                const liveSeconds = agent.statut_actuel === key ? (liveCounters[key] || 0) : 0;
+                            {statuses.map(({ key, statusFr, icon: Icon, color }) => {
+                                const baseSeconds = agent.cumul_statuts?.[statusFr] || 0;
+                                const liveSeconds = agent.statut_actuel === statusFr ? (liveCounters[statusFr] || 0) : 0;
                                 const totalSeconds = baseSeconds + liveSeconds;
 
                                 if (totalSeconds === 0) return null;
@@ -166,7 +174,7 @@ export default function SessionAgentDetailsModal({ agent, onClose }) {
                                 return (
                                     <Detail
                                         key={key}
-                                        label={label}
+                                        label={statusFr}
                                         value={formatTime(totalSeconds)}
                                         icon={<Icon size={18} className={color} />}
                                     />
