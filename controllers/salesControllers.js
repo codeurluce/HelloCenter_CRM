@@ -469,3 +469,31 @@ exports.updateSaleStatus = async (req, res) => {
     res.status(500).json({ error: 'Erreur serveur' });
   }
 };
+
+exports.auditeSale = async (req, res) => {
+  const { id } = req.params;
+  const { audite } = req.body;
+
+  try {
+    const { rows } = await db.query(
+      `UPDATE sales 
+       SET audite = $1, 
+           date_audite = CASE 
+                           WHEN $1 = true THEN NOW()
+                           ELSE NULL
+                         END
+       WHERE id = $2 
+       RETURNING *`,
+      [audite, id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "Vente introuvable" });
+    }
+
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("Erreur update audit:", err);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+}
