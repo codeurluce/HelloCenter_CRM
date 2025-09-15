@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Download, Calendar, Users, FileText, Clock, ChevronDown, Search } from 'lucide-react';
+import { X, Download, Calendar, Users, FileText, Clock, ChevronDown, Search, ClockArrowUp, ClockArrowDown, Coffee, Utensils, Armchair, ClockAlert, BookOpen } from 'lucide-react';
 import { exportData } from '../utils/exportUtils';
 import axios from 'axios';
 import dayjs from "dayjs";
+import { statuses } from '../../shared/StatusSelector';
 
 const ExportModal = ({ isOpen, onClose, agents = [] }) => {
   const [selectedAgents, setSelectedAgents] = useState([]);
@@ -11,7 +12,6 @@ const ExportModal = ({ isOpen, onClose, agents = [] }) => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [selectedStatuses, setSelectedStatuses] = useState([]);
-  const [search, setSearch] = useState('');
 
   const [agentDropdownOpen, setAgentDropdownOpen] = useState(false);
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
@@ -21,15 +21,22 @@ const ExportModal = ({ isOpen, onClose, agents = [] }) => {
   const agentDropdownRef = useRef(null);
   const statusDropdownRef = useRef(null);
 
-  const statusOptions = [
-    { key: 'heureConnexion', label: 'Heure de connexion', icon: Clock },
-    { key: 'heureDeconnexion', label: 'Heure de déconnexion', icon: Clock },
-    { key: 'presenceTotale', label: 'Présence totale', icon: FileText },
-    { key: 'tempsDisponible', label: 'Temps disponible', icon: Users },
-    { key: 'tempsPause', label: 'Temps en pause', icon: Clock },
-    { key: 'tempsIndisponible', label: 'Temps indisponible', icon: X }
-  ];
+const additionalStatusOptions = [
+  { key: 'heureConnexion', label: 'Heure de connexion', icon: ClockArrowUp },
+  { key: 'heureDeconnexion', label: 'Heure de déconnexion', icon: ClockArrowDown },
+  { key: 'TotalPause', label: 'Total des pauses', icon: ClockAlert },
+  { key: 'TotalIndispo', label: 'Total des indisponibilités', icon: X },
+];
 
+// Fusionner les deux listes
+const statusOptions = [
+  ...additionalStatusOptions, 
+  ...statuses.map(({ key, statusFr, icon }) => ({
+    key,
+    label: statusFr,
+    icon
+  }))
+];
   // Filtre agents en fonction recherche
   const filteredAgents = agents.filter(agent => {
     const fullName = `${agent.firstname || ''} ${agent.lastname || ''}`.trim();
@@ -81,6 +88,15 @@ const ExportModal = ({ isOpen, onClose, agents = [] }) => {
     setSelectedStatuses(selectedStatuses.filter(s => s.key !== statusKey));
   };
 
+  // Formatage seconde => HH:mm:ss
+ function formatSeconds(sec) {
+    if (!sec || sec <= 0) return "00:00:00";
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = Math.floor(sec % 60);
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  }
+
   // Fonction d'export qui appelle backend puis exporte
   const handleExport = async () => {
     if (!selectedAgents.length || !selectedStatuses.length) return;
@@ -108,8 +124,6 @@ const ExportModal = ({ isOpen, onClose, agents = [] }) => {
         const heureDeconnexion = row.last_disconnection ? dayjs(row.last_disconnection).format("HH:mm:ss") : "-";
 
         exportRow["Date"] = date;
-        exportRow["Heure connexion"] = heureConnexion;
-        exportRow["Heure déconnexion"] = heureDeconnexion;
         selectedStatuses.forEach(status => {
           switch (status.key) {
             case 'presenceTotale':
@@ -118,16 +132,50 @@ const ExportModal = ({ isOpen, onClose, agents = [] }) => {
             case 'tempsDisponible':
               exportRow['Temps disponible'] = formatSeconds(row.cumul_statuts?.Disponible || 0);
               break;
-            case 'tempsPause':
-              exportRow['Temps en pause'] = formatSeconds(row.cumul_statuts?.['Pause Café'] || 0);
+             case 'pause_cafe_1':
+              exportRow['Pausette 1'] = formatSeconds(row.cumul_statuts?.['Pausette 1'] || 0);
               break;
-            case 'tempsIndisponible':
-              exportRow['Temps indisponible'] = formatSeconds(row.cumul_statuts?.Indisponible || 0);
+            case 'pause_dejeuner':
+              exportRow['Pause Déjeuner'] = formatSeconds(row.cumul_statuts?.['Pause Déjeuner'] || 0);
+              break;
+            case 'pause_cafe_2':
+              exportRow['Pausette 2'] = formatSeconds(row.cumul_statuts?.['Pausette 2'] || 0);
+              break;
+            case 'TotalPause':
+              exportRow['Total des pauses'] = formatSeconds(
+                (row.cumul_statuts?.['Pausette 1'] || 0) +
+                (row.cumul_statuts?.['Pause Déjeuner'] || 0) +
+                (row.cumul_statuts?.['Pausette 2'] || 0)
+              );
+              break;
+            case 'reunion':
+              exportRow['Réunion'] = formatSeconds(row.cumul_statuts?.['Réunion'] || 0);
+              break;
+            case 'brief':
+              exportRow['Brief'] = formatSeconds(row.cumul_statuts?.['Brief'] || 0);
+              break;
+            case 'pause_formation':
+              exportRow['Formation'] = formatSeconds(row.cumul_statuts?.['Formation'] || 0);
+              break;
+            case 'TotalIndispo':
+              exportRow['Total des indisponibilités'] = formatSeconds(
+                (row.cumul_statuts?.['Réunion'] || 0) +
+                (row.cumul_statuts?.['Brief'] || 0) +
+                (row.cumul_statuts?.['Formation'] || 0)
+              );
+              break;
+            case 'heureConnexion':
+              exportRow['Heure de connexion'] = heureConnexion;
+              break;
+            case 'heureDeconnexion':
+              exportRow['Heure de déconnexion'] = heureDeconnexion;
               break;
             default:
               break;
           }
         });
+
+
         exportRow["Prénom"] = row.firstname || "";
         exportRow["Nom"] = row.lastname || "";
         exportRow['Agent'] = `${row.firstname || ''} ${row.lastname || ''}`.trim();
@@ -141,15 +189,7 @@ const ExportModal = ({ isOpen, onClose, agents = [] }) => {
       alert('Erreur lors de l’export des données.');
     }
   };
-  function formatSeconds(sec) {
-    if (!sec || sec <= 0) return "00:00:00";
-    const h = Math.floor(sec / 3600);
-    const m = Math.floor((sec % 3600) / 60);
-    const s = Math.floor(sec % 60);
-    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-  }
-
-
+ 
   const isExportDisabled = () => {
     const hasAgents = selectedAgents.length > 0;
     const hasDate = dateType === 'single' ? singleDate : (startDate && endDate);
@@ -230,7 +270,6 @@ const ExportModal = ({ isOpen, onClose, agents = [] }) => {
                         value={agentSearchTerm}
                         onChange={(e) => setAgentSearchTerm(e.target.value)}
                         className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        autoFocus
                       />
                     </div>
                   </div>
