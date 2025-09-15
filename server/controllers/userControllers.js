@@ -207,7 +207,7 @@ const getAllUsers = async (req, res) => {
     }
 
     const result = await db.query(
-      `SELECT id, lastname, firstname, email, role, profil, is_active 
+      `SELECT id, lastname, firstname, email, role, profil, is_active, created_at 
        FROM users
        ORDER BY lastname ASC`
     );
@@ -223,6 +223,8 @@ const getAllUsers = async (req, res) => {
     res.status(500).json({ message: "Erreur serveur lors de la récupération des utilisateurs" });
   }
 };
+
+
 const getAllUsersBd = async (req, res) => {
   try {
     if (req.user.role !== 'Admin') {
@@ -230,7 +232,7 @@ const getAllUsersBd = async (req, res) => {
     }
 
     const result = await db.query(
-      `SELECT id, firstname, lastname, email, role, is_active 
+      `SELECT id, firstname, lastname, email, role, is_active, created_at
        FROM users
        WHERE role = 'Agent' AND is_active = true
        ORDER BY lastname ASC`

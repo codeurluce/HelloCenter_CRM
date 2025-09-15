@@ -60,6 +60,7 @@ const AgentDetailsModal = ({ agent, onClose, onEdit, onToggleStatus }) => {
                                 Informations Comptes
                             </h3>
                             <Detail label="Rôle" value={agent.role || "-"} />
+                            <Detail label="Univers" value={agent.profil || "-"} />
                             <Detail
                                 label="Statut"
                                 value={
