@@ -142,11 +142,12 @@ exports.getUpcomingRendezVous = async (req, res) => {
 
   try {
     const result = await db.query(
-      `SELECT id, nom_client, prenom_client, rendez_vous_date 
+      `SELECT id, nom_client, prenom_client, rendez_vous_date, rendez_vous_commentaire 
        FROM files 
        WHERE assigned_to = $1 
          AND statut = 'rendez_vous' 
-         AND rendez_vous_date BETWEEN $2 AND $3`,
+         AND rendez_vous_date BETWEEN $2 AND $3
+         ORDER BY rendez_vous_date ASC`,
       [agentId, now.toISOString(), oneHourLater.toISOString()]
     );
     res.json(result.rows);

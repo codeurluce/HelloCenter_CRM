@@ -29,9 +29,9 @@ const DashboardHeader = ({
   const calendarRef = useRef(null);
   const notifiedIdsRef = useRef(new Set());
 
-  const fetchFichesRdv = async () => {
+  const fetchFichesRdv = async (agentId) => {
     try {
-      const res = await fetch('http://localhost:5000/api/files?statut=rendez_vous');
+      const res = await fetch(`http://localhost:5000/api/files/rendezvous/upcoming/${agentId}`);
       const data = await res.json();
       return data;
     } catch (error) {
@@ -47,23 +47,25 @@ const DashboardHeader = ({
 
   useEffect(() => {
     const checkRDVs = async () => {
-      const fiches = await fetchFichesRdv();
+      if (!connectedAgent?.id) return;
+      const fiches = await fetchFichesRdv(connectedAgent.id);
       if (!Array.isArray(fiches)) return;
+
       const now = new Date();
       const newNotifs = [];
       let shouldNotify = false;
 
       for (const fiche of fiches) {
         const rdvDate = new Date(fiche.rendez_vous_date);
-        const localRDV = new Date(
-          rdvDate.getUTCFullYear(),
-          rdvDate.getUTCMonth(),
-          rdvDate.getUTCDate(),
-          rdvDate.getUTCHours(),
-          rdvDate.getUTCMinutes()
-        );
-        const localNow = new Date();
-        const diffMs = localRDV.getTime() - localNow.getTime();
+        // const localRDV = new Date(
+        //   rdvDate.getUTCFullYear(),
+        //   rdvDate.getUTCMonth(),
+        //   rdvDate.getUTCDate(),
+        //   rdvDate.getUTCHours(),
+        //   rdvDate.getUTCMinutes()
+        // );
+        // const localNow = new Date();
+        const diffMs = rdvDate.getTime() - now.getTime();
         const diffMin = Math.round(diffMs / 60000);
 
         if ((diffMin === 5 || diffMin === 0) && !notifiedIdsRef.current.has(`${fiche.id}_${diffMin}`)) {
@@ -78,46 +80,50 @@ const DashboardHeader = ({
           shouldNotify = true;
         }
 
-        if (diffMin < 0 && diffMin > -1) {
-          await fetch(`http://localhost:5000/api/files/${fiche.id}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ statut: 'en_traitement' }),
-          });
-        }
-      }
+      //   if (diffMin < 0 && diffMin > -1) {
+      //     await fetch(`http://localhost:5000/api/files/${fiche.id}`, {
+      //       method: 'PATCH',
+      //       headers: { 'Content-Type': 'application/json' },
+      //       body: JSON.stringify({ statut: 'en_traitement' }),
+      //     });
+      //   }
+       }
 
       if (shouldNotify) {
         const updatedNotifs = [...rdvNotifications, ...newNotifs];
         setRdvNotifications(updatedNotifs);
         setHasNewRDVNotif(true);
         playAlertSound();
-        localStorage.setItem('hasNewRDVNotif', 'true');
-        localStorage.setItem('rdvNotifications', JSON.stringify(updatedNotifs));
+         localStorage.setItem(`hasNewRDVNotif_${connectedAgent.id}`, 'true');
+         localStorage.setItem(`rdvNotifications_${connectedAgent.id}`, JSON.stringify(updatedNotifs));
       }
     };
 
     checkRDVs();
     const interval = setInterval(checkRDVs, 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, [connectedAgent]);
 
   useEffect(() => {
     const storedAgent = localStorage.getItem('user');
-    const storedNotifFlag = localStorage.getItem('hasNewRDVNotif') === 'true';
-    const storedNotifications = JSON.parse(localStorage.getItem('rdvNotifications')) || [];
-    if (storedAgent) setConnectedAgent(JSON.parse(storedAgent));
+    if (storedAgent) {
+    const agent = JSON.parse(storedAgent);
+    setConnectedAgent(agent);
+
+    const storedNotifFlag = localStorage.getItem(`hasNewRDVNotif_${agent.id}`) === 'true';
+    const storedNotifications = JSON.parse(localStorage.getItem(`rdvNotifications_${agent.id}`)) || [];
 
     if (storedNotifFlag && storedNotifications.length > 0) {
       setHasNewRDVNotif(true);
       setRdvNotifications(storedNotifications);
     }
-  }, []);
+  }
+}, []);
 
   const handleNotifClick = () => {
     setShowNotif(show => !show);
     setHasNewRDVNotif(false);
-    localStorage.setItem('hasNewRDVNotif', 'false');
+    localStorage.setItem(`hasNewRDVNotif_${connectedAgent.id}`, 'false');
   };
 
   useEffect(() => {
@@ -205,14 +211,14 @@ const DashboardHeader = ({
               {rdvNotifications.length === 0 ? (
                 <p className="text-sm text-gray-500">Aucune notification</p>
               ) : (
-                rdvNotifications.map((notif, idx) => (
+                rdvNotifications.map((notif) => (
                   <div
-                    key={idx}
+                    key={notif.id}
                     className="mb-2 cursor-pointer hover:bg-gray-100 p-2 rounded transition"
                     onClick={() => {
                       const updated = rdvNotifications.filter(n => n.id !== notif.id);
                       setRdvNotifications(updated);
-                      localStorage.setItem('rdvNotifications', JSON.stringify(updated));
+                      localStorage.setItem(`rdvNotifications_${connectedAgent.id}`, JSON.stringify(updated));
                     }}
                   >
                     <p className="text-sm font-medium text-black">{notif.message}</p>
