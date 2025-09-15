@@ -79,9 +79,20 @@ export default function AdministrationUsers() {
         toast.success("✅ Agent modifié avec succès !");
       } else {
         // Création nouvel utilisateur
-        await axios.post("/users/register", form);
-        toast.success("✅ Agent créé avec succès !");
-      }
+         const res = await axios.post("/users/register", form);    
+
+      // Afficher les identifiants (exemple avec Swal)
+      Swal.fire({
+        icon: "success",
+        title: "✅ Nouvel agent créé",
+        html: `
+          <p>Adresse email : <strong>${res.data.email}</strong></p>
+          <p>Mot de passe temporaire : <strong>${res.data.tempPassword}</strong></p>
+          <p>L’agent devra changer le mot de passe à sa première connexion.</p>
+        `,
+        confirmButtonText: "OK",
+      });
+ }
       setShowModal(false);
       fetchUsers();
     } catch (err) {
