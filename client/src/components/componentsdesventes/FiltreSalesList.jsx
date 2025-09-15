@@ -6,6 +6,8 @@ import {
   RefreshCw,
   Plus,
   Upload,
+  Ear,
+  Headphones,
 } from "lucide-react";
 import { BadgeCheck, X as BadgeX } from "lucide-react";
 import Swal from "sweetalert2";
@@ -23,6 +25,7 @@ const FiltreSalesList = ({
   onViewSale,
   onEditSale,
   onUpdateStatus,
+  onAuditeSale,
   getStatusText,
   isAdmin,
   onRefresh,
@@ -246,9 +249,14 @@ const FiltreSalesList = ({
                       Statut
                     </th>
                     {isAdmin && (
+                      <>
                       <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
                         Agent
                       </th>
+                      <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
+                        Auditer
+                      </th>
+                    </>
                     )}
                     <th className="px-6 py-3 text-center text-sm font-semibold text-blue-700">
                       Actions
@@ -313,7 +321,13 @@ const FiltreSalesList = ({
                             : "Inconnu"}
                         </td>
                       )}
+                      {isAdmin && (
+                        <td className="py-3 px-4 text-center items-center">
+                        {sale.audite ? "0ui" : "Non" }
+                      </td>
+                      )}
                       {/* Actions */}
+                      
                       <td className="py-3 px-4">
                         <div className="flex justify-center gap-2 items-center">
                           {/* Voir */}
@@ -370,7 +384,7 @@ const FiltreSalesList = ({
                                   Swal.fire({
                                     title: "Payer cette vente",
                                     text:
-                                      "Voulez-vous vraiment marquer cette vente comme payée ?",
+                                      "Voulez-vous marquer cette vente comme payée ?",
                                     icon: "warning",
                                     showCancelButton: true,
                                     confirmButtonColor: "#22c55e",
@@ -423,6 +437,35 @@ const FiltreSalesList = ({
                                 }}
                               >
                                 <BadgeX className="w-4 h-4" />
+                              </button>
+
+                              <button
+                                className="px-3 py-1.5 rounded-lg border border-gray-100 text-black-600 hover:bg-gray-900 hover:text-white transition-transform hover:scale-105"
+                                title="Marquer comme auditée"
+                                onClick={() => {
+                                  Swal.fire({
+                                    title: "Auditer cette vente",
+                                    text:
+                                      "Voulez-vous marquer cette vente comme auditée ?",
+                                    icon: "warning",
+                                    showCancelButton: true,
+                                    confirmButtonColor: "#22c55e",
+                                    cancelButtonColor: "#9ca3af",
+                                    confirmButtonText: "Oui, auditer",
+                                    cancelButtonText: "Fermer",
+                                  }).then((result) => {
+                                    if (result.isConfirmed) {
+                                      onAuditeSale(sale.id, "true");
+                                      Swal.fire(
+                                        "Auditée !",
+                                        "La vente a été marquée comme auditée.",
+                                        "success"
+                                      );
+                                    }
+                                  });
+                                }}
+                              >
+                                <Headphones className="w-4 h-4" />
                               </button>
                             </>
                           )}

@@ -232,6 +232,28 @@ useEffect(() => {
     }
   };
 
+  // Marquer une vente comme auditée
+  const handleAuditeSale = async (saleId, auditeValue = true) => {
+      try {
+    const response = await axiosInstance.put(`/sales/${saleId}/audit`, {
+      audite: auditeValue,
+    });
+
+    // Met à jour le state local avec la réponse backend
+    setSales((prev) =>
+      prev.map((s) => (s.id === saleId ? response.data : s))
+    );
+  toast.success(
+      auditeValue
+        ? "✅ Vente marquée comme auditée"
+        : "❌ Audit retiré de la vente"
+    );
+  } catch (error) {
+    console.error("Erreur mise à jour audit:", error);
+    toast.error("Impossible de mettre à jour l'audit");
+  }
+};
+
   const getStatusText = (status) => {
     switch (status) {
       case "pending":
@@ -261,6 +283,7 @@ console.log("Univers détecté:", univers);
         setDateFilter={setDateFilter}
         onDeleteSale={handleDeleteSale}
         onUpdateStatus={handleUpdateStatus}
+        onAuditeSale={handleAuditeSale}
         onViewSale={handleViewSale}
         onEditSale={handleEditSale}
         isAdmin={isAdmin}
