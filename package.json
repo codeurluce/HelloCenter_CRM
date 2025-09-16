@@ -1,9 +1,10 @@
 {
-  "name": "crm",
+  "name": "hello-center-crm-backend",
   "version": "1.0.0",
-  "main": "server.js",
+  "main": "server/server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server/server.js",
     "dev": "nodemon server/server.js"
   },
   "keywords": [],
@@ -19,22 +20,14 @@
     "date-fns": "^3.0.0",
     "dayjs": "^1.11.13",
     "dotenv": "^17.2.0",
-    "espress": "^0.0.0",
-    "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
-    "lucide": "^0.525.0",
     "multer": "^2.0.2",
     "node-cron": "^4.2.1",
     "pg": "^8.16.3",
-    "react": "^19.1.1",
-    "react-dom": "^19.1.1",
-    "react-feather": "^2.0.10",
     "recharts": "^3.1.0",
-    "router": "^2.2.0",
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
     "typescript": "^5.8.3",
-    "vite": "^6.3.5",
     "xlsx": "^0.18.5"
   }
 }

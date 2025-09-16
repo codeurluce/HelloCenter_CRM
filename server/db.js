@@ -3,8 +3,12 @@ require('dotenv').config();
 console.log('DATABASE_URL:', process.env.DATABASE_URL);
 
 const { Pool } = require('pg');
+const isProduction = process.env.NODE_ENV === 'production';
+
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL, // ou config individuelle
+  connectionString: process.env.DATABASE_URL,  // ou config individuelle
+ssl: isProduction ? { rejectUnauthorized: false } : false // obligatoire pour PostgreSQL cloud
 });
 
 pool.connect()
