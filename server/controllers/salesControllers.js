@@ -167,7 +167,7 @@ exports.createSale = async (req, res) => {
       status = 'pending',
       product_type,
 
-       // Champs spécifiques pour les offres Mobile
+      // Champs spécifiques pour les offres Mobile
       free_agent_account,
       ancienOperateur,
       pto,
@@ -187,7 +187,7 @@ exports.createSale = async (req, res) => {
     const engagementBool = engagement === true || engagement === 'true';
 
     const result = await db.query(
-     `
+      `
       INSERT INTO sales (
         agent_id, status, partenaire, civilite, client_name, client_firstname, client_email,
         client_phone, client_phone_fix, ville_client, adresse_client, code_postal_client, ref_client, ref_contrat,
@@ -205,11 +205,11 @@ exports.createSale = async (req, res) => {
         agentId, status, partenaire, civilite, client_name, client_firstname, client_email,
         client_phone, client_phone_fix || null, ville_client, adresse_client, code_postal_client, ref_client, ref_contrat || null,
         energie, pdl || null, pce || null, nature_offre, puissance_compteur, etat_contrat, fichier, product_type, free_agent_account,
-        ancienOperateur, pto, optionSmartphone || null, autresOptions || null, engagementBool, typeTechnologie, prixOffre, provenanceFichier, 
+        ancienOperateur, pto, optionSmartphone || null, autresOptions || null, engagementBool, typeTechnologie, prixOffre, provenanceFichier,
         iban || null, rio || null, etat_cmd || null, ref_cmd || null
       ]
     );
-    
+
     // log dans sales_history
     await logSaleHistory({
       saleId: result.rows[0].id,
@@ -238,8 +238,8 @@ exports.deleteSale = async (req, res) => {
     }
     const oldSale = oldSaleRes.rows[0];
 
-       console.log("logSaleHistory suppression:", saleId, oldSale);
-     // 3️⃣ Log dans sales_history
+    console.log("logSaleHistory suppression:", saleId, oldSale);
+    // 3️⃣ Log dans sales_history
     await logSaleHistory({
       saleId,
       action: 'SUPPRESSION',
@@ -342,9 +342,9 @@ exports.updateSale = async (req, res) => {
 
     // Champs à vérifier pour le log
     const fieldsToCheck = [
-      'civilite','nomClient','prenomClient','emailClient','numMobile','numFixe',
-      'villeClient','adresseClient','codePostal','refClient','refContrat',
-      'energie','pdl','pce','natureOffre','puissanceCompteur','partenaire','etatContrat','status','fichier'
+      'civilite', 'nomClient', 'prenomClient', 'emailClient', 'numMobile', 'numFixe',
+      'villeClient', 'adresseClient', 'codePostal', 'refClient', 'refContrat',
+      'energie', 'pdl', 'pce', 'natureOffre', 'puissanceCompteur', 'partenaire', 'etatContrat', 'status', 'fichier'
     ];
 
     const keyMap = {
@@ -374,7 +374,7 @@ exports.updateSale = async (req, res) => {
       })
       .filter(Boolean);
 
-// Log dans sales_history si champs modifiés
+    // Log dans sales_history si champs modifiés
     if (modifiedFields.length) {
       await logSaleHistory({
         saleId,
@@ -490,7 +490,7 @@ exports.updateSaleMobile = async (req, res) => {
     );
 
     // Définir les champs à vérifier pour le log
- const fieldsToCheck = [
+    const fieldsToCheck = [
       'civilite', 'nomClient', 'prenomClient', 'emailClient', 'numMobile', 'numFixe',
       'villeClient', 'adresseClient', 'codePostal', 'engagement', 'typeTechnologie',
       'prixOffre', 'ancienOperateur', 'pto', 'optionSmartphone', 'autresOptions',
@@ -526,7 +526,7 @@ exports.updateSaleMobile = async (req, res) => {
       })
       .filter(Boolean);
 
-// 4️⃣ Log dans sales_history si des modifications
+    // 4️⃣ Log dans sales_history si des modifications
     if (modifiedFields.length) {
       await logSaleHistory({
         saleId,
@@ -553,9 +553,30 @@ exports.updateSaleStatus = async (req, res) => {
     const { id } = req.params;
     const { status, motif } = req.body;
     const updatedBy = req.user.id;
+    const actorName = await getActorName(req);
+
+    const oldSaleRes = await db.query('SELECT * FROM sales WHERE id=$1', [id]);
+    if (oldSaleRes.rows.length === 0) {
+      return res.status(404).json({ message: 'Vente non trouvée' });
+    }
+    const oldSale = oldSaleRes.rows[0];
+
+    // 🔹 Mapping des statuts
+    const statusMap = {
+      validated: 'Payée',
+      cancelled: 'Annulée',
+      pending: 'Defaut'
+    };
+    const mappedStatus = statusMap[status] || statusMap['pending'];
+
+    // Pour le log : mapper l'ancien statut aussi
+    const oldMappedStatus = Object.values(statusMap).includes(oldSale.status)
+      ? oldSale.status
+      : statusMap[oldSale.status] || oldSale.status;
+
+    const newMappedStatus = mappedStatus;
 
     let query, values;
-
     if (status === 'cancelled') {
       query = `
         UPDATE sales
@@ -566,7 +587,7 @@ exports.updateSaleStatus = async (req, res) => {
         WHERE id = $4
         RETURNING *;
       `;
-      values = [status, motif, updatedBy, id];
+      values = [mappedStatus, motif, updatedBy, id];
     } else {
       // validated
       query = `
@@ -577,11 +598,30 @@ exports.updateSaleStatus = async (req, res) => {
         WHERE id = $3
         RETURNING *;
       `;
-      values = [status, updatedBy, id];
+      values = [mappedStatus, updatedBy, id];
+    }
+    const result = await db.query(query, values);
+    const newSale = result.rows[0]
+
+    const modifiedFields = [];
+    if (oldMappedStatus !== newMappedStatus) {
+      modifiedFields.push(`Le statut est passé de : "${oldMappedStatus}" → "${newMappedStatus}"`);
+      if (status === 'cancelled') {
+        modifiedFields.push(`Raison de l'annulation : "${oldSale.cancelled_reason || ''}" → "${motif}"`);
+      }
     }
 
-    const result = await db.query(query, values);
-    res.json(result.rows[0]);
+    if (modifiedFields.length) {
+      await logSaleHistory({
+        saleId: id,
+        action: 'MODIFICATION_STATUT',
+        actorId: updatedBy,
+        actorName,
+        commentaire: modifiedFields.join(', ')
+      });
+    }
+
+    res.json(newSale);
   } catch (error) {
     console.error('Erreur updateSaleStatus:', error);
     res.status(500).json({ error: 'Erreur serveur' });
@@ -591,8 +631,16 @@ exports.updateSaleStatus = async (req, res) => {
 exports.auditeSale = async (req, res) => {
   const { id } = req.params;
   const { audite } = req.body;
+  const actorId = req.user.id;
 
   try {
+
+    const oldSaleRes = await db.query('SELECT * FROM sales WHERE id=$1', [id]);
+    if (oldSaleRes.rows.length === 0) {
+      return res.status(404).json({ message: "Vente introuvable" });
+    }
+    const oldSale = oldSaleRes.rows[0];
+
     const { rows } = await db.query(
       `UPDATE sales 
        SET audite = $1, 
@@ -605,11 +653,31 @@ exports.auditeSale = async (req, res) => {
       [audite, id]
     );
 
+    const newSale = rows[0];
+
+    // Log dans sales_history
+    const modifiedFields = {};
+    if (oldSale.audite !== newSale.audite) {
+      modifiedFields['audite'] = [oldSale.audite, newSale.audite];
+      modifiedFields['date_audite'] = [oldSale.date_audite, newSale.date_audite];
+    }
+
+    if (Object.keys(modifiedFields).length) {
+      await logSaleHistory({
+        saleId: id,
+        action: 'AUDITION',
+        actorId,
+        actorName: await getActorName(req),
+        changedColumns: modifiedFields,
+        commentaire: `Vente ${audite ? 'auditée' : 'désauditée'}`
+      });
+    }
+
     if (rows.length === 0) {
       return res.status(404).json({ message: "Vente introuvable" });
     }
 
-    res.json(rows[0]);
+    res.json(newSale);
   } catch (err) {
     console.error("Erreur update audit:", err);
     res.status(500).json({ message: "Erreur serveur" });
