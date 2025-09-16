@@ -230,14 +230,33 @@ exports.createSale = async (req, res) => {
 exports.deleteSale = async (req, res) => {
   try {
     const saleId = req.params.id;
+
+    // 1️⃣ Récupérer la vente avant suppression pour le log
+    const oldSaleRes = await db.query('SELECT * FROM sales WHERE id = $1', [saleId]);
+    if (oldSaleRes.rows.length === 0) {
+      return res.status(404).json({ message: 'Vente non trouvée' });
+    }
+    const oldSale = oldSaleRes.rows[0];
+
+       console.log("logSaleHistory suppression:", saleId, oldSale);
+     // 3️⃣ Log dans sales_history
+    await logSaleHistory({
+      saleId,
+      action: 'SUPPRESSION',
+      actorId: req.user.id,
+      actorName: await getActorName(req),
+      oldValue: oldSale, // 🔹 ici on garde l'état avant suppression
+      newValue: null,    // 🔹 après suppression, plus rien
+      commentaire: `Vente supprimée: client ${oldSale.client_name} ${oldSale.client_firstname}`
+    });
+
+    console.log('Log enregistré pour suppression de la vente', saleId);
+
+    // 2️⃣ Supprimer la vente
     const result = await db.query(
       'DELETE FROM sales WHERE id = $1 RETURNING *',
       [saleId]
     );
-
-    if (result.rowCount === 0) {
-      return res.status(404).json({ message: 'Vente non trouvée' });
-    }
 
     res.json({ message: 'Vente supprimée avec succès', sale: result.rows[0] });
   } catch (error) {
@@ -245,6 +264,7 @@ exports.deleteSale = async (req, res) => {
     res.status(500).json({ error: 'Erreur serveur' });
   }
 };
+
 
 // Export pour mettre à jour une vente energie
 exports.updateSale = async (req, res) => {
