@@ -338,12 +338,12 @@ const FiltreSalesList = ({
                         </td>
                       )}
                       {/* Actions */}
-
                       <td className="py-3 px-4">
                         <div className="flex justify-center gap-2 items-center">
                           {/* Voir */}
+                            <div className="relative group">
                           <button
-                            title="Voir"
+                            title=""
                             type="button"
                             onClick={() => {
                               if (!onViewSale) return;
@@ -361,19 +361,29 @@ const FiltreSalesList = ({
                           >
                             <Eye className="w-4 h-4" />
                           </button>
+                          <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-blue-600 text-white text-xs whitespace-nowrap">
+                                   Détails Vente
+                                </span>
+                                </div>
 
                           {/* Modifier / Supprimer seulement si vente en attente */}
                           {(isAdmin) && (
                             <>
+                            <div className="relative group">
                               <button
-                                title="Modifier"
+                                title=""
                                 type="button"
                                 onClick={onEditSale && (() => onEditSale(sale))}
                                 className="px-3 py-1.5 rounded-lg border border-green-100 text-green-600 hover:bg-green-600 hover:text-white transition-transform hover:scale-105"
                               >
                                 <Pencil className="w-4 h-4" />
                               </button>
+                              <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-green-600 text-white text-xs whitespace-nowrap">
+                                   Modifier 
+                                </span>
+                                </div>
 
+                            <div className="relative group">
                               <button
                                 title="Supprimer"
                                 type="button"
@@ -382,15 +392,20 @@ const FiltreSalesList = ({
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>
+                              <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-yellow-600 text-white text-xs whitespace-nowrap">
+                                   Supprimer 
+                                </span>
+                                </div>
                             </>
                           )}
 
                           {/* Actions admin */}
                           {isAdmin && onUpdateStatus && (
                             <>
+                            <div className="relative group">
                               <button
                                 className="px-3 py-1.5 rounded-lg border border-green-100 text-green-600 hover:bg-green-400 hover:text-white transition-transform hover:scale-105"
-                                title="Marquer comme payée"
+                                title=""
                                 onClick={() => {
                                   Swal.fire({
                                     title: "Payer cette vente",
@@ -416,10 +431,15 @@ const FiltreSalesList = ({
                               >
                                 <BadgeCheck className="w-4 h-4" />
                               </button>
+                              <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-green-400 text-white text-xs whitespace-nowrap">
+                                  Payer la vente
+                                </span>
+                                </div>
 
+                            <div className="relative group">
                               <button
                                 className="px-3 py-1.5 rounded-lg border border-red-100 text-red-600 hover:bg-red-400 hover:text-white transition-transform hover:scale-105"
-                                title="Annuler la vente"
+                                title=""
                                 onClick={async () => {
                                   const { value: motif } = await Swal.fire({
                                     title: "Annuler cette vente",
@@ -449,10 +469,16 @@ const FiltreSalesList = ({
                               >
                                 <BadgeX className="w-4 h-4" />
                               </button>
+                              <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-red-400 text-white text-xs whitespace-nowrap">
+                                  Annuler la vente
+                                </span>
+                                </div>
 
+                              
+<div className="relative group">
                               <button
                                 className="px-3 py-1.5 rounded-lg border border-gray-100 text-black-600 hover:bg-gray-900 hover:text-white transition-transform hover:scale-105"
-                                title="Marquer comme auditée"
+                                title=""
                                 onClick={() => {
                                   Swal.fire({
                                     title: "Auditer cette vente",
@@ -478,6 +504,10 @@ const FiltreSalesList = ({
                               >
                                 <Headphones className="w-4 h-4" />
                               </button>
+                                <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-gray-900 text-white text-xs whitespace-nowrap">
+                                  Auditer
+                                </span>
+                                </div>
 
                               <div className="relative group">
                                 <button
