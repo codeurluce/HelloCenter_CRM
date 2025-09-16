@@ -27,4 +27,12 @@ async function getActorName(req) {
   }
 }
 
-module.exports = { logSaleHistory, getActorName };
+async function getSaleHistory(saleId) {
+  const result = await db.query(
+    `SELECT * FROM sales_history WHERE sale_id = $1 ORDER BY created_at DESC`,
+    [saleId]
+  );
+  return result.rows;
+}
+
+module.exports = { logSaleHistory, getActorName, getSaleHistory };

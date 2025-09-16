@@ -14,6 +14,7 @@ const sessionRoutes = require('./routes/sessionRoutes');
 const salesRoutes = require('./routes/salesRoutes');
 const filesRoutes = require('./routes/filesRoutes');
 const historiquesfilesRoutes = require('./routes/historiquesfilesRoutes');
+const historiquesVentesRoutes = require('./routes/historiquesVentesRoutes')
 const userRoutes = require('./routes/userRoutes');
 const initSockets = require('./socket');
 const { splitSessionsAtMidnight } = require('./controllers/sessionControllers');
@@ -47,6 +48,8 @@ app.use('/api/sales', salesRoutes); // APi pour les ventes
 app.use('/api/session_agents', sessionRoutes); // API pour les sessions
 app.use('/api/files', filesRoutes); // API pour les fichiers
 app.use('/api/historiques', historiquesfilesRoutes); // API pour l'historique des fichiers
+app.use('/api/historiques/ventes', historiquesVentesRoutes); // API pour l'historique des ventes
+
 
 
 

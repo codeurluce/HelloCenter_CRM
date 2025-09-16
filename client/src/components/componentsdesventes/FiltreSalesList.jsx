@@ -8,10 +8,12 @@ import {
   Upload,
   Ear,
   Headphones,
+  FileText
 } from "lucide-react";
 import { BadgeCheck, X as BadgeX } from "lucide-react";
 import Swal from "sweetalert2";
 import ExportModal from "../componentsAdminVentes/ExportModalVentes";
+import HistoriqueVentesModal from "../componentsAdminVentes/HistoriqueVentesModal.tsx"
 
 const FiltreSalesList = ({
   sales,
@@ -34,6 +36,15 @@ const FiltreSalesList = ({
   univers,
 }) => {
   const [showExport, setShowExport] = useState(false);
+  const [selectedSaleId, setSelectedSaleId] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const openModal = (id) => {
+    setSelectedSaleId(id);
+    setModalOpen(true);
+  };
+
+  const closeModal = () => setModalOpen(false);
 
   const filterByDate = (saleDate) => {
     if (!saleDate) return false;
@@ -250,13 +261,13 @@ const FiltreSalesList = ({
                     </th>
                     {isAdmin && (
                       <>
-                      <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
-                        Agent
-                      </th>
-                      <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
-                        Auditer
-                      </th>
-                    </>
+                        <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
+                          Agent
+                        </th>
+                        <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
+                          Auditer
+                        </th>
+                      </>
                     )}
                     <th className="px-6 py-3 text-center text-sm font-semibold text-blue-700">
                       Actions
@@ -323,11 +334,11 @@ const FiltreSalesList = ({
                       )}
                       {isAdmin && (
                         <td className="py-3 px-4 text-center items-center">
-                        {sale.audite ? "0ui" : "Non" }
-                      </td>
+                          {sale.audite ? "0ui" : "Non"}
+                        </td>
                       )}
                       {/* Actions */}
-                      
+
                       <td className="py-3 px-4">
                         <div className="flex justify-center gap-2 items-center">
                           {/* Voir */}
@@ -467,6 +478,19 @@ const FiltreSalesList = ({
                               >
                                 <Headphones className="w-4 h-4" />
                               </button>
+
+                              <div className="relative group">
+                                <button
+                                  onClick={() => openModal(sale.id)}
+                                  title=""
+                                  className=" px-3 py-1.5 rounded-lg border border-green-100 text-blue-600 hover:bg-blue-600 hover:text-white
+                                                                                                              transition-transform transform focus:outline-none focus:ring-2 focus:ring-offset-1 hover:scale-105">
+                                  <FileText className="w-4 h-4" />
+                                </button>
+                                <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-blue-600 text-white text-xs whitespace-nowrap">
+                                  Voir l'historique
+                                </span>
+                              </div>
                             </>
                           )}
                         </div>
@@ -479,6 +503,12 @@ const FiltreSalesList = ({
           )}
         </div>
       </div>
+
+      <HistoriqueVentesModal
+        isOpen={modalOpen}
+        saleId={selectedSaleId}
+        onClose={closeModal}
+      />
 
       {showExport && (
         <ExportModal
