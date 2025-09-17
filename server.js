@@ -1,5 +1,15 @@
 // server/server.js
-require('dotenv').config();
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config();
+}
+// require('dotenv').config();
+
+console.log("🔑 Loaded ENV variables:");
+console.log("DATABASE_URL:", process.env.DATABASE_URL);
+console.log("JWT_SECRET:", process.env.JWT_SECRET ? "✅ défini" : "❌ manquant");
+console.log("PORT:", process.env.PORT);
+
+
 const db = require('./db');
 
 const express = require('express');
