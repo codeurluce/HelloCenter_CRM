@@ -1,5 +1,6 @@
 // src/api/historiqueFiles.ts 
 // API pour l'historique des fichiers
+import axiosInstance from "./axiosInstance";
 
 interface LogParams {
   ficheId: number;
@@ -19,19 +20,13 @@ export const logHistorique = async ({
   metadata = {}
 }: LogParams) => {
   try {
-    await fetch('http://localhost:5000/api/historiques', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
+    await axiosInstance.post('/historiques', {
         fiche_id: ficheId,
         action,
         actor_id: actorId,
         actor_name: actorName,
         commentaire,
         metadata
-      })
     });
   } catch (error) {
     console.error('Erreur lors de la création du log historique :', error);
