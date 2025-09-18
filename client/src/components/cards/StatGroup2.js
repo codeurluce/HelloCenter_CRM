@@ -4,6 +4,7 @@ import SalesFormEnergie from '../componentsdesventes/SalesFormEnergie';
 import SalesFormOffreMobile from '../componentsdesventes/SalesFormOffreMobile';
 import FormTypeSelector from '../componentsdesventes/FormTypeSelector';
 import FiltreSalesList from '../componentsdesventes/FiltreSalesList';
+import axiosInstance from '../../api/axiosInstance';
 
 const VentesInfoPanel = () => {
   const [sales, setSales] = useState([]);
@@ -45,16 +46,10 @@ const VentesInfoPanel = () => {
   useEffect(() => {
     const fetchSales = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/sales', {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`            
-          },
-        });
-        if (!response.ok) throw new Error('Erreur chargement ventes');
-        const data = await response.json();
+        const { data } = await axiosInstance.get("/sales");
         setSales(data);
       } catch (error) {
-        console.error(error);
+        console.error("❌ Erreur lors du chargement des ventes :",  error.response?.data || error.message );
       }
     };
     fetchSales();
