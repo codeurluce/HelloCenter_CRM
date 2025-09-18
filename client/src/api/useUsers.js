@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import axios from "../api/axiosInstance";
+import axiosInstance from "../api/axiosInstance";
 
 /**
  * useUsers hook
@@ -38,7 +38,7 @@ export default function useUsers({
 
       if (options.clientSideOnly) {
         // Récupération brute puis filtrage côté client
-        const { data } = await axios.get("/users", { params: { page, limit } });
+        const { data } = await axiosInstance.get("/users", { params: { page, limit } });
         let list = data.items ?? data;
 
         // Mapping active pour le filtre statusFilter
@@ -56,7 +56,7 @@ export default function useUsers({
         if (profilFilter) params.profil = normalizeForServer(profilFilter);
         if (q) params.q = q;
 
-        const { data } = await axios.get("/users", { params });
+        const { data } = await axiosInstance.get("/users", { params });
         const list = data.items ?? data;
 
         setUsers(Array.isArray(list) ? list : []);
