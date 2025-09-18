@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import axiosInstance from '../../api/axiosInstance';
 
 import {
   BarChart,
@@ -9,6 +10,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
+import { Axios } from 'axios';
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
@@ -29,16 +31,7 @@ const WeeklySalesChart = () => {
 useEffect(() => {
   async function fetchWeeklySales() {
     try {
-      const response = await fetch('http://localhost:5000/api/sales/weekly', {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`, // si token JWT
-        },
-      });
-      if (!response.ok) {
-        throw new Error(`Erreur HTTP : ${response.status}`);
-      }
-      const result = await response.json();
-
+      const { data: result } = await axiosInstance.get('/sales/weekly');
       console.log('Données reçues:', result);
 
       // jours de la semaine (Jusqu'à Dimanche = 0)
@@ -67,7 +60,10 @@ useEffect(() => {
 
       setData(formattedData);
     } catch (err) {
-      console.error('Erreur chargement ventes de la semaine', err);
+      console.error(
+          "❌ Erreur chargement ventes de la semaine :",
+          err.response?.data || err.message
+        );
     } finally {
       setLoading(false);
     }
