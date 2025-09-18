@@ -21,8 +21,8 @@ useEffect(() => {
         }),
       ]);
 
-      const salesData = await salesRes.json();
-      const filesData = await filesRes.json();
+      const salesData =  salesRes.data;
+      const filesData =  filesRes.data;
 
       setStatsData({
         totalTransactions: parseInt(salesData.total_sales_today) || 0,
@@ -34,7 +34,7 @@ useEffect(() => {
 
     } 
     catch (error) {
-        console.error("Erreur lors du fetch des statistiques :", error.response?.data || error.message );
+        console.error("❌ Erreur lors du fetch des statistiques :", error.response?.data || error.message );
     } finally {
       setLoading(false);
     }

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import axiosInstance from '../../api/axiosInstance';
 
 const TodayRecap = () => {
   const [data, setData] = useState(null);
@@ -7,12 +8,8 @@ const TodayRecap = () => {
   useEffect(() => {
     async function fetchTodayData() {
       try {
-        const response = await fetch('http://localhost:5000/api/sales/today-summary', {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-          },
-        });
-        const result = await response.json();
+        const { data: result } = await axiosInstance.get('/sales/today-summary');
+
         console.log('Résultat API:', result);
 
         const formattedData = {
@@ -23,7 +20,7 @@ const TodayRecap = () => {
 
         setData(formattedData);
       } catch (err) {
-        console.error('Erreur chargement ventes du jour', err);
+        console.error('❌ Erreur chargement ventes du jour :', err.response?.data || err.message );
       } finally {
         setLoading(false);
       }
