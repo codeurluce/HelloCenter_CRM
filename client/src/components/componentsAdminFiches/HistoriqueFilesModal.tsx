@@ -4,7 +4,6 @@ import {
   CheckCircle, 
   Clock, 
   PlayCircle, 
-  RotateCcw, 
   CalendarClock,
   Import,
   Redo
@@ -33,8 +32,8 @@ export default function HistoriqueFilesModal({ isOpen, onClose, ficheId }: Histo
     try {
       const res = await axiosInstance.get(`/historiques/${ficheId}`);
       setHistorique(res.data);
-    } catch (err) {
-      console.error("Erreur chargement historique", err);
+    }catch (error: any) {
+    console.error("Erreur export:", error.response?.data || error.message);
     } finally {
       setLoading(false);
     }
@@ -156,8 +155,8 @@ if (!isOpen) return null;
 //     try {
 //       const res = await axiosInstance.get(`/historiques/${ficheId}`);
 //       setHistorique(res.data);
-//     } catch (err) {
-//       console.error("Erreur chargement historique", err);
+//     } catch (error: any) {
+//       console.error("Erreur chargement historique", error.response?.data || error.message);
 //     } finally {
 //       setLoading(false);
 //     }
