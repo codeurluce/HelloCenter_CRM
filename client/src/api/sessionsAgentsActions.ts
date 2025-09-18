@@ -1,5 +1,5 @@
 // sessionsAgentsActions
-import axios from "./axiosInstance";
+import axiosInstance from "./axiosInstance";
 
 export interface Session {
   id: number;
@@ -35,10 +35,10 @@ export const fetchSessions = async (options: FetchSessionsOptions = {}): Promise
     if (startDate) params.startDate = startDate;
     if (endDate) params.endDate = endDate;
 
-    const response = await axios.get("/sessions", { params });
-    return response.data.sessions; // adapter selon ton backend
+    const response = await axiosInstance.get("/sessions", { params });
+    return response.data.sessions;
   } catch (error: any) {
-    console.error("Erreur fetchSessions:", error.response || error.message);
+    console.error("Erreur fetchSessions:", error.response?.data || error.message);
     return [];
   }
 };
@@ -54,7 +54,7 @@ export interface ExportOptions {
 
 export const exportSessions = async (options: ExportOptions) => {
   try {
-    const response = await axios.post("/sessions/export", options, {
+    const response = await axiosInstance.post("/sessions/export", options, {
       responseType: "blob", // pour télécharger le fichier
     });
 
@@ -67,22 +67,32 @@ export const exportSessions = async (options: ExportOptions) => {
     link.click();
     link.remove();
   } catch (error: any) {
-    console.error("Erreur exportSessions:", error.response || error.message);
+    console.error("Erreur exportSessions:", error.response?.data || error.message);
   }
 };
 
 // 📌 Récupérer l’historique d’un agent
 export const getUserHistory = async (userId: number, period: string = "today") => {
-  const res = await axios.get(`/sessions/history/${userId}?period=${period}`);
-  return res.data;
+  try {
+    const res = await axiosInstance.get(`/sessions/history/${userId}?period=${period}`);
+    return res.data;
+  } catch (error: any) {
+    console.error("Erreur getUserHistory:", error.response?.data || error.message);
+    return null;
+  }
 };
 
 // 📌 Changer de statut
 export const changeStatus = async (userId: number, newStatus: string, pauseType?: string) => {
-  const res = await axios.post(`/sessions/change`, {
-    user_id: userId,
-    new_status: newStatus,
-    pause_type: pauseType || null,
-  });
-  return res.data;
-};
+  try {
+    const res = await axiosInstance.post(`/sessions/change`, {
+      user_id: userId,
+      new_status: newStatus,
+      pause_type: pauseType || null,
+    });
+    return res.data;
+  } catch (error: any) {
+    console.error("Erreur changeStatus:", error.response?.data || error.message);
+    return null;
+  }
+}
