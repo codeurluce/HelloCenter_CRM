@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import StatCard from './StatCard';
 import { CalendarDays, CheckCircle, XCircle, BarChart3, CircleArrowOutUpRight } from 'lucide-react';
+import axiosInstance from '../../api/axiosInstance';
 
 
 const StatGroup = ({ setActiveItem }) => {
@@ -12,10 +13,10 @@ useEffect(() => {
     try {
         console.log(localStorage.getItem('token'));
       const [salesRes, filesRes] = await Promise.all([
-        fetch('http://localhost:5000/api/sales/today-summary', {
+        axiosInstance.get('/sales/today-summary', {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
         }),
-        fetch('http://localhost:5000/api/files/today-summary', {
+        axiosInstance.get('/files/today-summary', {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
         }),
       ]);
@@ -31,8 +32,9 @@ useEffect(() => {
         fichesDisponibles: parseInt(filesData.total_files_today) || 0,
       });
 
-    } catch (error) {
-      console.error('Erreur lors du fetch des statistiques :', error);
+    } 
+    catch (error) {
+        console.error("Erreur lors du fetch des statistiques :", error.response?.data || error.message );
     } finally {
       setLoading(false);
     }
