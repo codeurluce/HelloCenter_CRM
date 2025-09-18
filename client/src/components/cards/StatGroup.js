@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import StatCard from './StatCard';
-import { CalendarDays, PhoneOutgoing, Clock, CheckCircle, XCircle, BarChart3, ReceiptCent, TrendingUp, CircleArrowOutUpRight } from 'lucide-react';
-import { Receipt } from 'lucide';
+import { CalendarDays, CheckCircle, XCircle, BarChart3, CircleArrowOutUpRight } from 'lucide-react';
+
 
 const StatGroup = ({ setActiveItem }) => {
   const [statsData, setStatsData] = useState(null);
