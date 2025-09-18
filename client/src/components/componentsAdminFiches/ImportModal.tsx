@@ -1,7 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { X, Upload, FileSpreadsheet, AlertCircle, CheckCircle, Download } from 'lucide-react';
 import Papa from 'papaparse';
-import { Fiche } from './fiche';
 import * as XLSX from "xlsx";
 import Swal from "sweetalert2";
 
@@ -11,7 +10,6 @@ interface ImportModalProps {
   // onImport: (fiches: Partial<Fiche>[]) => void;
   onImport: (fiches: any[]) => Promise<void>;
 }
-
 const ImportModal: React.FC<ImportModalProps> = ({
   isOpen,
   onClose,
