@@ -1,9 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
 import { X, Download, Calendar, Users, FileText, ChevronDown } from "lucide-react";
+import axiosInstance from "../../api/axiosInstance";
 import columnOptions from "../../shared/columnsConfig";
 import dayjs from "dayjs";
 import { Fiche } from "./fiche";
 import isBetween from 'dayjs/plugin/isBetween';
+import { toast } from "react-toastify";
 dayjs.extend(isBetween);
 
 interface Agent {
@@ -122,39 +124,34 @@ const ExportModalFiches: React.FC<ExportModalFichesProps> = ({ isOpen, onClose, 
     try {
       // setIsExporting(true); // démarrer le loader
 
-      const params = new URLSearchParams();
-      if (selectedAgents.length > 0) params.append("agents", JSON.stringify(selectedAgents.map(a => a.id)));
-      params.append("columns", JSON.stringify(selectedColumns.map(c => c.key)));
-      params.append("dateType", dateType);
+      const params: any = {};
+      if (selectedAgents.length > 0) params.agents = selectedAgents.map(a => a.id); 
+      params.columns = selectedColumns.map(c => c.key);
+      params.dateType = dateType;
       if (dateType === 'single') {
         if (!singleDate) {
           alert("Veuillez sélectionner une date.");
           return;
         }
-        params.append("singleDate", singleDate);
+        params.singleDate = singleDate;
       } else {
         if (!startDate || !endDate) {
           alert("Veuillez sélectionner une plage de dates.");
           // setIsExporting(false); 
           return;
         }
-        params.append("startDate", startDate);
-        params.append("endDate", endDate);
+        params.startDate = startDate;
+        params.endDate= endDate;
       }
-      params.append("exportClosedOnly", exportClosedOnly.toString());
+      params.exportClosedOnly = exportClosedOnly.toString();
 
-      const response = await fetch(`http://localhost:5000/api/files/export_files?${params.toString()}`);
-
-
-      if (!response.ok) {
-        alert("Erreur récupération fichier.");
-        return;
-      }
-
-      const blob = await response.blob();
+      const response = await axiosInstance.get('/files/export_files',{
+      params,
+      responseType: "blob", // obligatoire pour les fichiers
+    });
 
       // Forcer le téléchargement du fichier
-      const url = window.URL.createObjectURL(blob);
+      const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
       link.href = url;
       link.download = "export_fiches.xlsx";
@@ -166,15 +163,11 @@ const ExportModalFiches: React.FC<ExportModalFichesProps> = ({ isOpen, onClose, 
       resetModal();
       onClose();
 
-    } catch (error) {
-      console.error("Erreur export:", error);
-      alert("Erreur lors de l’export.");
-    }
-    // finally {
-    //   setIsExporting(false); // arrêter le loader
-    // }
-  };
-
+    } catch (error: any) {
+      console.error("Erreur export:", error.response?.data || error.message);
+      toast.error("Erreur lors de l’export.");
+  }
+};
 
   const isExportDisabled = () =>
     selectedColumns.length === 0 || fiches.length === 0;
