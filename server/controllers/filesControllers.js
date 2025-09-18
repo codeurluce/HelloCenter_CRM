@@ -1,6 +1,6 @@
 const db = require('../db');
 const XLSX = require("xlsx");
-const columnOptions = require("../../client/src/shared/columnsConfig");
+const columnOptions = require("../shared/columnsConfig");
 const dayjs = require("dayjs");
 
 // Obtenir les nouvelles fiches par
