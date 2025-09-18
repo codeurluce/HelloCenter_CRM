@@ -44,9 +44,9 @@ const AssignModal: React.FC<AssignModalProps> = ({
     const fetchAgents = async () => {
       try {
         const res = await axiosInstance.get('/users_bd');
-        setAgents(res.data); // backend déjà filtré et formaté
+        setAgents(res.data);
       } catch (error) {
-        console.error("Erreur chargement agents:", error);
+        console.error("❌ Erreur chargement agents:", (error as any).response?.data || (error as any).message);
       }
     };
     fetchAgents();
