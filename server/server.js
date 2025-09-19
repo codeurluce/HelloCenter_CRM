@@ -2,21 +2,17 @@
 if (process.env.NODE_ENV !== 'production') {
   require('dotenv').config();
 }
-// require('dotenv').config();
 
 console.log("🔑 Loaded ENV variables:");
 console.log("DATABASE_URL:", process.env.DATABASE_URL);
 console.log("JWT_SECRET:", process.env.JWT_SECRET ? "✅ défini" : "❌ manquant");
 console.log("PORT:", process.env.PORT);
 
-
 const db = require('./db');
-
 const express = require('express');
 const cors = require('cors');
 const http = require('http');
 const { Server } = require('socket.io');
-const PORT = process.env.PORT || 5000;
 const cron = require('node-cron');
 
 // Import des routes
@@ -24,24 +20,30 @@ const sessionRoutes = require('./routes/sessionRoutes');
 const salesRoutes = require('./routes/salesRoutes');
 const filesRoutes = require('./routes/filesRoutes');
 const historiquesfilesRoutes = require('./routes/historiquesfilesRoutes');
-const historiquesVentesRoutes = require('./routes/historiquesVentesRoutes')
+const historiquesVentesRoutes = require('./routes/historiquesVentesRoutes');
 const userRoutes = require('./routes/userRoutes');
 const initSockets = require('./socket');
 const { splitSessionsAtMidnight } = require('./controllers/sessionControllers');
 
-
-
-
 // Initialisation de l'application Express
 const app = express();
 const server = http.createServer(app);
+
+// ✅ Configuration Socket.IO avec CORS sécurisé pour Railway
 const io = new Server(server, {
-  cors: { origin: '*' }
+  cors: {
+    origin: [
+      'http://localhost:3000',
+      'https://crmhellocenterfrontend-production.up.railway.app'
+    ],
+    methods: ['GET', 'POST'],
+    credentials: true
+  },
+  transports: ['websocket'] // Force WebSocket only (évite le polling en prod)
 });
 
+// Initialiser les sockets
 initSockets(io);
-
-
 
 // ⏰ Tâche planifiée : tous les jours à 00:00
 cron.schedule('0 0 * * *', async () => {
@@ -49,23 +51,20 @@ cron.schedule('0 0 * * *', async () => {
   await splitSessionsAtMidnight();
 });
 
-// les API d'authentification, de sessions et de ventes
+// Middleware
 app.use(cors());
 app.use(express.json());
-app.use('/api', userRoutes)
-app.use('/api/users', userRoutes) 
-app.use('/api/sales', salesRoutes); // APi pour les ventes
-app.use('/api/session_agents', sessionRoutes); // API pour les sessions
-app.use('/api/files', filesRoutes); // API pour les fichiers
-app.use('/api/historiques', historiquesfilesRoutes); // API pour l'historique des fichiers
-app.use('/api/historiques/ventes', historiquesVentesRoutes); // API pour l'historique des ventes
 
+// Routes
+app.use('/api', userRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/sales', salesRoutes);
+app.use('/api/session_agents', sessionRoutes);
+app.use('/api/files', filesRoutes);
+app.use('/api/historiques', historiquesfilesRoutes);
+app.use('/api/historiques/ventes', historiquesVentesRoutes);
 
-
-
-
-
-
+// Routes de santé
 app.get('/api/test-db', async (req, res) => {
   try {
     const result = await db.query('SELECT NOW()');
@@ -75,24 +74,23 @@ app.get('/api/test-db', async (req, res) => {
   }
 });
 
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'OK', uptime: process.uptime() });
+});
+
 app.get('/', (req, res) => {
   res.send('API CRM en ligne ✅');
 });
 
-// io.on('connection', socket => {
-//   console.log('Un utilisateur connecté :', socket.id);
-//   socket.on('disconnect', () => {
-//     console.log('Utilisateur déconnecté :', socket.id);
-//   });
-// });
+// ✅ ✅ ✅ CORRECTION CRITIQUE : ÉCOUTER AVEC `server`, PAS `app`
+const PORT = process.env.PORT || 8080; // Railway utilise 8080, pas 5000
 
-// server.listen(PORT, () => {
-//   console.log(`🚀 Serveur CRM lancé sur http://localhost:${PORT}`);
-// });
-app.listen(PORT, () => {
-  console.log(`🚀 Serveur CRM lancé sur le port ${PORT}`);
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Serveur HTTP + Socket.IO lancé sur le port ${PORT}`);
+  console.log(`🌐 Écoute sur 0.0.0.0 (nécessaire pour Railway)`);
 });
 
+// Vérification de la connexion DB au démarrage
 db.query('SELECT NOW()')
-  .then(res => console.log('DB connected at:', res.rows[0].now))
-  .catch(err => console.error('DB connection error:', err));
+  .then(res => console.log('✅ DB connected at:', res.rows[0].now))
+  .catch(err => console.error('❌ DB connection error:', err));
