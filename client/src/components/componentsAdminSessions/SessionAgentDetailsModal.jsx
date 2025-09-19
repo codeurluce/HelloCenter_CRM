@@ -28,7 +28,7 @@ export default function SessionAgentDetailsModal({ agent, onClose }) {
             try {
                 const res = await axiosInstance.get("/session_agents/user/agent_connection_details");
                 // On récupère uniquement les infos pour l'agent actuel
-                const userData = res.data.find(item => item.user_id == agent.user_id);
+                const userData = res.data.find(item => item.user_id === agent.user_id);
                 if (userData) setConnectionTimes(userData);
             } catch (err) {
                 console.error("Erreur récupération connexion agent:", err.response?.data || err.message);
@@ -91,10 +91,6 @@ export default function SessionAgentDetailsModal({ agent, onClose }) {
     const live = agent.statut_actuel === statusFr ? (liveCounters[agent.statut_actuel] || 0) : 0;
     return acc + base + live;
   }, 0);
-
-    // 🟡 Connexion / Déconnexion du jour
-    const heureConnexion = connectionTimes.first_connection || "—";
-    const heureDeconnexion = connectionTimes.last_disconnection || "—";
 
     return (
         <div

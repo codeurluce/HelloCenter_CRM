@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { RefreshCw, Eye, RotateCcw, Power, Pause, Play } from "lucide-react";
+import { RefreshCw, Eye, } from "lucide-react";
 import SessionAgentDetailsModal from "./SessionAgentDetailsModal";
 
 // Formatage hh:mm:ss
