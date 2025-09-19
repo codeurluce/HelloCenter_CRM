@@ -1,11 +1,10 @@
-import React, { useState, useMemo, useContext, useEffect } from 'react';
+import React, { useState, useMemo, useContext } from 'react';
 import { FileText, Clock, CheckCircle, CalendarClock, Filter, RefreshCw } from 'lucide-react';
 import { Fiche, ClotureData } from './types/fiche';
 import FicheCard from './FicheCard.tsx';
 import ClotureModal from './ClotureModal.tsx';
 import { AuthContext } from '../../pages/AuthContext.jsx';
 import RendezVousModal from './RendezVousModal.jsx';
-import axiosInstance from '../../api/axiosInstance.js';
 
 interface FichesInfoPanelProps {
   fiches: Fiche[];
@@ -14,7 +13,7 @@ interface FichesInfoPanelProps {
   onTreatFiche: (id: number) => void;
   onCancelFiche: (id: number) => void;
   onCloseFiche: (id: number, data: ClotureData) => void;
-  onProgramRdv: (id: number, date: string, commentaire: string) => void;
+  onProgramRdv: (id: number, date: Date, commentaire: string) => void;
 }
 
 type FilterType = 'nouvelle' | 'en_traitement' | 'rendez_vous' | 'cloturee' | 'toutes';
@@ -303,7 +302,7 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
       <RendezVousModal
         isOpen={showRdvModal}
         onClose={() => setShowRdvModal(false)}
-        onConfirm={({ date, commentaire }) => {
+        onConfirm={({ date, commentaire }: { date: Date; commentaire: string }) => {
           if (selectedFiche) {
             onProgramRdv(selectedFiche.id, date, commentaire);
             setShowRdvModal(false);
