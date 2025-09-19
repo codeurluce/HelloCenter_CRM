@@ -86,8 +86,11 @@ app.get('/', (req, res) => {
 //   });
 // });
 
-server.listen(PORT, () => {
-  console.log(`🚀 Serveur CRM lancé sur http://localhost:${PORT}`);
+// server.listen(PORT, () => {
+//   console.log(`🚀 Serveur CRM lancé sur http://localhost:${PORT}`);
+// });
+app.listen(PORT, () => {
+  console.log(`🚀 Serveur CRM lancé sur le port ${PORT}`);
 });
 
 db.query('SELECT NOW()')
