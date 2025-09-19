@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Loader2, User, UserPlus, UserPen, X } from "lucide-react";
 import axios from "axios";
+import axiosInstance from "../../api/axiosInstance";
 
 const rolesOptions = [
   { value: "Agent", label: "Agent" },
@@ -50,7 +51,7 @@ export default function UserFormModal({ show, setShow, editingUser, onSave, savi
 
     try {
       // Envoi des données modifiées au backend
-      const res = await axios.put(`/users/${editingUser.id}/update`, {
+      const res = await axiosInstance.put(`/users/${editingUser.id}/update`, {
         firstname: form.firstname,
         lastname: form.lastname,
         email: form.email,
