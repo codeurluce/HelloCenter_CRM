@@ -15,17 +15,17 @@ export const startSession = async ({ status, pause_type = null, user_id }) => {
 
   try {
     const response = await axiosInstance.post('/session_agents/start', {
-        user_id: userId,
-        status,
-        pause_type,
-        start_time: new Date().toISOString(),
+      user_id: userId,
+      status,
+      pause_type,
+      start_time: new Date().toISOString(),
     });
 
     console.log('✅ Session démarrée:', response.data);
     return response.data;
   } catch (error) {
-    console.error('❌ Erreur lors du démarrage de session :',  error.response?.data || error.message);
-     throw error;
+    console.error('❌ Erreur lors du démarrage de session :', error.response?.data || error.message);
+    throw error;
   }
 };
 
@@ -40,20 +40,26 @@ export const closeSession = async ({ user_id }) => {
 
   try {
     const response = await axiosInstance.post('/session_agents/close', {
-       user_id: userId,
+      user_id: userId,
     });
+    const data = response.data;
 
-    console.log('✅ Session fermée:', response.data);
+    if (data.success && data.session) {
+      console.log('✅ Session fermée:', data.session);
 
-    // 🔹 Mettre à jour localStorage
-    const user = JSON.parse(localStorage.getItem('user'));
-    if (user) {
-      localStorage.setItem('dernierStatus', 'Hors Ligne'); // ou Hors ligne
+      // 🔹 Mettre à jour localStorage
+      const user = JSON.parse(localStorage.getItem('user'));
+      if (user) {
+        localStorage.setItem('dernierStatus', 'Hors Ligne');
+      }
+    } else {
+      // Cas "aucune session active"
+      console.info("ℹ️ Aucune session active à fermer");
     }
 
-    return response.data;
+    return data;
   } catch (error) {
-    console.error('❌ Erreur lors de la fermeture de session :',error.response?.data || error.message);
-     throw error;
+    console.error('❌ Erreur lors de la fermeture de session :', error.response?.data || error.message);
+    throw error;
   }
 };
