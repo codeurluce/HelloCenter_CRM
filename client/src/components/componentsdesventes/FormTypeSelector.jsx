@@ -1,6 +1,4 @@
-import React, { useState } from 'react';
-import { X, Send, Eye, Edit, Trash2, Plus, Search, Filter } from 'lucide-react';
-import e from 'cors';
+import React from 'react';
 
 // Popup de choix type de vente
 const FormTypeSelector = ({ onSelect, onClose }) => {
