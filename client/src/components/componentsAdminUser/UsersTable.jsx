@@ -1,9 +1,6 @@
 // src/components/admin/UsersTable.jsx
 import React from "react";
 import {
-  Shield,
-  Mail,
-  Briefcase,
   Pencil,
   Power,
   RefreshCw,
