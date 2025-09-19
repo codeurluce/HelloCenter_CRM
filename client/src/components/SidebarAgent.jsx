@@ -9,7 +9,7 @@ const SidebarAgent = ({ activeItem, setActiveItem, onLogout }) => {
         { id: 'dashboard', label: 'Dashbord Agent', icon: LayoutDashboard },
         { id: 'sales', label: 'Ventes', icon: ShoppingCart },
         { id: 'files', label: 'Fichiers', icon: Folder },
-        { id: 'appointments', label: 'Rendez-vous', icon: Calendar },
+        // { id: 'appointments', label: 'Rendez-vous', icon: Calendar },
         { id: 'activité', label: 'Activité', icon: CircleUser },
     ];
 

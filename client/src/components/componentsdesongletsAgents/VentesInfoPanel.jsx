@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { X, Plus } from "lucide-react";
+import { X } from "lucide-react";
 import Swal from "sweetalert2";
 import { toast } from "react-toastify";
 
@@ -60,8 +60,8 @@ useEffect(() => {
       const response = await axiosInstance.get(endpoint);
       setSales([...response.data]);
     } catch (error) {
-      console.error("Erreur chargement ventes:", error);
-      toast.error("Impossible de récupérer les ventes");
+      console.error("Erreur chargement ventes:", error.response?.data?.message || error.message);
+      toast.error(error.response?.data?.message || "Impossible de récupérer les ventes");
     } finally {
       setLoading(false);
     }
@@ -227,8 +227,8 @@ useEffect(() => {
           : "✅ Statut mis à jour"
       );
     } catch (error) {
-      console.error(error);
-      toast.error("❌ Impossible de mettre à jour le statut");
+      console.error(error.response?.data?.message || error.message);
+      toast.error(error.response?.data?.message || "Impossible de mettre à jour le statut");
     }
   };
 
@@ -249,8 +249,8 @@ useEffect(() => {
         : "❌ Audit retiré de la vente"
     );
   } catch (error) {
-    console.error("Erreur mise à jour audit:", error);
-    toast.error("Impossible de mettre à jour l'audit");
+    console.error("Erreur mise à jour audit:", error.response?.data?.message || error.message);
+    toast.error(error.response?.data?.message || "Impossible de mettre à jour l'audit");
   }
 };
 
