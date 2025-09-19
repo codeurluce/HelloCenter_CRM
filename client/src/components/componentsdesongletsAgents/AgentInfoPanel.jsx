@@ -1,10 +1,7 @@
 // components/componentsdesonglets/AgentInfoPanel.jsx
 import React, { useEffect, useRef } from "react";
 import { startSession, closeSession } from "../../api/saveSessionToDB";
-import StatusSelector, {
-  statuses,
-  formatTime,
-} from "../../shared/StatusSelector.jsx";
+import StatusSelector, { statuses, formatTime } from "../../shared/StatusSelector.jsx";
 
 export default function AgentInfoPanel({
   userId,
