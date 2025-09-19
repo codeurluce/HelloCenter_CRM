@@ -31,8 +31,8 @@ export default function HistoriqueVentesModal({ isOpen, onClose, saleId }: Histo
     try {
       const res = await axiosInstance.get(`/historiques/ventes/${saleId}`);
       setHistorique(res.data);
-    } catch (err) {
-      console.error("Erreur chargement historique", err);
+    } catch (err: any) {
+      console.error("Erreur chargement historique", err.response?.data || err.message);
     } finally {
       setLoading(false);
     }
@@ -148,7 +148,7 @@ if (!isOpen) return null;
 //       const res = await axiosInstance.get(`/historiques/ventes/${saleId}`);
 //       setHistorique(res.data);
 //     } catch (err) {
-//       console.error("Erreur chargement historique", err);
+//       console.error("Erreur chargement historique", err.response?.data || err.message);
 //     } finally {
 //       setLoading(false);
 //     }
