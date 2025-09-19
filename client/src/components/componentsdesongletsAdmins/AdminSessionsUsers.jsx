@@ -46,7 +46,7 @@ export default function AdminLiveSessions() {
       }));
       setAgents(data);
     } catch (err) {
-      console.error("Erreur récupération sessions live:", err);
+      console.error("Erreur récupération sessions live:", err.response?.data || err.message);
     } finally {
       setLoading(false);
     }
