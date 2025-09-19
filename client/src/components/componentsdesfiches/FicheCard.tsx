@@ -11,7 +11,7 @@ import {
   Clock,
   Eye,
 } from 'lucide-react';
-import { Fiche, ClotureData } from './types/fiche.ts';
+import { Fiche } from './types/fiche.ts';
 
 interface FicheCardProps {
   fiche: Fiche;
@@ -63,11 +63,11 @@ const FicheCard: React.FC<FicheCardProps> = ({
     }
   };
 
-  const getInitials = (name: string) => {
-    const parts = name.trim().split(' ');
-    if (parts.length === 1) return parts[0][0].toUpperCase();
-    return parts[0][0].toUpperCase() + parts[1][0].toUpperCase();
-  };
+  // const getInitials = (name: string) => {
+  //   const parts = name.trim().split(' ');
+  //   if (parts.length === 1) return parts[0][0].toUpperCase();
+  //   return parts[0][0].toUpperCase() + parts[1][0].toUpperCase();
+  // };
   console.log('🧪 fiche.id', fiche.id, 'statut:', fiche.statut, 'assigned_to:', fiche.assigned_to, 'currentAgent:', currentAgent);
 
   return (
