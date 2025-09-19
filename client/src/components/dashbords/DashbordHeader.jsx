@@ -4,6 +4,7 @@ import { Bell, CalendarDays, User } from 'lucide-react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import SimpleTimer from './SimpleTimer';
+import axiosInstance from '../../api/axiosInstance.js';
 import StatusSelector, { statuses, formatTime } from "../../shared/StatusSelector.jsx";
 
 const DashboardHeader = ({
@@ -28,11 +29,10 @@ const DashboardHeader = ({
 
   const fetchFichesRdv = async (agentId) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/files/rendezvous/upcoming/${agentId}`);
-      const data = await res.json();
-      return data;
+      const res = await axiosInstance.get(`/files/rendezvous/upcoming/${agentId}`);
+      return res.data;
     } catch (error) {
-      console.error('Erreur lors de la récupération des fiches avec rendez-vous :', error);
+      console.error("❌ Erreur lors de la récupération des fiches avec rendez-vous :", error.response?.data || error.message);
       return [];
     }
   };
@@ -77,22 +77,22 @@ const DashboardHeader = ({
           shouldNotify = true;
         }
 
-      //   if (diffMin < 0 && diffMin > -1) {
-      //     await fetch(`http://localhost:5000/api/files/${fiche.id}`, {
-      //       method: 'PATCH',
-      //       headers: { 'Content-Type': 'application/json' },
-      //       body: JSON.stringify({ statut: 'en_traitement' }),
-      //     });
-      //   }
-       }
+        //   if (diffMin < 0 && diffMin > -1) {
+        //     await fetch(`http://localhost:5000/api/files/${fiche.id}`, {
+        //       method: 'PATCH',
+        //       headers: { 'Content-Type': 'application/json' },
+        //       body: JSON.stringify({ statut: 'en_traitement' }),
+        //     });
+        //   }
+      }
 
       if (shouldNotify) {
         const updatedNotifs = [...rdvNotifications, ...newNotifs];
         setRdvNotifications(updatedNotifs);
         setHasNewRDVNotif(true);
         playAlertSound();
-         localStorage.setItem(`hasNewRDVNotif_${connectedAgent.id}`, 'true');
-         localStorage.setItem(`rdvNotifications_${connectedAgent.id}`, JSON.stringify(updatedNotifs));
+        localStorage.setItem(`hasNewRDVNotif_${connectedAgent.id}`, 'true');
+        localStorage.setItem(`rdvNotifications_${connectedAgent.id}`, JSON.stringify(updatedNotifs));
       }
     };
 
@@ -104,18 +104,18 @@ const DashboardHeader = ({
   useEffect(() => {
     const storedAgent = localStorage.getItem('user');
     if (storedAgent) {
-    const agent = JSON.parse(storedAgent);
-    setConnectedAgent(agent);
+      const agent = JSON.parse(storedAgent);
+      setConnectedAgent(agent);
 
-    const storedNotifFlag = localStorage.getItem(`hasNewRDVNotif_${agent.id}`) === 'true';
-    const storedNotifications = JSON.parse(localStorage.getItem(`rdvNotifications_${agent.id}`)) || [];
+      const storedNotifFlag = localStorage.getItem(`hasNewRDVNotif_${agent.id}`) === 'true';
+      const storedNotifications = JSON.parse(localStorage.getItem(`rdvNotifications_${agent.id}`)) || [];
 
-    if (storedNotifFlag && storedNotifications.length > 0) {
-      setHasNewRDVNotif(true);
-      setRdvNotifications(storedNotifications);
+      if (storedNotifFlag && storedNotifications.length > 0) {
+        setHasNewRDVNotif(true);
+        setRdvNotifications(storedNotifications);
+      }
     }
-  }
-}, []);
+  }, []);
 
   const handleNotifClick = () => {
     setShowNotif(show => !show);
