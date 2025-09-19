@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { LayoutDashboard, CircleUser, Settings, LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
-import { ShoppingCart, Folder, Calendar } from 'react-feather';
+import { LayoutDashboard, CircleUser, LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ShoppingCart, Folder } from 'react-feather';
 
 const SidebarAgent = ({ activeItem, setActiveItem, onLogout }) => {
     const [isCollapsed, setIsCollapsed] = useState(false);
