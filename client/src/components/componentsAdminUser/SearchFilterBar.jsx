@@ -1,6 +1,6 @@
 // src/components/admin/SearchFilterBar.jsx
 import React from "react";
-import { Search, RefreshCw, Plus } from "lucide-react";
+import { Search, Plus } from "lucide-react";
 
 export default function SearchFilterBar({
   q,
