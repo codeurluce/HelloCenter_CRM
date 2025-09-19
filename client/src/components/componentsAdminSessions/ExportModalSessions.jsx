@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Download, Calendar, Users, FileText, Clock, ChevronDown, Search, ClockArrowUp, ClockArrowDown, Coffee, Utensils, Armchair, ClockAlert, BookOpen } from 'lucide-react';
+import { X, Download, Calendar, Users, FileText, ChevronDown, Search, ClockArrowUp, ClockArrowDown, ClockAlert } from 'lucide-react';
 import { exportData } from '../utils/exportUtils';
-import axios from 'axios';
 import dayjs from "dayjs";
 import { statuses } from '../../shared/StatusSelector';
+import axiosInstance from '../../api/axiosInstance';
+import Swal from 'sweetalert2';
 
 const ExportModal = ({ isOpen, onClose, agents = [] }) => {
   const [selectedAgents, setSelectedAgents] = useState([]);
@@ -112,8 +113,7 @@ const statusOptions = [
     };
 
     try {
-      const response = await axios.post('http://localhost:5000/api/session_agents/export-sessions', body);
-      const rows = response.data;
+      const { data: rows } = await axiosInstance.post('/session_agents/export-sessions', body);
 
       // Construire tableau pour export en fonction des statuts choisis
       const dataToExport = rows.map(row => {
@@ -186,9 +186,14 @@ const statusOptions = [
       onClose();
     } catch (error) {
       console.error('Erreur lors de l’export:', error);
-      alert('Erreur lors de l’export des données.');
-    }
-  };
+    Swal.fire({
+      icon: 'error',
+      title: 'Erreur export',
+      text: error?.response?.data?.error || 'Erreur lors de l’export des données.',
+      confirmButtonColor: "#dc2626"
+    });
+  }
+};
  
   const isExportDisabled = () => {
     const hasAgents = selectedAgents.length > 0;
