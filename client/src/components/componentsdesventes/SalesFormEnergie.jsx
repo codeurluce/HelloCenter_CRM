@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, Send, Eye, Edit, Trash2, Plus, Search, Filter } from 'lucide-react';
+import React from 'react';
+import { X, Send } from 'lucide-react';
 
 const partenaires = ['Partenaire A', 'Partenaire B', 'Partenaire C'];
 
