@@ -2,6 +2,7 @@
 const db = require('../db');
 const dayjs = require("dayjs");
 
+// Activer la session active 
 exports.createSession = async (req, res) => {
   try {
     console.log('📥 Requête reçue pour session :', req.body);
@@ -41,36 +42,64 @@ exports.createSession = async (req, res) => {
 exports.closeCurrentSession = async (req, res) => {
   try {
     const { user_id } = req.body;
+
     if (!user_id) {
-      return res.status(400).json({ message: "user_id est requis" });
+      return res.status(400).json({
+        success: false,
+        message: "❌ user_id est requis",
+      });
     }
-    // Met à jour la session active (end_time NULL) pour l'utilisateur
+
     const now = new Date();
+
+    // Mettre fin à la session active de l’utilisateur
     const result = await db.query(
-      `UPDATE session_agents
-       SET end_time = $1,
-           duration = EXTRACT(EPOCH FROM ($1 - start_time))
-       WHERE user_id = $2
-         AND end_time IS NULL
-       RETURNING id, status`,
+      `
+      UPDATE session_agents
+      SET end_time = $1,
+          duration = EXTRACT(EPOCH FROM ($1 - start_time))
+      WHERE user_id = $2
+        AND end_time IS NULL
+      RETURNING id, status, start_time, end_time, duration
+      `,
       [now, user_id]
     );
 
     if (result.rowCount === 0) {
-      return res.status(404).json({ message: "Aucune session active trouvée" });
+      // Aucun enregistrement mis à jour → pas de session active
+      console.warn(`⚠️ Aucun session active trouvée pour user_id=${user_id}`);
+      return res.status(200).json({
+        success: true,
+        message: "ℹ️ Aucune session active à fermer",
+        is_connected: false,
+        session: null,
+      });
     }
 
-    res.status(200).json({ 
-  message: "Session fermée avec succès",
-  session_id: result.rows[0].id,
-  status: "En ligne",
-  is_connected: false
-});
+    // Session fermée avec succès
+    const session = result.rows[0];
+    res.status(200).json({
+      success: true,
+      message: "✅ Session fermée avec succès",
+      is_connected: false,
+      session: {
+        id: session.id,
+        status: session.status,
+        start_time: session.start_time,
+        end_time: session.end_time,
+        duration: session.duration,
+      },
+    });
+
   } catch (error) {
-    console.error('Erreur fermeture session :', error);
-    res.status(500).json({ message: "Erreur serveur" });
+    console.error("❌ Erreur fermeture session :", error);
+    res.status(500).json({
+      success: false,
+      message: "Erreur serveur lors de la fermeture de session",
+    });
   }
 };
+
 
 exports.closeSessionForce = async (userId) => {
   try {
