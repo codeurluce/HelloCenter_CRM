@@ -10,7 +10,6 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import { Axios } from 'axios';
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
