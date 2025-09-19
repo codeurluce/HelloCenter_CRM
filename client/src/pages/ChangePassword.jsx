@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
+import axiosInstance from '../api/axiosInstance';
 
 const ChangePassword = ({ onPasswordChanged }) => {
   const navigate = useNavigate();
@@ -88,11 +88,7 @@ const handleSubmit = async (e) => {
   try {
     const token = localStorage.getItem('token');
 
-    await axios.post(
-      'http://localhost:5000/api/change-password-first-login',
-      { password },
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+    await axiosInstance.post('/change-password-first-login',  { password });
 
     if (onPasswordChanged) onPasswordChanged();
 

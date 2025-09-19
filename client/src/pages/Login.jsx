@@ -1,9 +1,9 @@
 import React, { useState, useContext } from 'react';
 import { Eye, EyeOff, User, Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import { AuthContext } from './AuthContext';
 import socket  from '../socket';
+import axiosInstance from '../api/axiosInstance';
 
 const Login = ({ onLogin }) => {
   const { setUser } = useContext(AuthContext);
@@ -25,7 +25,7 @@ const Login = ({ onLogin }) => {
     setError('');
 
     try {
-      const response = await axios.post('http://localhost:5000/api/login', formData);
+      const response = await axiosInstance.post('/login', formData);
       const { user, token, mustChangePassword  } = response.data;
       
       localStorage.setItem('token', token);
@@ -38,14 +38,11 @@ const Login = ({ onLogin }) => {
         // ⚡ Notifie le backend que l'agent est connecté
 if (user) {
   try {
-    await axios.post(
-      'http://localhost:5000/api/agent/connect',
-      { userId: user.id },
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+    await axiosInstance.post('/agent/connect',{ userId: user.id });
+
     socket.emit('agent_connected', { userId: user.id });
   } catch (err) {
-    console.error("Impossible de notifier la connexion de l'agent", err);
+    console.error("Impossible de notifier la connexion de l'agent", err.response?.data || err.message);
   }
 }
       if (onLogin) onLogin(token, user, mustChangePassword);
