@@ -1,7 +1,6 @@
 // src/components/admin/UserFormModal.jsx
 import React, { useState, useEffect } from "react";
 import { Loader2, User, UserPlus, UserPen, X } from "lucide-react";
-import axios from "axios";
 import axiosInstance from "../../api/axiosInstance";
 
 const rolesOptions = [
