@@ -8,7 +8,7 @@ import useTimers from '../api/useTimers.js';
 import AgentInfoPanel from '../components/componentsdesongletsAgents/AgentInfoPanel.jsx';
 import AdministrationUsers from '../components/componentsdesongletsAdmins/AdministrationUsers.jsx';
 import AdminSessionsUsers from '../components/componentsdesongletsAdmins/AdminSessionsUsers.jsx';
-import socket  from '../socket.js';
+import socket from '../socket.js';
 import useAgentFiches from '../api/useAgentFiches.js';
 import axiosInstance from '../api/axiosInstance.js';
 import VentesInfoPanel from '../components/componentsdesongletsAgents/VentesInfoPanel.jsx';
@@ -23,20 +23,20 @@ const AdminDashboard = () => {
   const timersData = useTimers();
 
   const fichesData = useAgentFiches(user);
-   const navigate = useNavigate();
+  const navigate = useNavigate();
 
-       // États partagés
-     const [etat, setEtat] = useState(null);
-     const [timers, setTimers] = useState({});
-     const [elapsed, setElapsed] = useState(0);
-     const [lastChange, setLastChange] = useState(null);
+  // États partagés
+  const [etat, setEtat] = useState(null);
+  const [timers, setTimers] = useState({});
+  const [elapsed, setElapsed] = useState(0);
+  const [lastChange, setLastChange] = useState(null);
 
-     const mapStatusToKey = (statusFr) => {
-       const statusObj = statuses.find(s => s.statusFr === statusFr);
-       return statusObj ? statusObj.key : null;
-     };
+  const mapStatusToKey = (statusFr) => {
+    const statusObj = statuses.find(s => s.statusFr === statusFr);
+    return statusObj ? statusObj.key : null;
+  };
 
-     // Gestion du changement de statut - mise à jour cumulée des timers
+  // Gestion du changement de statut - mise à jour cumulée des timers
   const handleStatusChange = (newEtatFr, pause) => {
     console.log('handleStatusChange dans AgentDashboard', newEtatFr, pause);
 
@@ -61,6 +61,7 @@ const AdminDashboard = () => {
     setElapsed(0);
   };
 
+  // Gestion déconnexion
   const handleLogout = async () => {
     try {
       const user = JSON.parse(localStorage.getItem('user'));
@@ -77,7 +78,7 @@ const AdminDashboard = () => {
       setUser(null);
 
       // Redirection
-      navigate("/login"); 
+      navigate("/login");
 
     } catch (err) {
       console.error('Erreur lors de la déconnexion:', err.response?.data || err.message);
@@ -99,26 +100,26 @@ const AdminDashboard = () => {
             activePage={activeItem}
           />
           <main className="flex-1 p-6 bg-gray-100 overflow-auto">
-            {activeItem === 'dashboard' && <p> tableau de bord de l'administrateur</p> }
-          <AgentInfoPanel
-                          {...timersData}
-                          userId={user?.id}
-                          etat={etat}
-                          setEtat={setEtat}
-                          timers={timers}
-                          setTimers={setTimers}
-                          elapsed={elapsed}
-                          setElapsed={setElapsed}
-                          lastChange={lastChange}
-                          setLastChange={setLastChange}
-                          onStatusChange={handleStatusChange}
-                        />
+            {activeItem === 'dashboard' && <p> tableau de bord de l'administrateur</p>}
+            <AgentInfoPanel
+              {...timersData}
+              userId={user?.id}
+              etat={etat}
+              setEtat={setEtat}
+              timers={timers}
+              setTimers={setTimers}
+              elapsed={elapsed}
+              setElapsed={setElapsed}
+              lastChange={lastChange}
+              setLastChange={setLastChange}
+              onStatusChange={handleStatusChange}
+            />
             {activeItem === 'sales' && <VentesInfoPanel setActiveItem={setActiveItem} />}
             {activeItem === 'files' && <AdminFichiersPanel />}
             {activeItem === 'sessions' && <AdminSessionsUsers />}
             {activeItem === 'administration' && <AdministrationUsers />}
             {activeItem === 'settings' && <p> doit contenir les paramètres de l'administrateur</p>}
-          </main>          
+          </main>
         </div>
       </div>
     </AgentStatusProvider>

@@ -23,16 +23,16 @@ const AgentDashboard = () => {
   const timersData = useTimers();
   const navigate = useNavigate();
 
-    // États partagés
+  // États partagés
   const [etat, setEtat] = useState(null);
   const [timers, setTimers] = useState({});
   const [elapsed, setElapsed] = useState(0);
   const [lastChange, setLastChange] = useState(null);
 
   const mapStatusToKey = (statusFr) => {
-  const statusObj = statuses.find(s => s.statusFr === statusFr);
-  return statusObj ? statusObj.key : null;
-};
+    const statusObj = statuses.find(s => s.statusFr === statusFr);
+    return statusObj ? statusObj.key : null;
+  };
 
   // Gestion du changement de statut - mise à jour cumulée des timers
   const handleStatusChange = (newEtatFr, pause) => {
@@ -103,11 +103,11 @@ const AgentDashboard = () => {
 
       // Nettoyage local
       localStorage.clear();
-      loadFiches([]); 
+      loadFiches([]);
       setUser(null);
 
       // Redirection
-      navigate("/login"); 
+      navigate("/login");
     } catch (err) {
       console.error('Erreur lors de la déconnexion:', err.response?.data || err.message);
       toast.error("Impossible de se déconnecter correctement !");
@@ -140,8 +140,8 @@ const AgentDashboard = () => {
                 </div>
               </>
             )}
-            {activeItem === 'activité' && 
-            <AgentInfoPanel
+            {activeItem === 'activité' &&
+              <AgentInfoPanel
                 {...timersData}
                 userId={user?.id}
                 etat={etat}
@@ -154,7 +154,7 @@ const AgentDashboard = () => {
                 setLastChange={setLastChange}
                 onStatusChange={handleStatusChange}
               />
-              }
+            }
             {activeItem === 'sales' && <VentesInfoPanel setActiveItem={setActiveItem} />}
             {activeItem === 'files' && (
               <FichesInfoPanel
