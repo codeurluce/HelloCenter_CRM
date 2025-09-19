@@ -13,11 +13,48 @@ import useTimers from '../api/useTimers.js';
 import useFiches from '../api/useAgentFiches.js';
 import axiosInstance from '../api/axiosInstance.js';
 import socket from '../socket.js';
+import { statuses } from '../shared/StatusSelector.jsx';
 
 const AgentDashboard = () => {
   const { user, setUser } = useContext(AuthContext);
   const [activeItem, setActiveItem] = useState('dashboard');
   const timersData = useTimers();
+
+    // États partagés
+  const [etat, setEtat] = useState(null);
+  const [timers, setTimers] = useState({});
+  const [elapsed, setElapsed] = useState(0);
+  const [lastChange, setLastChange] = useState(null);
+
+  const mapStatusToKey = (statusFr) => {
+  const statusObj = statuses.find(s => s.statusFr === statusFr);
+  return statusObj ? statusObj.key : null;
+};
+
+  // Gestion du changement de statut - mise à jour cumulée des timers
+  const handleStatusChange = (newEtatFr, pause) => {
+    console.log('handleStatusChange dans AgentDashboard', newEtatFr, pause);
+
+    let duree = 0;
+    if (lastChange) {
+      duree = Math.floor((Date.now() - new Date(lastChange).getTime()) / 1000);
+      if (duree < 0) duree = 0;
+    }
+
+    const oldKey = etat ? mapStatusToKey(etat) : null;
+
+    setTimers(prevTimers => {
+      const newTimers = { ...prevTimers };
+      if (oldKey) {
+        newTimers[oldKey] = (newTimers[oldKey] || 0) + duree;
+      }
+      return newTimers;
+    });
+
+    setEtat(newEtatFr);
+    setLastChange(new Date());
+    setElapsed(0);
+  };
 
   // Utilisation du hook custom pour fiches
   const {
@@ -72,7 +109,15 @@ const AgentDashboard = () => {
       <div className="flex h-screen">
         <SidebarAgent activeItem={activeItem} setActiveItem={setActiveItem} onLogout={handleLogout} />
         <div className="flex-1 flex flex-col overflow-hidden">
-          <DashboardHeader {...timersData} currentAgent={user?.id} activePage={activeItem} />
+          <DashboardHeader
+            {...timersData}
+            etat={etat}
+            timers={timers}
+            elapsed={elapsed}
+            onStatusChange={handleStatusChange}
+            currentAgent={user?.id}
+            activePage={activeItem}
+          />
           <main className="flex-1 p-6 bg-gray-100 overflow-auto">
             {activeItem === 'dashboard' && (
               <>
@@ -85,7 +130,21 @@ const AgentDashboard = () => {
                 </div>
               </>
             )}
-            {activeItem === 'activité' && <AgentInfoPanel {...timersData} userId={user?.id} />}
+            {activeItem === 'activité' && 
+            <AgentInfoPanel
+                {...timersData}
+                userId={user?.id}
+                etat={etat}
+                setEtat={setEtat}
+                timers={timers}
+                setTimers={setTimers}
+                elapsed={elapsed}
+                setElapsed={setElapsed}
+                lastChange={lastChange}
+                setLastChange={setLastChange}
+                onStatusChange={handleStatusChange}
+              />
+              }
             {activeItem === 'sales' && <VentesInfoPanel setActiveItem={setActiveItem} />}
             {activeItem === 'files' && (
               <FichesInfoPanel

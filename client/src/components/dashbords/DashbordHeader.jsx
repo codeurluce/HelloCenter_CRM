@@ -4,10 +4,7 @@ import { Bell, CalendarDays, User } from 'lucide-react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import SimpleTimer from './SimpleTimer';
-import StatusSelector, {
-  statuses,
-  formatTime,
-} from "../../shared/StatusSelector.jsx";
+import StatusSelector, { statuses, formatTime } from "../../shared/StatusSelector.jsx";
 
 const DashboardHeader = ({
   activePage,

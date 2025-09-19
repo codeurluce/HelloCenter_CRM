@@ -1,5 +1,5 @@
 // components/dashbords/SimpleTimer.jsx
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import { startSession, closeSession } from '../../api/saveSessionToDB';
 import socket from '../../socket';
 import StatusSelector, { formatTime } from '../../shared/StatusSelector.jsx';
@@ -12,7 +12,6 @@ const SimpleTimer = ({
     totalIndispo, // en secondes
     onStatusChange,
 }) => {
-    const timerRef = useRef(null);
 
     useEffect(() => {
         if (userId) {
@@ -23,10 +22,6 @@ const SimpleTimer = ({
         };
     }, [userId]);
 
-    useEffect(() => {
-        clearInterval(timerRef.current);
-        return () => clearInterval(timerRef.current);
-    }, [status]);
 
     const handleStatusChange = async (newStatusFr, pause) => {
         if (!userId) {
