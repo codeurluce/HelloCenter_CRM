@@ -6,7 +6,6 @@ import {
   RefreshCw,
   Plus,
   Upload,
-  Ear,
   Headphones,
   FileText
 } from "lucide-react";
