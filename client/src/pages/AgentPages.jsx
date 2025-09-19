@@ -14,11 +14,14 @@ import useFiches from '../api/useAgentFiches.js';
 import axiosInstance from '../api/axiosInstance.js';
 import socket from '../socket.js';
 import { statuses } from '../shared/StatusSelector.jsx';
+import { toast } from 'react-toastify';
+import { useNavigate } from 'react-router-dom';
 
 const AgentDashboard = () => {
   const { user, setUser } = useContext(AuthContext);
   const [activeItem, setActiveItem] = useState('dashboard');
   const timersData = useTimers();
+  const navigate = useNavigate();
 
     // États partagés
   const [etat, setEtat] = useState(null);
@@ -93,14 +96,21 @@ const AgentDashboard = () => {
     try {
       const userStored = JSON.parse(localStorage.getItem('user'));
       if (userStored) {
-        await axiosInstance.post('http://localhost:5000/api/agent/disconnect', { userId: userStored.id });
+        await axiosInstance.post('/agent/disconnect', { userId: userStored.id });
         socket.emit('agent_disconnected', { userId: userStored.id });
+        socket.disconnect();
       }
+
+      // Nettoyage local
       localStorage.clear();
+      loadFiches([]); 
       setUser(null);
-      window.location.href = '/login';
+
+      // Redirection
+      navigate("/login"); 
     } catch (err) {
-      console.error('Erreur lors de la déconnexion:', err);
+      console.error('Erreur lors de la déconnexion:', err.response?.data || err.message);
+      toast.error("Impossible de se déconnecter correctement !");
     }
   };
 
