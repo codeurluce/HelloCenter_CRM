@@ -1,9 +1,8 @@
 // src/components/admin/SessionAgentDetailsModal.jsx
 import React, { useEffect, useCallback, useState } from "react";
-import axios from "../../api/axiosInstance";
 import { X, Clock, CheckCircle2, ClockPlus, LogOut } from "lucide-react";
 import { statuses } from '../../shared/StatusSelector';
-import { exportData } from "../utils/exportUtils";
+import axiosInstance from "../../api/axiosInstance";
 
 // Helper format
 const formatTime = (seconds) => {
@@ -27,12 +26,12 @@ export default function SessionAgentDetailsModal({ agent, onClose }) {
     useEffect(() => {
         const fetchConnectionTimes = async () => {
             try {
-                const res = await axios.get("/session_agents/user/agent_connection_details");
+                const res = await axiosInstance.get("/session_agents/user/agent_connection_details");
                 // On récupère uniquement les infos pour l'agent actuel
                 const userData = res.data.find(item => item.user_id == agent.user_id);
                 if (userData) setConnectionTimes(userData);
             } catch (err) {
-                console.error("Erreur récupération connexion agent:", err);
+                console.error("Erreur récupération connexion agent:", err.response?.data || err.message);
             }
         };
 
