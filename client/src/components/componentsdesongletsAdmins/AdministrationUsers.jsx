@@ -1,11 +1,11 @@
 // src/components/admin/AdministrationUsers.jsx
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import useUsers from "../../api/useUsers";
 import SearchFilterBar from "../componentsAdminUser/SearchFilterBar";
 import UsersTable from "../componentsAdminUser/UsersTable";
 import UserFormModal from "../componentsAdminUser/UserFormModal";
 import AgentDetailsModal from "../componentsAdminUser/AgentDetailsModal";
-import axios from "../../api/axiosInstance";
+import axiosInstance from "../../api/axiosInstance";
 import { toast } from "react-toastify";
 import Swal from "sweetalert2";
 
@@ -75,11 +75,11 @@ export default function AdministrationUsers() {
       setSaving(true);
       if (editingUser) {
         // Modification utilisateur existant
-        await axios.put(`/users/${editingUser.id}/update`, form);
+        await axiosInstance.put(`/users/${editingUser.id}/update`, form);
         toast.success("✅ Agent modifié avec succès !");
       } else {
         // Création nouvel utilisateur
-         const res = await axios.post("/users/register", form);    
+         const res = await axiosInstance.post("/users/register", form);    
 
       // Afficher les identifiants (exemple avec Swal)
       Swal.fire({
@@ -96,7 +96,7 @@ export default function AdministrationUsers() {
       setShowModal(false);
       fetchUsers();
     } catch (err) {
-      console.error(err);
+      console.error(err.response?.data || err.message);
       toast.error(err.response?.data?.message || "Erreur lors de l'enregistrement");
     } finally {
       setSaving(false);
@@ -118,7 +118,7 @@ export default function AdministrationUsers() {
       });
 
       if (result.isConfirmed) {
-        const res = await axios.put(`/users/${user.id}/toggle-active`);
+        const res = await axiosInstance.put(`/users/${user.id}/toggle-active`);
         Swal.fire({
           icon: 'success',
           title: 'Succès',
@@ -129,7 +129,7 @@ export default function AdministrationUsers() {
         fetchUsers();
       }
     } catch (err) {
-      console.error(err);
+      console.error(err.response?.data || err.message);
       Swal.fire({
         icon: 'error',
         title: 'Erreur',
@@ -154,7 +154,7 @@ export default function AdministrationUsers() {
       });
 
       if (result.isConfirmed) {
-        const res = await axios.post(`/users/${user.id}/reset-password`);
+        const res = await axiosInstance.post(`/users/${user.id}/reset-password`);
 
         Swal.fire({
           icon: 'success',
@@ -172,7 +172,7 @@ export default function AdministrationUsers() {
         });
       }
     } catch (err) {
-      console.error(err);
+      console.error(err.response?.data || err.message);
       Swal.fire({
         icon: 'error',
         title: 'Erreur',
