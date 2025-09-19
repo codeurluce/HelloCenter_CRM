@@ -1,11 +1,12 @@
 // src/socket.js
 import { io } from 'socket.io-client';
 
-// 🔗 adapte à ton backend (si tu déploies en prod mets ton vrai domaine)
-const socket = io("http://crmhellocenterbackend-production.up.railway.app", {
-  // const socket = io("http://localhost:5000", {
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+
+const socket = io(BACKEND_URL, {
   withCredentials: true,
   transports: ["websocket"],
+  secure: BACKEND_URL.startsWith('https'), // true en prod, false en local
 });
 
 export default socket;
