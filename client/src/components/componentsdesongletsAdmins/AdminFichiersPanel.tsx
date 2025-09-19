@@ -53,16 +53,15 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
     const [historiqueModal, setHistoriqueModal] = useState({ isOpen: false, ficheId: null as number | null, });
     const [modalOpen, setModalOpen] = useState(false);
   
-    const openDetailModal = (fiche) => {
+    const openDetailModal = (fiche: Fiche) => {
     setSelectedFiche(fiche);
     setModalOpen(true);
   };
 
-  const closeModal = () => {
+    const closeModal = () => {
     setModalOpen(false);
     setSelectedFiche(null);
   };
-
 
     // Onglets univers
     const tabs = [
@@ -82,8 +81,8 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
             setLoading(true);
             const response = await axiosInstance.get('/files/all_files');
             setFiches(response.data);
-        } catch (error) {
-            console.error('Erreur fetch fiches:', error);
+        } catch (error: any) {
+            console.error('Erreur fetch fiches:', error.response?.data || error.message);
         } finally {
             setLoading(false);
         }
@@ -107,7 +106,7 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
             setAssignModal({ isOpen: false, ficheId: null, currentAgentId: null });
             return res.data;
         } catch (err: any) {
-            console.error('Erreur assignation:', err);
+            console.error('Erreur assignation:', err.response?.data || err.message);
             throw err;
         }
     }
@@ -124,8 +123,8 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
             console.log("✅ Import réussi:", result);
 
             return result; // <-- renvoyer la réponse si besoin
-        } catch (error) {
-            console.error("❌ Erreur import:", error);
+        } catch (error: any) {
+            console.error("❌ Erreur import:", error.response?.data || error.message);
             throw error; // <-- relancer pour que l'enfant sache qu'il y a eu une erreur
         }
     };
