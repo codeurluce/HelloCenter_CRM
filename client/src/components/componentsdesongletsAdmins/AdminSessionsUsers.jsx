@@ -1,11 +1,12 @@
 // src/pages/admin/AdminLiveSessions.jsx (ou AdminSessionsUsers.jsx selon ton arbo)
 import React, { useEffect, useState, useRef } from "react";
+import { Upload } from "lucide-react";
 import axiosInstance from "../../api/axiosInstance";
 import socket from "../../socket";
 import SessionsTable from "../componentsAdminSessions/SessionsTable";
 import SessionFilters from "../componentsAdminSessions/SessionFilters";
 import ExportModal from "../componentsAdminSessions/ExportModalSessions.jsx";
-import { Download, Upload } from "lucide-react";
+import { statuses } from '../../shared/StatusSelector';
 
 export default function AdminLiveSessions() {
   const [agents, setAgents] = useState([]);
@@ -19,14 +20,7 @@ export default function AdminLiveSessions() {
   const intervalRef = useRef();
 
   // Statuts qui incrémentent un timer (hors connexion exclu)
-  const STATUTS_VALIDES = [
-    "Disponible",
-    "Pause Café",
-    "Pause Déjeuner",
-    "Autre Pause",
-    "Formation",
-    "Indisponible",
-  ];
+  const STATUTS_VALIDES = statuses.map(status => status.statusFr);
 
   const fetchAgents = async () => {
     setLoading(true);
@@ -144,8 +138,6 @@ export default function AdminLiveSessions() {
 
     return okSearch && okStatus;
   });
-
-  // ----------------------------------------------------------------
 
   const handleExport = () => setShowExport(false);
 
