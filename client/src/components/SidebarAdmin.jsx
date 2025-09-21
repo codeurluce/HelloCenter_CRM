@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { 
-  LayoutDashboard, 
-  CircleUser, 
-  Settings, 
-  LogOut, 
-  ChevronLeft, 
-  ChevronRight 
+import {
+  LayoutDashboard,
+  CircleUser,
+  Settings,
+  LogOut,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { ShoppingCart, Folder, Clock } from 'react-feather';
 import { Users } from 'lucide-react';
+import Swal from "sweetalert2";
 
 const SidebarAdmin = ({ activeItem, setActiveItem, onLogout }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -24,7 +25,24 @@ const SidebarAdmin = ({ activeItem, setActiveItem, onLogout }) => {
 
   const bottomItems = [
     { id: 'settings', label: 'Paramètres', icon: Settings },
-    { id: 'logout', label: 'Déconnexion', icon: LogOut, action: onLogout },
+    {
+      id: 'logout',
+      label: 'Déconnexion',
+      icon: LogOut,
+      action: () => {
+        Swal.fire({
+          title: 'Voulez-vous vraiment vous déconnecter ?',
+          showCancelButton: true,
+          confirmButtonText: 'Déconnexion',
+          confirmButtonColor: '#dc2626', // rouge
+          cancelButtonText: 'Annuler',
+        }).then((result) => {
+          if (result.isConfirmed) {
+            onLogout(); // ta fonction de logout
+          }
+        });
+      },
+    },
   ];
 
   const MenuItem = ({ item, isBottom = false }) => (
@@ -45,7 +63,7 @@ const SidebarAdmin = ({ activeItem, setActiveItem, onLogout }) => {
   return (
     <div className={`bg-gradient-to-b from-blue-500 to-blue-700 h-screen flex flex-col transition-all duration-300 
       ${isCollapsed ? 'w-20' : 'w-64'}`}>
-      
+
       {/* Logo */}
       <div className="p-6 border-b border-blue-400 border-opacity-30">
         <div className="flex items-center justify-between">
@@ -73,7 +91,9 @@ const SidebarAdmin = ({ activeItem, setActiveItem, onLogout }) => {
       {/* Bottom Items */}
       <div className="border-t border-blue-400 border-opacity-30 py-4">
         {bottomItems.map((item) => (
-          <MenuItem key={item.id} item={item} isBottom={true} />
+          <div key={item.id}>
+            {item.component ? item.component : <MenuItem item={item} isBottom={true} />}
+          </div>
         ))}
       </div>
     </div>

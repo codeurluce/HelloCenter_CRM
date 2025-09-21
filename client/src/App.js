@@ -7,6 +7,7 @@ import {
   useNavigate
 } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
+import ProtectedRoute from './api/ProtectedRoute';
 
 import Login from './pages/Login';
 import ChangePassword from './pages/ChangePassword';
@@ -27,33 +28,56 @@ function AppWrapper() {
   );
 }
 
-function App() {
+const routeByRole = (role) => {
+  switch (role) {
+    case 'Agent': return '/agent';
+    case 'Manager': return '/manager';
+    case 'Admin': return '/admin';
+    default: return '/';
+  }
+};
+
+const App = () => {
   const navigate = useNavigate();
 
-  const [token, setToken] = useState(localStorage.getItem('token') || null);
-  const [user, setUser] = useState(
-    JSON.parse(localStorage.getItem('user')) || null
-  );
+  const [token, setToken] = useState(() => localStorage.getItem("token"));
+  const [user, setUser] = useState(() => {
+    const raw = localStorage.getItem("user");
+    return raw ? JSON.parse(raw) : null;
+  });
+
+  // ✅ Redirection automatique au refresh
+useEffect(() => {
+  if (!token || !user) return;
+
+  const currentPath = window.location.pathname;
+  const target = user.mustChangePassword ? "/change-password" : routeByRole(user.role);
+
+  // 🚨 éviter la boucle infinie : naviguer seulement si nécessaire
+  if (currentPath !== target) {
+    navigate(target, { replace: true });
+  }
+}, [token, user]);
 
   const handleLogin = (newToken, newUser, mustChangePasswordObj) => {
-    // Met à jour l’objet user avec mustChangePassword
-    const updatedUser = { ...newUser, 
-      mustChangePassword:       mustChangePasswordObj.required, 
-      mustChangePasswordReason: mustChangePasswordObj.reason };
-
+    const updatedUser = { 
+      ...newUser, 
+      mustChangePassword: mustChangePasswordObj.required, 
+      mustChangePasswordReason: mustChangePasswordObj.reason 
+    };
 
     localStorage.setItem('token', newToken);
     localStorage.setItem('user', JSON.stringify(updatedUser));
     localStorage.setItem('mustChangePassword', mustChangePasswordObj.required);
-  localStorage.setItem('mustChangePasswordReason', mustChangePasswordObj.reason);
+    localStorage.setItem('mustChangePasswordReason', mustChangePasswordObj.reason);
 
     setToken(newToken);
     setUser(updatedUser);
 
     if (mustChangePasswordObj.required) {
-      navigate('/change-password');
+      navigate('/change-password', { replace: true });
     } else {
-      redirectByRole(updatedUser.role);
+      navigate(routeByRole(updatedUser.role), { replace: true });
     }
   };
 
@@ -61,61 +85,47 @@ function App() {
     localStorage.clear();
     setToken(null);
     setUser(null);
-    navigate('/login');
+    navigate('/login', { replace: true });
   };
-
-  const redirectByRole = (role) => {
-    switch (role) {
-      case 'Agent': navigate('/agent'); break;
-      case 'Manager': navigate('/manager'); break;
-      case 'Admin': navigate('/admin'); break;
-      default: navigate('/'); break;
-    }
-  };
-
-  // Redirection automatique selon token, user et mustChangePassword
-  useEffect(() => {
-    if (!token || !user) return;
-
-    const currentPath = window.location.pathname;
-    if (user.mustChangePassword && currentPath !== '/change-password') {
-      navigate('/change-password');
-    } else if (!user.mustChangePassword && currentPath !== routeByRole(user.role)) {
-      navigate(routeByRole(user.role));
-    }
-  }, [token, user, navigate]);
-
-  function routeByRole(role) {
-    switch (role) {
-      case 'Agent': return '/agent';
-      case 'Manager': return '/manager';
-      case 'Admin': return '/admin';
-      default: return '/';
-    }
-  }
 
   return (
     <Routes>
-      <Route path="/login" element={!token ? <Login onLogin={handleLogin} /> : <Navigate to="/" />} />
+      {/* ✅ Login corrigé */}
+      <Route path="/login" element={<Login onLogin={handleLogin} />} />
+
       <Route path="/change-password" element={
-        token ? (
+        user?.mustChangePassword ? (
           <ChangePassword onPasswordChanged={() => {
-            // Met à jour mustChangePassword à false après changement de mdp
             const updatedUser = { ...user, mustChangePassword: false };
             setUser(updatedUser);
             localStorage.setItem('mustChangePassword', 'false');
             localStorage.setItem('user', JSON.stringify(updatedUser));
-            redirectByRole(user.role);
+            navigate(routeByRole(user.role), { replace: true });
           }} />
-        ) : <Navigate to="/login" />
+        ) : <Navigate to="/" replace />
       } />
-      <Route path="/agent" element={token && user?.role === 'Agent' ? <AgentDashboard onLogout={handleLogout} /> : <Navigate to="/login" />} />
-      <Route path="/manager" element={token && user?.role === 'Manager' ? <ManagerDashboard onLogout={handleLogout} /> : <Navigate to="/login" />} />
-      <Route path="/admin" element={token && user?.role === 'Admin' ? <AdminDashboard onLogout={handleLogout} /> : <Navigate to="/login" />} />
-      <Route path="/" element={<Navigate to="/login" />} />
-      <Route path="*" element={<NotFoundPages />} />
+
+      <Route path="/agent" element={
+        <ProtectedRoute roles={['Agent']}>
+          <AgentDashboard onLogout={handleLogout} />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/manager" element={
+        <ProtectedRoute roles={['Manager']}>
+          <ManagerDashboard onLogout={handleLogout} />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/admin" element={
+        <ProtectedRoute roles={['Admin']}>
+          <AdminDashboard onLogout={handleLogout} />
+        </ProtectedRoute>
+      } />
+
+      <Route path="*" element={ token && user?.role ? <Navigate to={routeByRole(user.role)} replace /> : <Navigate to="/login" replace /> } />
     </Routes>
   );
-}
+};
 
 export default AppWrapper;

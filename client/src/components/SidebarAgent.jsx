@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { LayoutDashboard, CircleUser, LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ShoppingCart, Folder } from 'react-feather';
+import Swal from "sweetalert2";
 
 const SidebarAgent = ({ activeItem, setActiveItem, onLogout }) => {
     const [isCollapsed, setIsCollapsed] = useState(false);
@@ -15,15 +16,32 @@ const SidebarAgent = ({ activeItem, setActiveItem, onLogout }) => {
 
     const bottomItems = [
         // { id: 'settings', label: 'Paramètres', icon: Settings },
-        { id: 'logout', label: 'Deconnexion', icon: LogOut, action: onLogout },
+        {
+            id: 'logout',
+            label: 'Déconnexion',
+            icon: LogOut,
+            action: () => {
+                Swal.fire({
+                    title: 'Voulez-vous vraiment vous déconnecter ?',
+                    showCancelButton: true,
+                    confirmButtonText: 'Déconnexion',
+                    confirmButtonColor: '#dc2626', // rouge
+                    cancelButtonText: 'Annuler',
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        onLogout(); // ta fonction de logout
+                    }
+                });
+            },
+        },
     ];
 
     const MenuItem = ({ item, isBottom = false }) => (
         <button
             onClick={() => item.action ? item.action() : setActiveItem(item.id)}
             className={`w-full flex items-center space-x-3 px-6 py-3 text-left transition-all duration-200 ${activeItem === item.id
-                    ? 'bg-white bg-opacity-20 text-white border-r-4 border-white'
-                    : 'text-blue-100 hover:bg-white hover:bg-opacity-10 hover:text-white'
+                ? 'bg-white bg-opacity-20 text-white border-r-4 border-white'
+                : 'text-blue-100 hover:bg-white hover:bg-opacity-10 hover:text-white'
                 } ${isCollapsed ? 'justify-center px-3' : ''}`}
         >
             <item.icon className={`${isCollapsed ? 'w-6 h-6' : 'w-5 h-5'} flex-shrink-0`} />
@@ -63,7 +81,9 @@ const SidebarAgent = ({ activeItem, setActiveItem, onLogout }) => {
             {/* Bottom Items */}
             <div className="border-t border-blue-400 border-opacity-30 py-4">
                 {bottomItems.map((item) => (
-                    <MenuItem key={item.id} item={item} isBottom={true} />
+                    <div key={item.id}>
+                        {item.component ? item.component : <MenuItem item={item} isBottom={true} />}
+                    </div>
                 ))}
             </div>
         </div>

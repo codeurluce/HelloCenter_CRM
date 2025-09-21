@@ -17,11 +17,12 @@ import { statuses } from '../shared/StatusSelector.jsx';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 
+
 const AgentDashboard = () => {
   const { user, setUser } = useContext(AuthContext);
   const [activeItem, setActiveItem] = useState('dashboard');
   const timersData = useTimers();
-  const navigate = useNavigate();
+    const navigate = useNavigate();
 
   // États partagés
   const [etat, setEtat] = useState(null);
@@ -98,12 +99,10 @@ const AgentDashboard = () => {
       if (userStored) {
         await axiosInstance.post('/agent/disconnect', { userId: userStored.id });
         socket.emit('agent_disconnected', { userId: userStored.id });
-        socket.disconnect();
       }
 
       // Nettoyage local
       localStorage.clear();
-      loadFiches([]);
       setUser(null);
 
       // Redirection

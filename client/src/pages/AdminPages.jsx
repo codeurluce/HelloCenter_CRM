@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import SidebarAdmin from '../components/SidebarAdmin.jsx';
 import DashboardHeader from '../components/dashbords/DashbordHeader.jsx';
 import { AgentStatusProvider } from '../api/AgentStatusContext.jsx';
@@ -24,6 +24,15 @@ const AdminDashboard = () => {
 
   const fichesData = useAgentFiches(user);
   const navigate = useNavigate();
+  const alreadyNavigated = useRef(false);
+
+    // Redirige si l'utilisateur est null (après déconnexion par ex.)
+  useEffect(() => {
+    if (!user && !alreadyNavigated.current) {
+      alreadyNavigated.current = true;
+      navigate("/login", { replace: true });
+    }
+  }, [user, navigate]);
 
   // États partagés
   const [etat, setEtat] = useState(null);
@@ -69,16 +78,12 @@ const AdminDashboard = () => {
         // ⚡ Notifie le backend que l'agent se déconnecte
         await axiosInstance.post('/agent/disconnect', { userId: user.id });
         socket.emit('agent_disconnected', { userId: user.id });
-        socket.disconnect();
       }
 
       // Nettoyage local
       localStorage.clear();
       fichesData.loadFiches([]);
       setUser(null);
-
-      // Redirection
-      navigate("/login");
 
     } catch (err) {
       console.error('Erreur lors de la déconnexion:', err.response?.data || err.message);
@@ -101,19 +106,21 @@ const AdminDashboard = () => {
           />
           <main className="flex-1 p-6 bg-gray-100 overflow-auto">
             {activeItem === 'dashboard' && <p> tableau de bord de l'administrateur</p>}
-            <AgentInfoPanel
-              {...timersData}
-              userId={user?.id}
-              etat={etat}
-              setEtat={setEtat}
-              timers={timers}
-              setTimers={setTimers}
-              elapsed={elapsed}
-              setElapsed={setElapsed}
-              lastChange={lastChange}
-              setLastChange={setLastChange}
-              onStatusChange={handleStatusChange}
-            />
+
+            {activeItem === 'activité' &&
+              <AgentInfoPanel
+                {...timersData}
+                userId={user?.id}
+                etat={etat}
+                setEtat={setEtat}
+                timers={timers}
+                setTimers={setTimers}
+                elapsed={elapsed}
+                setElapsed={setElapsed}
+                lastChange={lastChange}
+                setLastChange={setLastChange}
+                onStatusChange={handleStatusChange}
+              />}
             {activeItem === 'sales' && <VentesInfoPanel setActiveItem={setActiveItem} />}
             {activeItem === 'files' && <AdminFichiersPanel />}
             {activeItem === 'sessions' && <AdminSessionsUsers />}
