@@ -109,10 +109,6 @@ const loginUser = async (req, res) => {
       JWT_SECRET,
       { expiresIn: '3d' }
     );
-console.log("🔍 Comparaison bcrypt :");
-console.log("Mot de passe saisi :", password);
-console.log("Hash stocké :", user.password);
-console.log("Résultat comparaison :", await bcrypt.compare(password, user.password));
     res.status(200).json({
       token,
       mustChangePassword,
