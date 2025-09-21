@@ -2,8 +2,7 @@
 import axios from 'axios';
 
 const axiosInstance = axios.create({
-  // baseURL: 'https://crmhellocenterbackend-production.up.railway.app/api', // Change cette URL pour la prod
- baseURL: 'http://localhost:5000/api', 
+  baseURL: process.env.REACT_APP_API_URL, // ✅ S'adapte à local/prod
   headers: {
     'Content-Type': 'application/json',
   },
