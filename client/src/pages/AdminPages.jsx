@@ -14,7 +14,6 @@ import axiosInstance from '../api/axiosInstance.js';
 import VentesInfoPanel from '../components/componentsdesongletsAgents/VentesInfoPanel.jsx';
 import AdminFichiersPanel from '../components/componentsdesongletsAdmins/AdminFichiersPanel.tsx';
 import { toast } from 'react-toastify';
-import { useNavigate } from 'react-router-dom';
 import { statuses } from '../shared/StatusSelector.jsx';
 
 const AdminDashboard = () => {
@@ -23,16 +22,7 @@ const AdminDashboard = () => {
   const timersData = useTimers();
 
   const fichesData = useAgentFiches(user);
-  const navigate = useNavigate();
-  const alreadyNavigated = useRef(false);
-
-    // Redirige si l'utilisateur est null (après déconnexion par ex.)
-  useEffect(() => {
-    if (!user && !alreadyNavigated.current) {
-      alreadyNavigated.current = true;
-      navigate("/login", { replace: true });
-    }
-  }, [user, navigate]);
+  const intervalRef = useRef();
 
   // États partagés
   const [etat, setEtat] = useState(null);
@@ -44,6 +34,26 @@ const AdminDashboard = () => {
     const statusObj = statuses.find(s => s.statusFr === statusFr);
     return statusObj ? statusObj.key : null;
   };
+
+  // Timer qui incrémente elapsed en live depuis lastChange
+  useEffect(() => {
+    if (!etat || !lastChange || isNaN(new Date(lastChange).getTime())) {
+      setElapsed(0);
+      clearInterval(intervalRef.current);
+      return;
+    }
+
+    const update = () => {
+      const diff = Math.floor(
+        (Date.now() - new Date(lastChange).getTime()) / 1000
+      );
+      setElapsed(diff >= 0 ? diff : 0);
+    };
+
+    update();
+    intervalRef.current = setInterval(update, 1000);
+    return () => clearInterval(intervalRef.current);
+  }, [etat, lastChange, setElapsed]);
 
   // Gestion du changement de statut - mise à jour cumulée des timers
   const handleStatusChange = (newEtatFr, pause) => {

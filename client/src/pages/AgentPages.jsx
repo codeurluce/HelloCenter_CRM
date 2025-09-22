@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import SidebarAgent from '../components/SidebarAgent.jsx';
 import DashboardHeader from '../components/dashbords/DashbordHeader.jsx';
 import StatGroup from '../components/cards/StatGroup.js';
@@ -22,7 +22,8 @@ const AgentDashboard = () => {
   const { user, setUser } = useContext(AuthContext);
   const [activeItem, setActiveItem] = useState('dashboard');
   const timersData = useTimers();
-    const navigate = useNavigate();
+  const navigate = useNavigate();
+  const intervalRef = useRef();
 
   // États partagés
   const [etat, setEtat] = useState(null);
@@ -34,6 +35,27 @@ const AgentDashboard = () => {
     const statusObj = statuses.find(s => s.statusFr === statusFr);
     return statusObj ? statusObj.key : null;
   };
+
+  // Timer qui incrémente elapsed en live depuis lastChange
+  useEffect(() => {
+    if (!etat || !lastChange || isNaN(new Date(lastChange).getTime())) {
+      setElapsed(0);
+      clearInterval(intervalRef.current);
+      return;
+    }
+
+    const update = () => {
+      const diff = Math.floor(
+        (Date.now() - new Date(lastChange).getTime()) / 1000
+      );
+      setElapsed(diff >= 0 ? diff : 0);
+    };
+
+    update();
+    intervalRef.current = setInterval(update, 1000);
+    return () => clearInterval(intervalRef.current);
+  }, [etat, lastChange, setElapsed]);
+
 
   // Gestion du changement de statut - mise à jour cumulée des timers
   const handleStatusChange = (newEtatFr, pause) => {

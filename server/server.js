@@ -84,6 +84,7 @@ app.get('/', (req, res) => {
 
 // ✅ ✅ ✅ CORRECTION CRITIQUE : ÉCOUTER AVEC `server`, PAS `app`
 const PORT = process.env.PORT || 8080; // Railway utilise 8080, pas 5000
+console.log(`🚀 Port utilisé : ${PORT} (source: ${process.env.PORT ? '.env' : 'fallback'})`);
 
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Serveur HTTP + Socket.IO lancé sur le port ${PORT}`);

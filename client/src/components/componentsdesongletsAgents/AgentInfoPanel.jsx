@@ -14,27 +14,27 @@ export default function AgentInfoPanel({
   elapsed,
   setElapsed,
 }) {
-  const intervalRef = useRef();
+  // const intervalRef = useRef();
 
   // Timer qui incrémente elapsed en live depuis lastChange
-  useEffect(() => {
-    if (!etat || !lastChange || isNaN(new Date(lastChange).getTime())) {
-      setElapsed(0);
-      clearInterval(intervalRef.current);
-      return;
-    }
+  // useEffect(() => {
+  //   if (!etat || !lastChange || isNaN(new Date(lastChange).getTime())) {
+  //     setElapsed(0);
+  //     clearInterval(intervalRef.current);
+  //     return;
+  //   }
 
-    const update = () => {
-      const diff = Math.floor(
-        (Date.now() - new Date(lastChange).getTime()) / 1000
-      );
-      setElapsed(diff >= 0 ? diff : 0);
-    };
+  //   const update = () => {
+  //     const diff = Math.floor(
+  //       (Date.now() - new Date(lastChange).getTime()) / 1000
+  //     );
+  //     setElapsed(diff >= 0 ? diff : 0);
+  //   };
 
-    update();
-    intervalRef.current = setInterval(update, 1000);
-    return () => clearInterval(intervalRef.current);
-  }, [etat, lastChange, setElapsed]);
+  //   update();
+  //   intervalRef.current = setInterval(update, 1000);
+  //   return () => clearInterval(intervalRef.current);
+  // }, [etat, lastChange, setElapsed]);
 
   // Sauvegarde locale des timers
   useEffect(() => {
