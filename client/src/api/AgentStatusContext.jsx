@@ -1,5 +1,6 @@
 // AgentStatusContext.js
 import React, { createContext, useState, useContext, useEffect, useRef } from "react";
+import socket from "../socket";
 
 const AgentStatusContext = createContext();
 
@@ -38,13 +39,32 @@ export const AgentStatusProvider = ({ children }) => {
   const changeStatus = (newStatus) => {
     setStatus(newStatus);
     localStorage.setItem("agentStatus", newStatus);
-
     if (newStatus === "disponible" || newStatus.includes("pause")) {
       startTimer();
     } else {
       stopTimer();
     }
   };
+
+   // 🟡 Connexion socket + heartbeat
+   useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (!user?.id) return;
+
+     // Connexion de l’agent au backend socket
+    socket.emit("agent_connected", { userId: user.id });
+
+        // Heartbeat toutes les 30s
+    const hb = setInterval(() => {
+      socket.emit("heartbeat");
+    }, 30 * 1000);
+
+    // Nettoyage
+    return () => {
+      clearInterval(hb);
+      socket.disconnect(); // coupe la connexion si on démonte le provider
+    };
+  }, []);
 
   // Sur le premier chargement, on redémarre le timer si statut actif
   useEffect(() => {
