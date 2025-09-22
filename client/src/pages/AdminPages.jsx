@@ -55,6 +55,22 @@ const AdminDashboard = () => {
     return () => clearInterval(intervalRef.current);
   }, [etat, lastChange, setElapsed]);
 
+  useEffect(() => {
+  try {
+    const saved = localStorage.getItem("timers");
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed) {
+        if (parsed.etat) setEtat(parsed.etat);
+        if (parsed.timers) setTimers(parsed.timers);
+        if (parsed.lastChange) setLastChange(new Date(parsed.lastChange));
+      }
+    }
+  } catch {
+    // ignore errors
+  }
+}, []);
+
   // Gestion du changement de statut - mise à jour cumulée des timers
   const handleStatusChange = (newEtatFr, pause) => {
     console.log('handleStatusChange dans AgentDashboard', newEtatFr, pause);
