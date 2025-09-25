@@ -15,10 +15,14 @@ import VentesInfoPanel from '../components/componentsdesongletsAgents/VentesInfo
 import AdminFichiersPanel from '../components/componentsdesongletsAdmins/AdminFichiersPanel.tsx';
 import { toast } from 'react-toastify';
 import { statuses } from '../shared/StatusSelector.jsx';
+import { useAgentStatus } from '../api/AgentStatusContext';
 
 const AdminDashboard = () => {
   const { user, setUser } = useContext(AuthContext);
-  const [activeItem, setActiveItem] = useState('dashboard');
+  const [activeItem, setActiveItem] = useState(() => {
+      return localStorage.getItem("activeSidebarItem") || "dashboard";
+    });
+  const { sessionTime, pauseTime, dispoTime } = useAgentStatus();
   const timersData = useTimers();
 
   const fichesData = useAgentFiches(user);
@@ -67,7 +71,7 @@ const AdminDashboard = () => {
       }
     }
   } catch {
-    // ignore errors
+
   }
 }, []);
 
@@ -102,7 +106,14 @@ const AdminDashboard = () => {
       const user = JSON.parse(localStorage.getItem('user'));
       if (user) {
         // ⚡ Notifie le backend que l'agent se déconnecte
-        await axiosInstance.post('/agent/disconnect', { userId: user.id });
+        await axiosInstance.post('/agent/disconnect', { 
+          userId: user.id,
+          timers: {
+          sessionTime,
+          pauseTime,
+          dispoTime,
+        },
+      });
         socket.emit('agent_disconnected', { userId: user.id });
       }
 
@@ -116,6 +127,7 @@ const AdminDashboard = () => {
       toast.error("Impossible de se déconnecter correctement !");
     }
   };
+
   return (
     <AgentStatusProvider>
       <div className="flex h-screen">

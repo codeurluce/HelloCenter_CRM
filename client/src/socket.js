@@ -10,6 +10,8 @@ const socket = io(socketUrl, {
   withCredentials: true,
   transports: ["websocket"],
   secure: socketUrl.startsWith('https'), // true en prod, false en local
+  autoConnect: false,       //  ne se connecte pas tout seul
+  reconnection: false,      //  n’essaie pas de se reconnecter
 });
 
 export default socket;

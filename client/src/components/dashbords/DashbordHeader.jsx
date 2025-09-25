@@ -17,6 +17,7 @@ const DashboardHeader = ({
 }) => {
   const [connectedAgent, setConnectedAgent] = useState(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
+
   const [showNotif, setShowNotif] = useState(false);
   const [showAgentMenu, setShowAgentMenu] = useState(false);
   const [rdvNotifications, setRdvNotifications] = useState([]);
@@ -27,6 +28,7 @@ const DashboardHeader = ({
   const calendarRef = useRef(null);
   const notifiedIdsRef = useRef(new Set());
 
+   // --- Fetch RDV fiches
   const fetchFichesRdv = async (agentId) => {
     try {
       const res = await axiosInstance.get(`/files/rendezvous/upcoming/${agentId}`);
@@ -42,6 +44,7 @@ const DashboardHeader = ({
     audio.play().catch(err => console.error('Erreur lecture audio :', err));
   };
 
+  // --- Gestion notifications RDV
   useEffect(() => {
     const checkRDVs = async () => {
       if (!connectedAgent?.id) return;
@@ -101,6 +104,7 @@ const DashboardHeader = ({
     return () => clearInterval(interval);
   }, [connectedAgent]);
 
+    // --- Chargement agent et notifications stockées
   useEffect(() => {
     const storedAgent = localStorage.getItem('user');
     if (storedAgent) {
@@ -123,6 +127,7 @@ const DashboardHeader = ({
     localStorage.setItem(`hasNewRDVNotif_${connectedAgent.id}`, 'false');
   };
 
+    // --- Click outside pour fermer menus
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (notifRef.current && !notifRef.current.contains(event.target)) {
@@ -136,6 +141,7 @@ const DashboardHeader = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+            // --- Calculs totaux
   // Mappage timers avec clés technique (key) pour cohérence
   const timersByKey = timers;
   const currentKey = statuses.find((s) => s.statusFr === etat)?.key || null;
@@ -145,20 +151,9 @@ const DashboardHeader = ({
   const indispoKeys = ["reunion", "pause_formation", "brief"];
 
   // Exemple du calcul des totaux (correspondants aux clés dans AgentInfoPanel)
-  const totalDispo =
-    (timers["disponible"] || 0) + (etat === "Disponible" ? elapsed : 0);
-
-  const totalPause = pauseKeys.reduce(
-    (sum, key) =>
-      sum + (timersByKey[key] || 0) + (currentKey === key ? elapsed : 0),
-    0
-  );
-
-  const totalIndispo = indispoKeys.reduce(
-    (sum, key) =>
-      sum + (timersByKey[key] || 0) + (currentKey === key ? elapsed : 0),
-    0
-  );
+  const totalDispo = (timers["disponible"] || 0) + (etat === "Disponible" ? elapsed : 0);
+  const totalPause = pauseKeys.reduce((sum, key) => sum + (timersByKey[key] || 0) + (currentKey === key ? elapsed : 0), 0);
+  const totalIndispo = indispoKeys.reduce((sum, key) => sum + (timersByKey[key] || 0) + (currentKey === key ? elapsed : 0), 0);
 
   const pageTitles = {
     dashboard: 'Tableau de bord',

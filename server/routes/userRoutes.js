@@ -25,7 +25,6 @@ router.post("/register", createUser);
 
 // Connexion utilisateur
 router.post("/login", loginUser);
-
 router.post('/agent/connect', connectAgent);
 router.post('/agent/disconnect', disconnectAgent);
 

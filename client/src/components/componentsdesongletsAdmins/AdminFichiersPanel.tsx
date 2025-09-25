@@ -267,7 +267,7 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
                             <label>Nombre de fiches :</label>
                             <select value={batchSize} onChange={handleBatchSizeChange} className="px-2 py-1 border rounded">
                                 <option value="">-- Choisir --</option>
-                                {[5, 10, 20, 30, 50, 100].map(n => <option key={n} value={n}>{n}</option>)}
+                                {[5, 10, 20, 30, 50, 100, 200].map(n => <option key={n} value={n}>{n}</option>)}
                             </select>
 
                             {selectedFiches.length > 0 && (

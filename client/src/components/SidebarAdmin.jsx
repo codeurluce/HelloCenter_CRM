@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   LayoutDashboard,
   CircleUser,
@@ -44,6 +44,21 @@ const SidebarAdmin = ({ activeItem, setActiveItem, onLogout }) => {
       },
     },
   ];
+
+      // 🔹 Charger l’item actif depuis localStorage au montage
+    useEffect(() => {
+        const savedItem = localStorage.getItem("activeSidebarItem");
+        if (savedItem) {
+            setActiveItem(savedItem);
+        }
+    }, [setActiveItem]);
+
+    // 🔹 Sauvegarder à chaque changement
+    useEffect(() => {
+        if (activeItem) {
+            localStorage.setItem("activeSidebarItem", activeItem);
+        }
+    }, [activeItem]);
 
   const MenuItem = ({ item, isBottom = false }) => (
     <button

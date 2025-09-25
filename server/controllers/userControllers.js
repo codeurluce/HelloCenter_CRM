@@ -10,6 +10,20 @@ if (!JWT_SECRET) {
   throw new Error("JWT_SECRET is not defined!");
 }
 
+// Vérification du token
+const verifyToken = (req, res, next) => {
+  const token = req.headers['authorization'];
+  if (!token) return res.status(403).json({ message: 'Token requis' });
+
+  try {
+    const decoded = jwt.verify(token.split(' ')[1], JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch (err) {
+    return res.status(401).json({ message: 'Token invalide' });
+  }
+};
+
 // Création d’un utilisateur avec génération automatique d'email + mot de passe
 const createUser = async (req, res) => {
   const { lastname, firstname, role, profil } = req.body;
@@ -129,7 +143,6 @@ const loginUser = async (req, res) => {
   }
 };
 
-
 // Connexion de l'agent
 const connectAgent = async (req, res) => {
   const { userId } = req.body;
@@ -148,31 +161,35 @@ const connectAgent = async (req, res) => {
 
 // Déconnexion de l'agent
 const disconnectAgent = async (req, res) => {
-  const { userId } = req.body;
+  const { userId } = req.body; 
+
+    if (!userId) {
+    return res.status(400).json({ error: "userId manquant" });
+  }
+
   try {
+        // Fermer la session active
+    await db.query(
+      `UPDATE session_agents
+       SET end_time = NOW(),
+           duration = EXTRACT(EPOCH FROM (NOW() - start_time))
+       WHERE user_id = $1 AND end_time IS NULL`,
+      [userId]
+    );
+
+    // Marquer l’agent comme déconnecté
     await db.query("UPDATE users SET is_connected = FALSE WHERE id = $1", [userId]);
+
+    //  Ajouter un événement dans l’historique des connexions
     await db.query(
       "INSERT INTO agent_connections_history (user_id, event_type) VALUES ($1, 'disconnect')",
       [userId]
     );
-    res.json({ success: true });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Erreur lors de la déconnexion de l’agent' });
-  }
-};
 
-// Vérification du token
-const verifyToken = (req, res, next) => {
-  const token = req.headers['authorization'];
-  if (!token) return res.status(403).json({ message: 'Token requis' });
-
-  try {
-    const decoded = jwt.verify(token.split(' ')[1], JWT_SECRET);
-    req.user = decoded;
-    next();
+    res.json({ success: true, message: "Déconnexion réussie et session sauvegardés." });
   } catch (err) {
-    return res.status(401).json({ message: 'Token invalide' });
+    console.error("Erreur disconnectAgent:", err);
+    res.status(500).json({ error: "Erreur lors de la déconnexion de l’agent" });
   }
 };
 

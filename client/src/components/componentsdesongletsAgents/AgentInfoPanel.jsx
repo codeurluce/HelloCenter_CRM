@@ -2,6 +2,7 @@
 import React, { useEffect, useRef } from "react";
 import { startSession, closeSession } from "../../api/saveSessionToDB";
 import StatusSelector, { statuses, formatTime } from "../../shared/StatusSelector.jsx";
+import axiosInstance from "../../api/axiosInstance.js";
 
 export default function AgentInfoPanel({
   userId,
@@ -14,27 +15,42 @@ export default function AgentInfoPanel({
   elapsed,
   setElapsed,
 }) {
-  // const intervalRef = useRef();
 
-  // Timer qui incrémente elapsed en live depuis lastChange
-  // useEffect(() => {
-  //   if (!etat || !lastChange || isNaN(new Date(lastChange).getTime())) {
-  //     setElapsed(0);
-  //     clearInterval(intervalRef.current);
-  //     return;
-  //   }
+  // ---- Récupérer les cumuls existants au montage ----
+  useEffect(() => {
+    const fetchCumul = async () => {
+      if (!userId) return;
+      try {
+        const res = await axiosInstance.get(`/session_agents/user/live/${userId}`);
+        const data = res.data;
 
-  //   const update = () => {
-  //     const diff = Math.floor(
-  //       (Date.now() - new Date(lastChange).getTime()) / 1000
-  //     );
-  //     setElapsed(diff >= 0 ? diff : 0);
-  //   };
+        if (!data) return;
+          // cumul_statuts renvoyé par la DB : { "Disponible": 3600, "Pause Café": 600, ... }
+          const newTimers = {};
+          Object.entries(data.cumul_statuts || {}).forEach(([statusFr, sec]) => {
+            const st = statuses.find((s) => s.statusFr === statusFr);
+            if (st?.key) newTimers[st.key] = sec;
+          });
 
-  //   update();
-  //   intervalRef.current = setInterval(update, 1000);
-  //   return () => clearInterval(intervalRef.current);
-  // }, [etat, lastChange, setElapsed]);
+          setTimers(newTimers);
+          setEtat(data.statut_actuel || "En ligne");
+
+          // Sécurisation de depuis_sec
+      const sec =
+        Number.isFinite(data?.depuis_sec) && data.depuis_sec >= 0
+          ? data.depuis_sec
+          : 0;
+
+      setElapsed(sec);
+      setLastChange(new Date(Date.now() - sec * 1000));
+        
+      } catch (err) {
+        console.error("Erreur récupération cumul agent:", err.response?.data || err.message);
+      }
+    };
+
+    fetchCumul();
+  }, [userId, setEtat, setTimers, setElapsed, setLastChange]);
 
   // Sauvegarde locale des timers
   useEffect(() => {

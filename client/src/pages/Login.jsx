@@ -2,8 +2,8 @@ import React, { useState, useContext } from 'react';
 import { Eye, EyeOff, User, Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from './AuthContext';
-import socket  from '../socket';
 import axiosInstance from '../api/axiosInstance';
+
 
 const Login = ({ onLogin }) => {
   const { setUser } = useContext(AuthContext);
@@ -26,8 +26,8 @@ const Login = ({ onLogin }) => {
 
     try {
       const response = await axiosInstance.post('/login', formData);
-      const { user, token, mustChangePassword  } = response.data;
-      
+      const { user, token, mustChangePassword } = response.data;
+
       localStorage.setItem('token', token);
       localStorage.setItem('role', user.role);
       localStorage.setItem('univers', user.profil);
@@ -35,22 +35,21 @@ const Login = ({ onLogin }) => {
       localStorage.setItem('user', JSON.stringify(user));
       setUser(user);
 
-        // ⚡ Notifie le backend que l'agent est connecté
-if (user) {
-  try {
-    await axiosInstance.post('/agent/connect',{ userId: user.id });
+      // ⚡ Notifie le backend que l'agent est connecté
+      if (user) {
+        try {
+          await axiosInstance.post('/agent/connect', { userId: user.id });
 
-    socket.emit('agent_connected', { userId: user.id });
-  } catch (err) {
-    console.error("Impossible de notifier la connexion de l'agent", err.response?.data || err.message);
-  }
-}
+        } catch (err) {
+          console.error("Impossible de notifier la connexion de l'agent", err.response?.data || err.message);
+        }
+      }
       if (onLogin) onLogin(token, user, mustChangePassword);
 
       if (mustChangePassword) {
-      navigate('/change-password');
-    } else {
-      switch (user.role) {
+        navigate('/change-password');
+      } else {
+        switch (user.role) {
           case 'Agent':
             navigate('/agent');
             break;

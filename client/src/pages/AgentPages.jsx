@@ -9,7 +9,6 @@ import VentesInfoPanel from '../components/componentsdesongletsAgents/VentesInfo
 import FichesInfoPanel from '../components/componentsdesfiches/FichesInfoPanel.tsx';
 import { AuthContext } from './AuthContext.jsx';
 import { AgentStatusProvider } from '../api/AgentStatusContext.jsx';
-import useTimers from '../api/useTimers.js';
 import useFiches from '../api/useAgentFiches.js';
 import axiosInstance from '../api/axiosInstance.js';
 import socket from '../socket.js';
@@ -17,16 +16,17 @@ import { statuses } from '../shared/StatusSelector.jsx';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 
-
 const AgentDashboard = () => {
   const { user, setUser } = useContext(AuthContext);
-  const [activeItem, setActiveItem] = useState('dashboard');
-  const timersData = useTimers();
+  const [activeItem, setActiveItem] = useState(() => {
+    return localStorage.getItem("activeSidebarItem") || "dashboard";
+  });
   const navigate = useNavigate();
   const intervalRef = useRef();
+  const [loadingTimers, setLoadingTimers] = useState(true);
 
   // États partagés
-  const [etat, setEtat] = useState(null);
+  const [etat, setEtat] = useState("En ligne");
   const [timers, setTimers] = useState({});
   const [elapsed, setElapsed] = useState(0);
   const [lastChange, setLastChange] = useState(null);
@@ -53,25 +53,45 @@ const AgentDashboard = () => {
 
     update();
     intervalRef.current = setInterval(update, 1000);
-    return () => clearInterval(intervalRef.current);
+    return () => clearInterval(intervalRef.current) && clearInterval(intervalRef.current);
   }, [etat, lastChange, setElapsed]);
 
-useEffect(() => {
-  try {
-    const saved = localStorage.getItem("timers");
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (parsed) {
-        if (parsed.etat) setEtat(parsed.etat);
-        if (parsed.timers) setTimers(parsed.timers);
-        if (parsed.lastChange) setLastChange(new Date(parsed.lastChange));
-      }
-    }
-  } catch {
-    // ignore errors
-  }
-}, []);
+  // --- Fetch session live au chargement de l'agent
+  useEffect(() => {
+    if (!user?.id) return;
 
+    const fetchLiveSession = async () => {
+      try {
+        const res = await axiosInstance.get(`/session_agents/user/live/${user.id}`);
+        const data = res.data;
+        if (!data) return;
+
+        // cumul_statuts renvoyé par la DB : { "Disponible": 3600, "Pause Café": 600, ... }
+        const newTimers = {};
+        Object.entries(data.cumul_statuts || {}).forEach(([status, sec]) => {
+          const st = statuses.find(s => s.statusFr === status);
+          if (st?.key) newTimers[st.key] = sec;
+        });
+
+        setTimers(newTimers);
+        setEtat(data.statut_actuel || "En ligne");
+
+        // Sécurisation de depuis_sec
+        const sec =
+          Number.isFinite(data?.depuis_sec) && data.depuis_sec >= 0
+            ? data.depuis_sec
+            : 0;
+
+        setElapsed(sec);
+        setLastChange(new Date(Date.now() - sec * 1000));
+      } catch (err) {
+        console.error("Erreur récupération cumul agent:", err.response?.data || err.message);
+      } finally {
+        setLoadingTimers(false);
+      }
+    };
+    fetchLiveSession();
+  }, [user]);
 
   // Gestion du changement de statut - mise à jour cumulée des timers
   const handleStatusChange = (newEtatFr, pause) => {
@@ -135,6 +155,7 @@ useEffect(() => {
     try {
       const userStored = JSON.parse(localStorage.getItem('user'));
       if (userStored) {
+        // ⚡ Notifie le backend que l'agent se déconnecte
         await axiosInstance.post('/agent/disconnect', { userId: userStored.id });
         socket.emit('agent_disconnected', { userId: userStored.id });
       }
@@ -156,15 +177,18 @@ useEffect(() => {
       <div className="flex h-screen">
         <SidebarAgent activeItem={activeItem} setActiveItem={setActiveItem} onLogout={handleLogout} />
         <div className="flex-1 flex flex-col overflow-hidden">
-          <DashboardHeader
-            {...timersData}
-            etat={etat}
-            timers={timers}
-            elapsed={elapsed}
-            onStatusChange={handleStatusChange}
-            currentAgent={user?.id}
-            activePage={activeItem}
-          />
+          {loadingTimers ? (
+            <span>Chargement...</span>
+          ) : (
+            <DashboardHeader
+  etat={etat}
+  timers={timers}
+  elapsed={elapsed}
+  onStatusChange={handleStatusChange}
+  currentAgent={user?.id}
+  activePage={activeItem}
+/>)}
+
           <main className="flex-1 p-6 bg-gray-100 overflow-auto">
             {activeItem === 'dashboard' && (
               <>
@@ -179,7 +203,6 @@ useEffect(() => {
             )}
             {activeItem === 'activité' &&
               <AgentInfoPanel
-                {...timersData}
                 userId={user?.id}
                 etat={etat}
                 setEtat={setEtat}

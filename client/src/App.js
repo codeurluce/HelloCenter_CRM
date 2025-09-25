@@ -8,20 +8,21 @@ import {
 } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import ProtectedRoute from './api/ProtectedRoute';
-
+import { AgentStatusProvider } from "./api/AgentStatusContext"
 import Login from './pages/Login';
 import ChangePassword from './pages/ChangePassword';
 import AgentDashboard from './pages/AgentPages';
 import AdminDashboard from './pages/AdminPages';
 import ManagerDashboard from './pages/ManagerPages';
-import NotFoundPages from './pages/NotFoundPages';
 import { AuthProvider } from './pages/AuthContext';
 
 function AppWrapper() {
   return (
     <AuthProvider>
       <Router>
-        <App />
+            <AgentStatusProvider>
+      <App />
+    </AgentStatusProvider>
         <ToastContainer position="top-right" autoClose={3000} />
       </Router>
     </AuthProvider>
@@ -51,11 +52,16 @@ useEffect(() => {
   if (!token || !user) return;
 
   const currentPath = window.location.pathname;
-  const target = user.mustChangePassword ? "/change-password" : routeByRole(user.role);
 
-  // 🚨 éviter la boucle infinie : naviguer seulement si nécessaire
-  if (currentPath !== target) {
-    navigate(target, { replace: true });
+  // ✅ Cas 1 : refresh sur une route déjà correcte (/agent, /agent/files, etc.)
+  // 👉 on ne fait rien → React Router charge cette page normalement
+
+  // ✅ Cas 2 : user est loggé mais est resté sur "/" ou "/login"
+  if (currentPath === "/" || currentPath === "/login") {
+    const target = user.mustChangePassword
+      ? "/change-password"
+      : routeByRole(user.role);
+    navigate(target, { replace: true }); // redirection uniquement dans ce cas
   }
 }, [token, user]);
 

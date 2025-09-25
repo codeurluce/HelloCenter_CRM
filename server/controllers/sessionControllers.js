@@ -100,28 +100,109 @@ exports.closeCurrentSession = async (req, res) => {
   }
 };
 
-
-exports.closeSessionForce = async (userId) => {
-  try {
-    const query = `
-      UPDATE session_agents
-      SET end_time = NOW(),
-          duration = EXTRACT(EPOCH FROM (NOW() - start_time))
-      WHERE user_id = $1 AND end_time IS NULL
-      RETURNING *;
-    `;
-    const result = await db.query(query, [userId]);
-    if (result.rows.length > 0) {
-      console.log(`✅ Session fermée pour l'agent ${userId} (déconnexion forcée).`);
-      return result.rows[0];
-    } else {
-      console.log(`ℹ️ Aucune session active trouvée pour l'agent ${userId}.`);
-      return null;
-    }
-  } catch (error) {
-    console.error("❌ Erreur closeSessionForce:", error);
-    throw error;
+// ✅ Fonction métier PURE (utilisée par le job ET par l'endpoint)
+exports.forceCloseAgentSession = async (userId, lastHeartbeatTimestamp) => {
+  if (!userId || !lastHeartbeatTimestamp) {
+    throw new Error("userId et lastHeartbeatTimestamp requis");
   }
+
+  const INACTIVITY_TIMEOUT_MS = 2.5 * 60 * 1000; // 150 000 ms
+
+  // Convertir le timestamp en Date
+  const lastHeartbeat = new Date(lastHeartbeatTimestamp);
+  const correctedEndTime = new Date(lastHeartbeat.getTime() + INACTIVITY_TIMEOUT_MS);
+
+  // Calculer la durée en secondes
+  // On a besoin de start_time pour calculer proprement
+  const sessionResult = await db.query(
+    `SELECT start_time FROM session_agents WHERE user_id = $1 AND end_time IS NULL`,
+    [userId]
+  );
+
+  if (sessionResult.rows.length === 0) {
+    console.log(`ℹ️ Aucune session active à fermer pour user_id=${userId}`);
+    return null;
+  }
+
+  const { start_time } = sessionResult.rows[0];
+  const durationSec = Math.floor((correctedEndTime - start_time) / 1000);
+
+  // Mettre à jour la session
+  const updateResult = await db.query(
+    `
+    UPDATE session_agents
+    SET end_time = $1,
+        duration = $2
+    WHERE user_id = $3 AND end_time IS NULL
+    RETURNING id, start_time, end_time, duration
+    `,
+    [correctedEndTime, durationSec, userId]
+  );
+
+  if (updateResult.rowCount === 0) {
+    console.log(`ℹ️ Session déjà fermée pour user_id=${userId}`);
+    return null;
+  }
+
+  // Mettre à jour l'utilisateur
+  await db.query("UPDATE users SET is_connected = FALSE WHERE id = $1", [userId]);
+
+  // Historique
+  await db.query(
+    "INSERT INTO agent_connections_history (user_id, event_type) VALUES ($1, 'disconnect_force')",
+    [userId]
+  );
+
+  console.log(`✅ Session fermée pour l'agent ${userId} (durée corrigée: ${durationSec}s)`);
+  return updateResult.rows[0];
+};
+
+exports.closeSessionForce =  async (req, res) => {
+  try {
+    const { user_id } = req.body;
+    if (!user_id) {
+      return res.status(400).json({ message: "❌ user_id est requis" });
+    }
+
+    const sessionResult = await db.query(
+      `UPDATE session_agents
+       SET end_time = NOW(),
+           duration = EXTRACT(EPOCH FROM (NOW() - start_time))
+       WHERE user_id = $1 AND end_time IS NULL
+       RETURNING *`,
+      [user_id]
+    );
+
+    if (sessionResult.rows.length === 0) {
+      return res.status(200).json({ message: "ℹ️ Aucune session active à fermer" });
+    }
+
+    await db.query("UPDATE users SET is_connected = FALSE WHERE id = $1", [user_id]);
+    await db.query(
+      "INSERT INTO agent_connections_history (user_id, event_type) VALUES ($1, 'disconnect_force')",
+      [user_id]
+    );
+    res.json({
+      message: "✅ Session fermée avec succès",
+      session: sessionResult.rows[0]
+    });
+
+  } catch (err) {
+    console.error("❌ Erreur dans /close-force:", err);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+};
+
+exports.checkActive = async (req, res) => {
+  const { user_id } = req.body;
+  if (!user_id) return res.status(400).json({ success: false, message: "user_id requis" });
+
+  const result = await db.query(
+    `SELECT 1 FROM session_agents WHERE user_id = $1 AND end_time IS NULL`,
+    [user_id]
+  );
+
+  res.json({ success: true, is_connected: result.rows.length > 0 });
 };
 
 // GET /api/sessions/agents/live
@@ -181,6 +262,76 @@ exports.getLiveSessionAgents = async (req, res) => {
   } catch (err) {
     console.error("Erreur getLiveSessionAgents:", err);
     res.status(500).json({ error: "Erreur récupération sessions live" });
+  }
+};
+
+// GET /api/sessions/agents/live/:userId
+exports.getSessionAgent = async (req, res) => {
+  const { userId } = req.params;
+
+  if (!userId) {
+    return res.status(400).json({ error: "userId manquant" });
+  }
+
+  try {
+    const query = `
+      WITH sessions_today AS (
+        SELECT user_id, status, start_time, COALESCE(end_time, NOW()) AS end_time
+        FROM session_agents
+        WHERE DATE(start_time) = CURRENT_DATE
+          AND user_id = $1
+      ),
+      cumuls AS (
+        SELECT user_id, status, SUM(EXTRACT(EPOCH FROM (end_time - start_time)))::INT AS sec
+        FROM sessions_today
+        GROUP BY user_id, status
+      ),
+      cumul_total AS (
+        SELECT user_id, SUM(sec)::INT AS presence_totale_sec
+        FROM cumuls
+        GROUP BY user_id
+      ),
+      last_status AS (
+        SELECT DISTINCT ON (user_id)
+               user_id,
+               status AS statut_actuel,
+               EXTRACT(EPOCH FROM (NOW() - start_time))::INT AS depuis_sec
+        FROM session_agents
+        WHERE end_time IS NULL
+          AND DATE(start_time) = CURRENT_DATE
+          AND user_id = $1
+        ORDER BY user_id, start_time DESC
+      ),
+      cumul_json AS (
+        SELECT c.user_id,
+               json_object_agg(c.status, c.sec) AS cumul_statuts
+        FROM cumuls c
+        GROUP BY c.user_id
+      )
+      SELECT 
+        u.id AS user_id,
+        u.lastname,
+        u.firstname,
+        COALESCE(ls.statut_actuel, 
+                 CASE WHEN u.is_connected = false THEN 'Hors ligne' ELSE 'En ligne' END
+        ) AS statut_actuel,
+        COALESCE(ls.depuis_sec, 0) AS depuis_sec,
+        COALESCE(ct.presence_totale_sec, 0) AS presence_totale_sec,
+        u.is_connected,
+        COALESCE(cj.cumul_statuts, '{}'::json) AS cumul_statuts
+      FROM users u
+      LEFT JOIN last_status ls ON u.id = ls.user_id
+      LEFT JOIN cumul_total ct ON u.id = ct.user_id
+      LEFT JOIN cumul_json cj ON u.id = cj.user_id
+      WHERE u.id = $1
+      ORDER BY u.lastname, u.firstname;
+    `;
+
+    const result = await db.query(query, [userId]);
+    res.json(result.rows[0] || null); // renvoie l'agent unique
+  } catch (err) {
+    console.error("Erreur getLiveSessionAgent:", err);
+    res.status(500).json({ error: "Erreur récupération session live" });
   }
 };
 
@@ -386,6 +537,7 @@ exports.getLastAgentStatus = async (userId)  =>{
       `SELECT status
        FROM session_agents
        WHERE user_id = $1
+       AND end_time IS NULL
        ORDER BY start_time DESC
        LIMIT 1`,
       [userId]

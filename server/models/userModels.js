@@ -1,7 +1,7 @@
 const db = require('../db');
 const bcrypt = require('bcrypt');
 
-function generateCompanyEmail(firstname, lastname, domain = 'hellocenter.sn', suffix = '') {
+function generateCompanyEmail(firstname, lastname, domain = 'hellocenter.org', suffix = '') {
     // Ajoute suffixe (ex: '2', '3', etc.) avant '@'
     const baseEmail = `${firstname.toLowerCase()}.${lastname.toLowerCase()}`;
     return suffix ? `${baseEmail}${suffix}@${domain}` : `${baseEmail}@${domain}`;

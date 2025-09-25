@@ -14,25 +14,9 @@ router.post('/start', sessionControllers.createSession);
 router.post('/close', sessionControllers.closeCurrentSession);
 
 // 📌 Forcer la fermeture d’une session
-router.post('/close-force', async (req, res) => {
-  try {
-    const { userId } = req.body;
-    if (!userId) {
-      return res.status(400).json({ message: "❌ userId requis" });
-    }
+// router.post('/close-force', sessionControllers.closeSessionForce);
 
-    const session = await sessionControllers.closeSessionForce(userId);
-
-    if (!session) {
-      return res.status(404).json({ message: "⚠️ Aucune session active trouvée pour cet utilisateur" });
-    }
-
-    res.json({ message: "✅ Session fermée avec succès", session });
-  } catch (err) {
-    console.error("❌ Erreur dans /close-force:", err);
-    res.status(500).json({ message: "Erreur serveur" });
-  }
-});
+// router.post('/check-active', sessionControllers.checkActive);
 
 // 📌 Récupérer le dernier statut d’un agent (pour restauration après reconnexion)
 router.get("/last-status/:userId", async (req, res) => {
@@ -46,9 +30,9 @@ router.get("/last-status/:userId", async (req, res) => {
   }
 });
 
-
 // 📌 Sessions en ligne (agents actifs)
 router.get('/user/live', sessionControllers.getLiveSessionAgents);
+router.get('/user/live/:userId', sessionControllers.getSessionAgent);
 
 router.get('/user/agent_connection_details', sessionControllers.getDailyConnectionTimes);
 
