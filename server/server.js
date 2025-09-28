@@ -39,7 +39,10 @@ const io = new Server(server, {
     methods: ['GET', 'POST'],
     credentials: true
   },
-  transports: ['websocket'] // Force WebSocket only (évite le polling en prod)
+  transports: ['websocket'], // Force WebSocket only (évite le polling en prod)
+   // 🔥 Heartbeat WebSocket natif (détecte la veille/perte réseau)
+  pingInterval: 10000,    // 10s
+  pingTimeout: 5000       // 5s de timeout → déconnexion après 15s max
 });
 
 // Initialiser les sockets

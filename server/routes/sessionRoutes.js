@@ -8,15 +8,52 @@ const sessionControllers = require('../controllers/sessionControllers');
 router.get('/', sessionControllers.getSessions);
 
 // 📌 Démarrer une session
-router.post('/start', sessionControllers.createSession);
+// router.post('/start', sessionControllers.createSession);
+router.post('/start', sessionControllers.startSession);
 
 // 📌 Fermer la session en cours
-router.post('/close', sessionControllers.closeCurrentSession);
+// router.post('/close', sessionControllers.closeCurrentSession);
+router.post('/stop', sessionControllers.stopSession);
+
+// 📌 ping une session
+router.post('/ping', sessionControllers.pingSession)
 
 // 📌 Forcer la fermeture d’une session
-// router.post('/close-force', sessionControllers.closeSessionForce);
+router.post('/close-force', async (req, res) => {
+  try {
+    const { user_id } = req.body;
+    if (!user_id) {
+      return res.status(400).json({ message: "❌ user_id est requis" });
+    }
 
-// router.post('/check-active', sessionControllers.checkActive);
+const sessionResult = await db.query(
+      `UPDATE session_agents
+       SET end_time = NOW(),
+           duration = EXTRACT(EPOCH FROM (NOW() - start_time))
+       WHERE user_id = $1 AND end_time IS NULL
+       RETURNING *`,
+      [user_id]
+    );
+
+    if (sessionResult.rows.length === 0) {
+      return res.status(200).json({ message: "ℹ️ Aucune session active à fermer" });
+    }
+
+    await db.query("UPDATE users SET is_connected = FALSE WHERE id = $1", [user_id]);
+    await db.query(
+      "INSERT INTO agent_connections_history (user_id, event_type) VALUES ($1, 'disconnect_force')",
+      [user_id]
+    );
+        res.json({ 
+      message: "✅ Session fermée avec succès", 
+      session: sessionResult.rows[0] 
+    });
+
+  } catch (err) {
+    console.error("❌ Erreur dans /close-force:", err);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
 
 // 📌 Récupérer le dernier statut d’un agent (pour restauration après reconnexion)
 router.get("/last-status/:userId", async (req, res) => {

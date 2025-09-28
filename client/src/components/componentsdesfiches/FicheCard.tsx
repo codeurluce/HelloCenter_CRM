@@ -68,7 +68,7 @@ const FicheCard: React.FC<FicheCardProps> = ({
   //   if (parts.length === 1) return parts[0][0].toUpperCase();
   //   return parts[0][0].toUpperCase() + parts[1][0].toUpperCase();
   // };
-  console.log('🧪 fiche.id', fiche.id, 'statut:', fiche.statut, 'assigned_to:', fiche.assigned_to, 'currentAgent:', currentAgent);
+  console.log('🧪 fiche.id:', fiche.id, ', statut:', fiche.statut, ', assigned_to:', fiche.assigned_to, ', currentAgent:', currentAgent);
 
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-all duration-300">

@@ -5,87 +5,80 @@ import socket from '../../socket';
 import StatusSelector, { formatTime } from '../../shared/StatusSelector.jsx';
 
 const SimpleTimer = ({
-    userId,
-    status,      // Ex: 'Disponible' en français
-    sessionTime,
-    totalPause,  // en secondes
-    totalIndispo, // en secondes
-    onStatusChange,
+  userId,
+  status,      // Ex: 'Disponible' en français
+  sessionTime,
+  totalPause,  // en secondes
+  totalIndispo, // en secondes
+  onStatusChange,
 }) => {
 
-    useEffect(() => {
-        if (userId) {
-            socket.emit('agent_connected', { userId });
-        }
-        return () => {
-            socket.emit('agent_disconnected', { userId });
-        };
-    }, [userId]);
-
-
-    const handleStatusChange = async (newStatusFr, pause) => {
-        if (!userId) {
-            console.error("Utilisateur non connecté");
-            return;
-        }
-
-        try {
-            // Fermer session active
-            await closeSession(userId);
-        } catch (error) {
-            if (!error.message.includes('Aucune session active trouvée')) {
-                console.error('Erreur fermeture session:', error);
-                return; // ou throw selon logique
-            }
-            // Sinon ignore cette erreur
-        }
-
-        try {
-            // Démarre une nouvelle session
-            await startSession({
-                userId,
-                status: newStatusFr,
-                pauseType: pause,
-            });
-
-            // Met à jour localement l’état après succès
-            onStatusChange(newStatusFr, pause);
-
-            // Émission socket
-            socket.emit('agent_status_update', {
-                userId,
-                status: newStatusFr,
-                timestamp: new Date().toISOString(),
-            });
-        } catch (error) {
-            console.error('Erreur lors de la gestion de la session en base:', error);
-        }
+  useEffect(() => {
+    if (userId) {
+      socket.emit('agent_connected', { userId });
+    }
+    return () => {
+      if (userId) socket.emit('agent_disconnected', { userId });
     };
+  }, [userId]);
 
-    return (
-        <div className="flex flex-col items-start gap-4 text-sm">
-            <StatusSelector
-                currentStatus={status}
-                onSelect={handleStatusChange}
-                mode="icons"
-            />
+  // newEtatFr = statut en français passé par StatusSelector
+  // pause = valeur optionnelle (ex: 'cafe', 'dejeuner', etc.) fournie par le StatusSelector
+  const handleStatusChange = async (newEtatFr, pause) => {
+    if (!userId) {
+      console.error("Utilisateur non connecté");
+      return;
+    }
 
-            <div>
-                ⏱️ Temps de travail : <strong>{formatTime(sessionTime)}</strong>
-            </div>
+    try {
+      // Fermer session active (si elle existe)
+      await closeSession({ user_id: userId });
+    } catch (error) {
+      const msg = error?.response?.data?.message || error?.message || '';
+      // ignorer le cas "no active session" ou message francophone équivalent
+      if (!msg.includes('Aucune session active') && !msg.includes('no active session')) {
+        console.error('Erreur fermeture session:', error);
+        return;
+      }
+    }
 
+    const pauseType = pause || null;
 
-            <div>
-                💤 Pause totale : <strong>{formatTime(totalPause)}</strong>
-            </div>
+    try {
+      // Démarre une nouvelle ligne en base (startSession doit créer un INSERT)
+      await startSession({ user_id: userId, status: newEtatFr, pause_type: pauseType });
 
-            {totalIndispo > 0 && (
-                <div>
-                    🚫 Indisponibilités : <strong>{formatTime(totalIndispo)}</strong>
-                </div>
-            )}
-        </div>
-    );
+      // update local state via parent
+      onStatusChange(newEtatFr, pauseType);
+
+      // notifier via socket
+      socket.emit('agent_status_update', {
+        userId,
+        status: newEtatFr,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error('Erreur lors de la gestion de la session en base:', error);
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-start gap-4 text-sm">
+      <StatusSelector
+        currentStatus={status}
+        onSelect={handleStatusChange}
+        mode="icons"
+      />
+
+      <div>⏱️ Temps de travail : <strong>{formatTime(sessionTime)}</strong></div>
+
+      <div>💤 Pause totale : <strong>{formatTime(totalPause)}</strong></div>
+
+      {totalIndispo > 0 && (
+        <div>🚫 Indisponibilités : <strong>{formatTime(totalIndispo)}</strong></div>
+      )}
+    </div>
+  );
 };
 
 export default SimpleTimer;

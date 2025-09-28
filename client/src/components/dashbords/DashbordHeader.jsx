@@ -167,7 +167,7 @@ const DashboardHeader = ({
   };
 
   const displayTitle = pageTitles[activePage] || 'Page';
-
+console.log("📊 DashboardHeader - props reçues:", { etat, elapsed, timers });
   return (
     <div className="flex items-center justify-between p-4 bg-white shadow rounded-lg sticky top-0 z-50">
       <div className="flex items-center space-x-4">

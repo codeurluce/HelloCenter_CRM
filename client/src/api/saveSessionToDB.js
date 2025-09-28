@@ -1,4 +1,4 @@
-// api/sessionAPI.js
+// api/saveSessionToDB.js
 
 //  API pour demarrer une session agent
 // Utilise l'API Fetch pour interagir avec le backend
@@ -39,7 +39,7 @@ export const closeSession = async ({ user_id }) => {
   }
 
   try {
-    const response = await axiosInstance.post('/session_agents/close', {
+    const response = await axiosInstance.post('/session_agents/stop', {
       user_id: userId,
     });
     const data = response.data;

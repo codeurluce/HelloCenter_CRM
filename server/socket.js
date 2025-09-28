@@ -1,83 +1,84 @@
-// sockets.js
+const db = require('./db');
 const { closeSessionForce, getLastAgentStatus } = require('./controllers/sessionControllers');
 
 let activeSockets = {};
-let lastPing = {}; // stocke le timestamp du dernier ping reçu par userId
+let lastPing = {};
 
+const INACTIVITY_TIMEOUT_MS = 2.5 * 60 * 1000;
 
 function initSockets(io) {
   io.on('connection', (socket) => {
-    console.log("🔌 Agent connecté:", socket.id);
+    console.log("🟢 Nouveau socket connecté:", socket.id);
 
-     // Quand l'agent se connecte
     socket.on('agent_connected', async ({ userId }) => {
+      console.log("🔌 SOCKET CONNECTÉ - userId:", userId);
       socket.userId = userId;
-
       if (!activeSockets[userId]) activeSockets[userId] = [];
       activeSockets[userId].push(socket.id);
-
-      // Initialise lastPing pour cet agent
       lastPing[userId] = Date.now();
 
-      console.log(`✅ Agent ${userId} lié au socket ${socket.id}`);
+      let lastStatus = await getLastAgentStatus(userId);
+      console.log("📊 Dernier statut trouvé:", lastStatus);
 
-      const lastStatus = await getLastAgentStatus(userId);
-      socket.emit("restore_status", { status: lastStatus || 'En_ligne' });
+      socket.emit("restore_status", { status: lastStatus || "En ligne" });
     });
 
-    // Heartbeat ping reçu du client
-    socket.on('heartbeat', () => {
-      if (!socket.userId) return;
-      lastPing[socket.userId] = Date.now();
-      // console.log(`Heartbeat reçu de l'agent ${socket.userId}`);
-    });
+socket.on('heartbeat', async () => {
+  if (!socket.userId) return;
+  lastPing[socket.userId] = Date.now();
+  console.log(`[SOCKET] heartbeat from ${socket.userId}`);
 
-    // Quand le socket se déconnecte
+  // Optionnel / recommandé : update DB last_ping
+  try {
+    await db.query(
+      `UPDATE session_agents SET last_ping = NOW() WHERE user_id = $1 AND end_time IS NULL`,
+      [socket.userId]
+    );
+  } catch (err) { console.error('db update last_ping failed', err); }
+});
+
     socket.on('disconnect', async () => {
       if (!socket.userId) return;
       const { userId } = socket;
+      console.log("🔌 SOCKET DÉCONNECTÉ - userId:", userId);
 
-      // Retirer ce socket de la liste
       activeSockets[userId] = activeSockets[userId]?.filter(id => id !== socket.id) || [];
+      console.log(`[DEBUG] Sockets restants pour ${userId}: ${activeSockets[userId].length}`);
 
-      // délai avant de clôturer → pour couvrir le cas d’un refresh
-      setTimeout(async () => {
-        if (activeSockets[userId]?.length === 0) {
-          console.log(`🔴 Aucun socket restant pour l’agent ${userId}, fermeture session...`);
-          await closeSessionForce(userId);
-          delete lastPing[userId];
-          delete activeSockets[userId];
-        } else {
-          console.log(`⚠️ Agent ${userId} a encore ${activeSockets[userId].length} socket(s) actif(s), session maintenue.`);
-        }
-      }, 10000); // délai ajustable
+      if (activeSockets[userId]?.length === 0) {
+        console.log(`🔴 Fermeture session immédiate pour ${userId}`);
+        await closeSessionForce(userId);
+        delete lastPing[userId];
+        delete activeSockets[userId];
+      }
     });
   });
 
-   // Intervalle serveur qui vérifie les heartbeats
-  setInterval(async () => {
-    const now = Date.now();
+  // --- 🔹 Vérification inactivité toutes les 30s
+setInterval(async () => {
+  const cutoff = new Date(Date.now() - INACTIVITY_TIMEOUT_MS);
+  // selectionne sessions ouvertes avant cutoff et status = 'Disponible' (ou la règle que tu veux)
+  const stale = await db.query(
+    `SELECT id, user_id, start_time, last_ping FROM session_agents
+     WHERE end_time IS NULL AND last_ping < $1`,
+    [cutoff]
+  );
 
-    for (const userId in lastPing) {
-      // Récupère le dernier statut en BD pour cet agent
-      const userStatus = await getLastAgentStatus(userId);
+  for (const row of stale.rows) {
+    console.log(`[SERVER] closing stale session id=${row.id} user=${row.user_id} last_ping=${row.last_ping}`);
+    await db.query(
+      `UPDATE session_agents
+       SET end_time = $1,
+           duration = EXTRACT(EPOCH FROM ($1 - start_time))::INT
+       WHERE id = $2`,
+      [row.last_ping || new Date(), row.id] // use last_ping if you want the precise "last seen"
+    );
 
-      // On ne ferme la session que si l’agent est "Disponible / En ligne"
-      if (userStatus === 'En_ligne' || userStatus === 'Disponible') {
-        const timeoutMs = 3 * 60 * 1000; // 3 minutes d'inactivité tolérée
-
-        if (now - lastPing[userId] > timeoutMs) {
-          if ((activeSockets[userId]?.length ?? 0) > 0) {
-            console.log(`🔴 Agent ${userId} (${userStatus}) inactif depuis +3min, fermeture session forcée...`);
-            await closeSessionForce(userId);
-            // Suppression des sockets et ping correspondants
-            delete lastPing[userId];
-            delete activeSockets[userId];
-          }
-        }
-      }
-    }
-  }, 60 * 1000); // toutes les 1 minute
+    // notifier socket(s) connectés de cet user
+    // io.to(userSocketRooms[userId])... ou comme tu fais avec activeSockets
+    // io.to(socketId).emit('session_closed_force', { reason: 'inactivité' });
+  }
+}, 30_000);
 }
 
 module.exports = initSockets;

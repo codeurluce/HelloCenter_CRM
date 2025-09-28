@@ -14,6 +14,7 @@ const {
   connectAgent,
   disconnectAgent,
   getAllUsersBd,
+  disconnectAgentForce,
 } = require("../controllers/userControllers");
 
 /**
@@ -27,6 +28,7 @@ router.post("/register", createUser);
 router.post("/login", loginUser);
 router.post('/agent/connect', connectAgent);
 router.post('/agent/disconnect', disconnectAgent);
+router.post('/agent/disconnect-force', disconnectAgentForce)
 
 // Changer mot de passe au premier login
 router.post("/change-password-first-login", verifyToken, changePasswordFirstLogin);

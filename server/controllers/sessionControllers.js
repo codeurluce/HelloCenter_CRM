@@ -7,6 +7,8 @@ exports.createSession = async (req, res) => {
   try {
     console.log('📥 Requête reçue pour session :', req.body);
     const { user_id, status, pause_type, start_time, end_time } = req.body;
+  console.log("🆕 CRÉATION SESSION - userId:", user_id, "status:", status); // ← LOG ICI
+
     if (status === 'pause' && !pause_type) {
       return res.status(400).json({ message: 'Le type de pause est requis pour une session de pause.' });
     }
@@ -42,6 +44,7 @@ exports.createSession = async (req, res) => {
 exports.closeCurrentSession = async (req, res) => {
   try {
     const { user_id } = req.body;
+    console.log("CloseOperation: Fermeture FORCE pour", user_id);
 
     if (!user_id) {
       return res.status(400).json({
@@ -100,110 +103,6 @@ exports.closeCurrentSession = async (req, res) => {
   }
 };
 
-// ✅ Fonction métier PURE (utilisée par le job ET par l'endpoint)
-exports.forceCloseAgentSession = async (userId, lastHeartbeatTimestamp) => {
-  if (!userId || !lastHeartbeatTimestamp) {
-    throw new Error("userId et lastHeartbeatTimestamp requis");
-  }
-
-  const INACTIVITY_TIMEOUT_MS = 2.5 * 60 * 1000; // 150 000 ms
-
-  // Convertir le timestamp en Date
-  const lastHeartbeat = new Date(lastHeartbeatTimestamp);
-  const correctedEndTime = new Date(lastHeartbeat.getTime() + INACTIVITY_TIMEOUT_MS);
-
-  // Calculer la durée en secondes
-  // On a besoin de start_time pour calculer proprement
-  const sessionResult = await db.query(
-    `SELECT start_time FROM session_agents WHERE user_id = $1 AND end_time IS NULL`,
-    [userId]
-  );
-
-  if (sessionResult.rows.length === 0) {
-    console.log(`ℹ️ Aucune session active à fermer pour user_id=${userId}`);
-    return null;
-  }
-
-  const { start_time } = sessionResult.rows[0];
-  const durationSec = Math.floor((correctedEndTime - start_time) / 1000);
-
-  // Mettre à jour la session
-  const updateResult = await db.query(
-    `
-    UPDATE session_agents
-    SET end_time = $1,
-        duration = $2
-    WHERE user_id = $3 AND end_time IS NULL
-    RETURNING id, start_time, end_time, duration
-    `,
-    [correctedEndTime, durationSec, userId]
-  );
-
-  if (updateResult.rowCount === 0) {
-    console.log(`ℹ️ Session déjà fermée pour user_id=${userId}`);
-    return null;
-  }
-
-  // Mettre à jour l'utilisateur
-  await db.query("UPDATE users SET is_connected = FALSE WHERE id = $1", [userId]);
-
-  // Historique
-  await db.query(
-    "INSERT INTO agent_connections_history (user_id, event_type) VALUES ($1, 'disconnect_force')",
-    [userId]
-  );
-
-  console.log(`✅ Session fermée pour l'agent ${userId} (durée corrigée: ${durationSec}s)`);
-  return updateResult.rows[0];
-};
-
-exports.closeSessionForce =  async (req, res) => {
-  try {
-    const { user_id } = req.body;
-    if (!user_id) {
-      return res.status(400).json({ message: "❌ user_id est requis" });
-    }
-
-    const sessionResult = await db.query(
-      `UPDATE session_agents
-       SET end_time = NOW(),
-           duration = EXTRACT(EPOCH FROM (NOW() - start_time))
-       WHERE user_id = $1 AND end_time IS NULL
-       RETURNING *`,
-      [user_id]
-    );
-
-    if (sessionResult.rows.length === 0) {
-      return res.status(200).json({ message: "ℹ️ Aucune session active à fermer" });
-    }
-
-    await db.query("UPDATE users SET is_connected = FALSE WHERE id = $1", [user_id]);
-    await db.query(
-      "INSERT INTO agent_connections_history (user_id, event_type) VALUES ($1, 'disconnect_force')",
-      [user_id]
-    );
-    res.json({
-      message: "✅ Session fermée avec succès",
-      session: sessionResult.rows[0]
-    });
-
-  } catch (err) {
-    console.error("❌ Erreur dans /close-force:", err);
-    res.status(500).json({ message: "Erreur serveur" });
-  }
-};
-
-exports.checkActive = async (req, res) => {
-  const { user_id } = req.body;
-  if (!user_id) return res.status(400).json({ success: false, message: "user_id requis" });
-
-  const result = await db.query(
-    `SELECT 1 FROM session_agents WHERE user_id = $1 AND end_time IS NULL`,
-    [user_id]
-  );
-
-  res.json({ success: true, is_connected: result.rows.length > 0 });
-};
 
 // GET /api/sessions/agents/live
 exports.getLiveSessionAgents = async (req, res) => {
@@ -525,6 +424,116 @@ exports.splitSessionsAtMidnight = async () => {
   }
 };
 
+// ----------------------------- NOUVELLE GESTION DU TIMER VIA BACKEND -------------------
+
+exports.startSession = async (req, res) => {
+  const { user_id, status = 'Disponible' } = req.body;
+  if (!user_id) return res.status(400).json({ error: 'user_id requis' });
+
+  try {
+    // Si session active existante -> retourne son id (idempotence)
+    const active = await db.query(
+      `SELECT id FROM session_agents WHERE user_id = $1 AND end_time IS NULL LIMIT 1`,
+      [user_id]
+    );
+    if (active.rowCount > 0) {
+      return res.json({ success: true, session_id: active.rows[0].id, reused: true });
+    }
+
+    const result = await db.query(
+      `INSERT INTO session_agents (user_id, status, start_time, last_ping)
+       VALUES ($1, $2, NOW(), NOW())
+       RETURNING id, start_time`,
+      [user_id, status]
+    );
+
+    res.json({ success: true, session_id: result.rows[0].id, start_time: result.rows[0].start_time });
+  } catch (err) {
+    console.error('startSession error', err);
+    res.status(500).json({ error: 'server error' });
+  }
+};
+
+exports.pingSession = async (req, res) => {
+  const { user_id } = req.body;
+  if (!user_id) return res.status(400).json({ error: 'user_id requis' });
+
+  try {
+    const result = await db.query(
+      `UPDATE session_agents SET last_ping = NOW() 
+       WHERE user_id = $1 AND end_time IS NULL
+       RETURNING id, start_time`,
+      [user_id]
+    );
+    if (result.rowCount === 0) {
+      return res.json({ success: false, message: 'no active session' });
+    }
+    res.json({ success: true, session_id: result.rows[0].id });
+  } catch (err) {
+    console.error('pingSession error', err);
+    res.status(500).json({ error: 'server error' });
+  }
+};
+
+exports.stopSession = async (req, res) => {
+  const { user_id } = req.body;
+  if (!user_id) return res.status(400).json({ error: 'user_id requis' });
+
+  try {
+    const now = new Date();
+    const result = await db.query(
+      `UPDATE session_agents
+       SET end_time = $1,
+           duration = EXTRACT(EPOCH FROM ($1 - start_time))::INT
+       WHERE user_id = $2 AND end_time IS NULL
+       RETURNING *`,
+      [now, user_id]
+    );
+
+    if (result.rowCount === 0) {
+      return res.json({ success: true, message: 'no active session to stop' });
+    }
+
+    res.json({ success: true, session: result.rows[0] });
+  } catch (err) {
+    console.error('stopSession error', err);
+    res.status(500).json({ error: 'server error' });
+  }
+};
+
+exports.closeSessionForce = async (userId) => {
+  try {
+    console.log(`[SERVER] closeSessionForce called for user ${userId}`);
+    const result = await db.query(
+      `UPDATE session_agents
+       SET end_time = COALESCE(last_ping, NOW()),
+           duration = EXTRACT(EPOCH FROM (COALESCE(last_ping, NOW()) - start_time))::INT
+       WHERE user_id = $1 AND end_time IS NULL
+       RETURNING id, start_time, end_time, duration`,
+      [userId]
+    );
+
+    if (result.rowCount === 0) {
+      console.log(`[SERVER] closeSessionForce: no active session for ${userId}`);
+      return null;
+    }
+
+    const session = result.rows[0];
+    console.log(`[SERVER] closeSessionForce: session closed for ${userId}`, session);
+    return session;
+  } catch (err) {
+    console.error('[SERVER] closeSessionForce error', err);
+    throw err;
+  }
+};
+
+/**
+ * Récupère le dernier statut actif d’un agent
+ * @param {number|string} userId 
+ * @returns {Promise<string|null>} statut ou null si rien trouvé
+ */
+
+
 /**
  * Récupère le dernier statut actif d’un agent
  * @param {number|string} userId 
@@ -537,7 +546,6 @@ exports.getLastAgentStatus = async (userId)  =>{
       `SELECT status
        FROM session_agents
        WHERE user_id = $1
-       AND end_time IS NULL
        ORDER BY start_time DESC
        LIMIT 1`,
       [userId]

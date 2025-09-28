@@ -193,6 +193,96 @@ const disconnectAgent = async (req, res) => {
   }
 };
 
+// controllers/agentController.js
+// const disconnectAgentForce = async (req, res) => {
+//   const { userId } = req.body;
+//   console.log("🔧 [DISCONNECT-FORCE] Reçu depuis frontend → userId:", userId);
+
+//   if (!userId) {
+//     return res.status(400).json({ error: "userId manquant" });
+//   }
+
+//   try {
+//     // 1. Fermer la session active et récupérer la ligne mise à jour
+//     const result = await db.query(
+//       `UPDATE session_agents
+//        SET end_time = NOW(),
+//            duration = EXTRACT(EPOCH FROM (NOW() - start_time))
+//        WHERE user_id = $1 AND end_time IS NULL
+//        RETURNING id, end_time, duration`,
+//       [userId]
+//     );
+
+//     if (result.rows.length > 0) {
+//       const { id, end_time, duration } = result.rows[0];
+//       console.log(`✅ Session #${id} fermée → end_time: ${end_time}, duration: ${duration}s`);
+//     } else {
+//       console.log(`⚠️ Aucune session active trouvée pour userId: ${userId}`);
+//     }
+
+//     // 2. Marquer l’agent comme déconnecté
+//     await db.query("UPDATE users SET is_connected = FALSE WHERE id = $1", [userId]);
+
+//     // 3. Historique
+//     await db.query(
+//       `INSERT INTO agent_connections_history (user_id, event_type, created_at) 
+//        VALUES ($1, 'deconnexion_forcee', NOW())`,
+//       [userId]
+//     );
+
+//     res.json({ success: true, message: "Déconnexion forcée sauvegardée." });
+//   } catch (err) {
+//     console.error("❌ Erreur disconnectAgentForce:", err);
+//     res.status(500).json({ error: "Erreur lors de la déconnexion forcée" });
+//   }
+// };
+const disconnectAgentForce = async (req, res) => {
+  const { userId } = req.body;
+  console.log("🔧 [DISCONNECT-FORCE] Reçu depuis frontend → userId:", userId);
+
+  if (!userId) {
+    return res.status(400).json({ error: "userId manquant" });
+  }
+
+  try {
+    // 1. Fermer la session active
+    const sessionResult = await db.query(
+      `UPDATE session_agents
+       SET end_time = NOW(),
+           duration = EXTRACT(EPOCH FROM (NOW() - start_time))
+       WHERE user_id = $1 AND end_time IS NULL
+       RETURNING id, start_time, end_time, duration`,
+      [userId]
+    );
+
+    if (sessionResult.rows.length > 0) {
+      const session = sessionResult.rows[0];
+      console.log(`✅ Session #${session.id} fermée → duration: ${session.duration}s`);
+    } else {
+      console.log(`ℹ️ Aucune session active à fermer pour userId: ${userId}`);
+    }
+
+    // 2. Marquer l’agent comme déconnecté
+    await db.query("UPDATE users SET is_connected = FALSE WHERE id = $1", [userId]);
+
+    // 3. Historique (optionnel)
+    await db.query(
+      "INSERT INTO agent_connections_history (user_id, event_type, created_at) VALUES ($1, 'disconnexion_forcé', NOW())",
+      [userId]
+    );
+
+    res.json({ 
+      success: true, 
+      message: "Déconnexion forcée traitée.",
+      sessionClosed: sessionResult.rows.length > 0
+    });
+  } catch (err) {
+    console.error("❌ Erreur disconnectAgentForce:", err);
+    res.status(500).json({ error: "Erreur lors de la déconnexion forcée" });
+  }
+};
+
+
 // Infos utilisateur connecté
 const getMe = async (req, res) => {
   const userId = req.user.id;
@@ -392,4 +482,5 @@ module.exports = {
   connectAgent,
   disconnectAgent,
   getAllUsersBd,
+  disconnectAgentForce,
 };

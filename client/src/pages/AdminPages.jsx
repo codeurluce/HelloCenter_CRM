@@ -29,10 +29,15 @@ const AdminDashboard = () => {
   const intervalRef = useRef();
 
   // États partagés
-  const [etat, setEtat] = useState(null);
+  const [etat, setEtat] = useState("En ligne");
   const [timers, setTimers] = useState({});
   const [elapsed, setElapsed] = useState(0);
   const [lastChange, setLastChange] = useState(null);
+
+    const [hasChosenStatusAfterReconnect, setHasChosenStatusAfterReconnect] = useState(() => {
+    // Si on vient de se reconnecter (refresh), on force à false
+    return localStorage.getItem('agent_has_chosen_status') === 'true';
+    });
 
   const mapStatusToKey = (statusFr) => {
     const statusObj = statuses.find(s => s.statusFr === statusFr);
