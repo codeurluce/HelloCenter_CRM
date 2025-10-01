@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useCallback, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
 import socket from "../socket.js";
 import axiosInstance from "../api/axiosInstance.js";
 import { toast } from "react-toastify";
@@ -36,19 +37,19 @@ export const AgentStatusProvider = ({ children }) => {
   //   }
   // }, [isInactive, navigate]);
   useEffect(() => {
-    if (isInactive) {
-      toast.warn("Vous avez été déconnecté pour inactivité. Veuillez vous reconnecter.", {
-        onClose: () => {
-          if (socket.connected) socket.disconnect();
-          localStorage.clear();
-          setUser(null);
-          setStatus("Hors ligne");
-          setIsInactive(false);
-          navigate("/login");
-        }
-      });
-    }
-  }, [isInactive, navigate]);
+  if (isInactive) {
+    toast.warn("Vous avez été déconnecté pour inactivité. Veuillez vous reconnecter.", {
+      onClose: () => {
+        if (socket.connected) socket.disconnect();
+        localStorage.clear();
+        setUser(null);
+        setStatus("Hors ligne");
+        setIsInactive(false);
+        navigate("/login");
+      }
+    });
+  }
+}, [isInactive, navigate]);
 
   // Gestion des déconnexions forcées reçues via socket
   const handleForcedLogout = useCallback(async (reason) => {
@@ -65,23 +66,23 @@ export const AgentStatusProvider = ({ children }) => {
 
     localStorage.setItem("lastLogoutReason", reason);
     toast.warn(reason, {   // toast.warn pour un message d'alerte
-      onClose: async () => {
-        if (userRef.current?.id) {
-          try {
-            await axiosInstance.post("/agent/disconnect-force", {
-              userId: userRef.current.id,
-            });
-          } catch (err) {
-            console.error(err);
-          }
-        }
-        if (socket.connected) socket.disconnect();
-        localStorage.clear();
-        setUser(null);
-        setStatus("Hors ligne");
-        navigate("/login");
-      },
-    });
+  onClose: async () => {
+    if (userRef.current?.id) {
+      try {
+        await axiosInstance.post("/agent/disconnect-force", {
+          userId: userRef.current.id,
+        });
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    if (socket.connected) socket.disconnect();
+    localStorage.clear();
+    setUser(null);
+    setStatus("Hors ligne");
+    navigate("/login");
+  },
+});
   }, [navigate]);
 
   // Connexion socket avec écouteurs nettoyés
