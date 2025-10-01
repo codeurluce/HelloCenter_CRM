@@ -3,7 +3,7 @@ import { Eye, EyeOff, User, Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from './AuthContext';
 import axiosInstance from '../api/axiosInstance';
-
+import { useAgentStatus } from '../api/AgentStatusContext';
 
 const Login = ({ onLogin }) => {
   const { setUser } = useContext(AuthContext);
@@ -13,12 +13,12 @@ const Login = ({ onLogin }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const { loginAgent } = useAgentStatus();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     setError('');
   };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -34,7 +34,7 @@ const Login = ({ onLogin }) => {
       localStorage.setItem('mustChangePassword', mustChangePassword);
       localStorage.setItem('user', JSON.stringify(user));
       setUser(user);
-
+  loginAgent(user);
       // ⚡ Notifie le backend que l'agent est connecté
       if (user) {
         try {

@@ -15,6 +15,7 @@ const {
   disconnectAgent,
   getAllUsersBd,
   disconnectAgentForce,
+  validateSession,
 } = require("../controllers/userControllers");
 
 /**
@@ -35,6 +36,8 @@ router.post("/change-password-first-login", verifyToken, changePasswordFirstLogi
 
 // Infos du profil connecté
 router.get("/me", verifyToken, getMe);
+
+router.get ('/validate', verifyToken, validateSession);
 
 
 /**

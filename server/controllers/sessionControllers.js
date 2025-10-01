@@ -7,7 +7,7 @@ exports.createSession = async (req, res) => {
   try {
     console.log('📥 Requête reçue pour session :', req.body);
     const { user_id, status, pause_type, start_time, end_time } = req.body;
-  console.log("🆕 CRÉATION SESSION - userId:", user_id, "status:", status); // ← LOG ICI
+    console.log("🆕 CRÉATION SESSION - userId:", user_id, "status:", status); // ← LOG ICI
 
     if (status === 'pause' && !pause_type) {
       return res.status(400).json({ message: 'Le type de pause est requis pour une session de pause.' });
@@ -102,7 +102,6 @@ exports.closeCurrentSession = async (req, res) => {
     });
   }
 };
-
 
 // GET /api/sessions/agents/live
 exports.getLiveSessionAgents = async (req, res) => {
@@ -399,7 +398,7 @@ exports.splitSessionsAtMidnight = async () => {
 
       // si start_time < aujourd'hui 00:00 → on doit couper
       const today = new Date();
-      today.setHours(0,0,0,0);
+      today.setHours(0, 0, 0, 0);
 
       if (start_time < today) {
         // 1. Clôturer l'ancienne session à 23:59:59 hier
@@ -504,23 +503,40 @@ exports.stopSession = async (req, res) => {
 exports.closeSessionForce = async (userId) => {
   try {
     console.log(`[SERVER] closeSessionForce called for user ${userId}`);
-    const result = await db.query(
-      `UPDATE session_agents
-       SET end_time = COALESCE(last_ping, NOW()),
-           duration = EXTRACT(EPOCH FROM (COALESCE(last_ping, NOW()) - start_time))::INT
+
+    // Vérifier s’il existe une session active
+    const check = await db.query(
+      `SELECT id FROM session_agents
        WHERE user_id = $1 AND end_time IS NULL
-       RETURNING id, start_time, end_time, duration`,
+       ORDER BY start_time DESC LIMIT 1`,
       [userId]
     );
 
-    if (result.rowCount === 0) {
-      console.log(`[SERVER] closeSessionForce: no active session for ${userId}`);
-      return null;
+    if (check.rowCount === 0) {
+      console.log(`[SERVER] closeSessionForce: aucun statut actif pour ${userId}, rien à fermer`);
+      return null; // ⛔ On ignore
     }
+
+    // Clôturer la session active
+    const result = await db.query(
+      `UPDATE session_agents
+       SET end_time = NOW(),
+           duration = EXTRACT(EPOCH FROM (NOW() - start_time))::INT
+       WHERE id = $1
+       RETURNING id, start_time, end_time, duration`,
+      [check.rows[0].id]
+    );
+
+    // Marquer l’agent comme déconnecté
+    await db.query("UPDATE users SET is_connected = FALSE WHERE id = $1", [userId]);
+
+    //  Ajouter un événement dans l’historique des connexions
+    await db.query("INSERT INTO agent_connections_history (user_id, event_type) VALUES ($1, 'disconnect')", [userId]);
 
     const session = result.rows[0];
     console.log(`[SERVER] closeSessionForce: session closed for ${userId}`, session);
     return session;
+
   } catch (err) {
     console.error('[SERVER] closeSessionForce error', err);
     throw err;
@@ -533,14 +549,7 @@ exports.closeSessionForce = async (userId) => {
  * @returns {Promise<string|null>} statut ou null si rien trouvé
  */
 
-
-/**
- * Récupère le dernier statut actif d’un agent
- * @param {number|string} userId 
- * @returns {Promise<string|null>} statut ou null si rien trouvé
- */
-
-exports.getLastAgentStatus = async (userId)  =>{
+exports.getLastAgentStatus = async (userId) => {
   try {
     const result = await db.query(
       `SELECT status
@@ -561,6 +570,26 @@ exports.getLastAgentStatus = async (userId)  =>{
     return null;
   }
 }
+
+exports.checkSessionActive = async (req, res) => {
+  try {
+    const userId = req.query.userId;
+    if (!userId) return res.status(400).json({ message: 'userId manquant' });
+
+    // Vérifie si une session active existe pour cet agent
+    const result = await db.query(
+      `SELECT * FROM session_agents 
+       WHERE user_id = $1 AND end_time IS NULL`,
+      [userId]
+    );
+
+    const active = result.rows.length > 0;
+    res.json({ active });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Erreur serveur', error: err.message });
+  }
+};
 
 
 
@@ -758,7 +787,7 @@ exports.getUserTodayAggregates = async (req, res) => {
         AND end_time IS NULL
       ORDER BY start_time DESC
       LIMIT 1
-    `; 
+    `;
     const { rows: activeRows } = await db.query(q2, [id]);
     const active = activeRows[0] || null;
 

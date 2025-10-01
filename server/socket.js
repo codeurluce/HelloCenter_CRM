@@ -1,84 +1,105 @@
 const db = require('./db');
-const { closeSessionForce, getLastAgentStatus } = require('./controllers/sessionControllers');
+const { Server } = require("socket.io");
+const { closeSessionForce } = require("./controllers/sessionControllers");
 
-let activeSockets = {};
-let lastPing = {};
+const INACTIVITY_TIMEOUT_MS = 60_000;
+const CHECK_INTERVAL_MS = 5_000;
 
-const INACTIVITY_TIMEOUT_MS = 2.5 * 60 * 1000;
+function initSockets(server) {
+  const io = new Server(server, {
+    cors: {
+      origin: ['http://localhost:3000', 'https://crmhellocenterfrontend-production.up.railway.app'],
+      methods: ["GET", "POST"],
+      credentials: true,
+    },
+    transports: ['websocket'],
+    pingInterval: 10000,
+    pingTimeout: 5000,
+  });
 
-function initSockets(io) {
-  io.on('connection', (socket) => {
-    console.log("🟢 Nouveau socket connecté:", socket.id);
+  const userSockets = new Map();
+  const lastPingMap = new Map();
 
-    socket.on('agent_connected', async ({ userId }) => {
-      console.log("🔌 SOCKET CONNECTÉ - userId:", userId);
-      socket.userId = userId;
-      if (!activeSockets[userId]) activeSockets[userId] = [];
-      activeSockets[userId].push(socket.id);
-      lastPing[userId] = Date.now();
+  io.use((socket, next) => {
+    const userId = socket.handshake.auth?.userId;
+    if (!userId) return next(new Error("Authentication error: userId manquant"));
+    socket.userId = userId;
+    next();
+  });
 
-      let lastStatus = await getLastAgentStatus(userId);
-      console.log("📊 Dernier statut trouvé:", lastStatus);
+  async function forceDisconnectSocket(userId, reason = "Déconnexion forcée / inactivité") {
+    try {
+      const res = await db.query("SELECT is_connected FROM users WHERE id = $1", [userId]);
+      if (!res.rows[0]?.is_connected) {
+        console.log(`[BACK] ⚡ Agent ${userId} n'est pas connecté, pas de closeSessionForce`);
+        return;
+      }
 
-      socket.emit("restore_status", { status: lastStatus || "En ligne" });
+      await closeSessionForce(userId);
+      await db.query("UPDATE users SET session_closed = TRUE WHERE id = $1", [userId]);
+      io.to(`agent_${userId}`).emit("session_closed_force", { reason });
+
+      userSockets.get(userId)?.forEach(socketId => {
+        io.sockets.sockets.get(socketId)?.disconnect(true);
+      });
+
+      userSockets.delete(userId);
+      lastPingMap.delete(userId);
+
+      console.log(`[BACK] ⚡ Agent ${userId} déconnecté et session clôturée`);
+    } catch (err) {
+      console.error(`[BACK] ❌ Erreur forceDisconnectSocket userId=${userId}:`, err);
+    }
+  }
+
+  io.on("connection", async (socket) => {
+    const userId = socket.userId;
+    console.log(`🔌 Nouveau client connecté : socketId=${socket.id} userId=${userId}`);
+
+    // Reset session_closed flag immediately on connect
+    await db.query("UPDATE users SET session_closed = FALSE WHERE id = $1", [userId]);
+
+    if (!userSockets.has(userId)) userSockets.set(userId, new Set());
+    userSockets.get(userId).add(socket.id);
+    socket.join(`agent_${userId}`);
+    lastPingMap.set(userId, Date.now());
+
+    // Do NOT emit session_closed_force if session_closed now FALSE
+
+    socket.onAny((event, ...args) => {
+      console.log(`📩 [BACK RECU] event=${event}`, args);
     });
 
-socket.on('heartbeat', async () => {
-  if (!socket.userId) return;
-  lastPing[socket.userId] = Date.now();
-  console.log(`[SOCKET] heartbeat from ${socket.userId}`);
+    socket.on("heartbeat", () => {
+      lastPingMap.set(userId, Date.now());
+      console.log(`❤️ Heartbeat reçu userId=${userId} socketId=${socket.id}`);
+    });
 
-  // Optionnel / recommandé : update DB last_ping
-  try {
-    await db.query(
-      `UPDATE session_agents SET last_ping = NOW() WHERE user_id = $1 AND end_time IS NULL`,
-      [socket.userId]
-    );
-  } catch (err) { console.error('db update last_ping failed', err); }
-});
-
-    socket.on('disconnect', async () => {
-      if (!socket.userId) return;
-      const { userId } = socket;
-      console.log("🔌 SOCKET DÉCONNECTÉ - userId:", userId);
-
-      activeSockets[userId] = activeSockets[userId]?.filter(id => id !== socket.id) || [];
-      console.log(`[DEBUG] Sockets restants pour ${userId}: ${activeSockets[userId].length}`);
-
-      if (activeSockets[userId]?.length === 0) {
-        console.log(`🔴 Fermeture session immédiate pour ${userId}`);
-        await closeSessionForce(userId);
-        delete lastPing[userId];
-        delete activeSockets[userId];
+    socket.on("disconnect", () => {
+      console.log(`[BACK] ❌ Déconnexion socketId=${socket.id} userId=${userId}`);
+      const socketsSet = userSockets.get(userId);
+      if (socketsSet) {
+        socketsSet.delete(socket.id);
+        if (socketsSet.size === 0) {
+          console.log(`[BACK] ⚠️ Aucun socket restant pour userId=${userId}`);
+          // rely on inactivity timer for force disconnection
+        }
       }
     });
   });
 
-  // --- 🔹 Vérification inactivité toutes les 30s
-setInterval(async () => {
-  const cutoff = new Date(Date.now() - INACTIVITY_TIMEOUT_MS);
-  // selectionne sessions ouvertes avant cutoff et status = 'Disponible' (ou la règle que tu veux)
-  const stale = await db.query(
-    `SELECT id, user_id, start_time, last_ping FROM session_agents
-     WHERE end_time IS NULL AND last_ping < $1`,
-    [cutoff]
-  );
+  setInterval(() => {
+    const now = Date.now();
+    for (const [userId, lastPing] of lastPingMap.entries()) {
+      const socketsSet = userSockets.get(userId);
+      if ((!socketsSet || socketsSet.size === 0) && now - lastPing > INACTIVITY_TIMEOUT_MS) {
+        console.log(`[BACK] ⚠️ Inactivité détectée userId=${userId}`);
+        forceDisconnectSocket(userId, "Déconnexion pour inactivité");
+      }
+    }
+  }, CHECK_INTERVAL_MS);
 
-  for (const row of stale.rows) {
-    console.log(`[SERVER] closing stale session id=${row.id} user=${row.user_id} last_ping=${row.last_ping}`);
-    await db.query(
-      `UPDATE session_agents
-       SET end_time = $1,
-           duration = EXTRACT(EPOCH FROM ($1 - start_time))::INT
-       WHERE id = $2`,
-      [row.last_ping || new Date(), row.id] // use last_ping if you want the precise "last seen"
-    );
-
-    // notifier socket(s) connectés de cet user
-    // io.to(userSocketRooms[userId])... ou comme tu fais avec activeSockets
-    // io.to(socketId).emit('session_closed_force', { reason: 'inactivité' });
-  }
-}, 30_000);
+  return io;
 }
 
 module.exports = initSockets;

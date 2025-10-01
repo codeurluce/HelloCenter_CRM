@@ -7,6 +7,8 @@ const sessionControllers = require('../controllers/sessionControllers');
 // 📌 Récupérer toutes les sessions avec leurs statuts/durées
 router.get('/', sessionControllers.getSessions);
 
+router.get('/check', sessionControllers.checkSessionActive);
+
 // 📌 Démarrer une session
 // router.post('/start', sessionControllers.createSession);
 router.post('/start', sessionControllers.startSession);

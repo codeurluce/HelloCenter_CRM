@@ -9,8 +9,7 @@ const TodayRecap = () => {
     async function fetchTodayData() {
       try {
         const { data: result } = await axiosInstance.get('/sales/today-summary');
-
-        console.log('Résultat API:', result);
+        // console.log('Résultat API:', result);
 
         const formattedData = {
           pending: parseInt(result.pending_sales_today),

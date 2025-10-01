@@ -1,6 +1,4 @@
-// components/componentsdesonglets/AgentInfoPanel.jsx
 import React from "react";
-import { startSession, closeSession } from "../../api/saveSessionToDB";
 import StatusSelector, { statuses, formatTime } from "../../shared/StatusSelector.jsx";
 
 export default function AgentInfoPanel({
@@ -8,68 +6,49 @@ export default function AgentInfoPanel({
   etat,
   setEtat,
   timers,
-  setTimers,
-  lastChange,
-  setLastChange,
-  elapsed,
-  setElapsed,
-  onStatusChange, // ← utilise la fonction du parent
+  currentSession,
+  onStatusChange,
 }) {
-
-  // 📌 Pas d'appel API ici → tout vient du parent
-
-  // Gestion du clic / sélection d'un nouvel état
-  const handleSelect = async (newEtatFr, pause) => {
+  const handleSelect = (newEtatFr, pause) => {
     if (!userId) {
       console.error("User ID manquant");
       return;
     }
-
-    // Appel direct de la logique du parent
     onStatusChange(newEtatFr, pause);
-
-    // Appels backend
-    try {
-      await closeSession({ user_id: userId });
-    } catch (error) {
-      const msg = error?.response?.data?.message || error?.message || '';
-      if (!msg.includes("Aucune session active") && !msg.includes("no active session")) {
-        console.error("Erreur fermeture session:", error);
-        return;
-      }
-    }
-
-    // Déterminer pauseType (ex: 'cafe' si status key commence par 'pause_')
-    const newStatusObj = statuses.find((s) => s.statusFr === newEtatFr);
-    const pauseType = pause || (newStatusObj?.key?.startsWith("pause_") 
-      ? newStatusObj.key.split("_")[1] 
-      : null);
-
-          // Démarrer nouvelle session en base (INSERT)
-    try {
-      await startSession({ user_id: userId, status: newEtatFr, pause_type: pauseType });
-    } catch (error) {
-      console.error("Erreur démarrage session:", error);
-    }
   };
 
-  // Calculs
   const timersByKey = timers;
-  const currentKey = statuses.find((s) => s.statusFr === etat)?.key || null;
+
+  const elapsed = currentSession
+    ? Math.floor((Date.now() - new Date(currentSession.start_time).getTime()) / 1000)
+    : 0;
+
+  const currentKey = currentSession
+    ? statuses.find(s => s.statusFr === currentSession.status)?.key
+    : null;
+
   const pausesForTotal = ["pause_cafe_1", "pause_dejeuner", "pause_cafe_2"];
   const indisposForTotal = ["reunion", "pause_formation", "brief"];
-  const dispoStatus = statuses.find((s) => s.key === "disponible");
+  const dispoStatus = statuses.find(s => s.key === "disponible");
 
   const totalDispo = (timersByKey[dispoStatus?.key] || 0) + (currentKey === dispoStatus?.key ? elapsed : 0);
-  const totalPause = pausesForTotal.reduce((sum, key) => sum + (timersByKey[key] || 0) + (currentKey === key ? elapsed : 0), 0);
-  const totalIndispo = indisposForTotal.reduce((sum, key) => sum + (timersByKey[key] || 0) + (currentKey === key ? elapsed : 0), 0);
+  const totalPause = pausesForTotal.reduce((sum, key) =>
+    sum + (timersByKey[key] || 0) + (currentKey === key ? elapsed : 0), 0);
+  const totalIndispo = indisposForTotal.reduce((sum, key) =>
+    sum + (timersByKey[key] || 0) + (currentKey === key ? elapsed : 0), 0);
   const totalPresence = totalDispo + totalPause + totalIndispo;
 
-  console.log("📊 AgentInfoPanel - props reçues:", { etat, elapsed, timers });
   return (
-    <div style={{ width: "100%", minHeight: "90vh", padding: 24, background: "#f9fafb", borderRadius: 12, overflowY: "auto" }}>
+    <div style={{
+      width: "100%",
+      minHeight: "90vh",
+      padding: 24,
+      background: "#f9fafb",
+      borderRadius: 12,
+      overflowY: "auto"
+    }}>
       <h2 style={{ textAlign: "center", marginBottom: 12 }}>⏱ Vue globale de mon Pointage</h2>
-      
+
       {!etat && (
         <p style={{ textAlign: "center", marginBottom: 24, color: "orange" }}>
           ⚠️ Veuillez sélectionner votre statut pour démarrer le suivi.
@@ -146,7 +125,7 @@ export default function AgentInfoPanel({
   );
 }
 
-// Styles
+// Styles explicites
 const boxStyle = (bg, color, flex = 1) => ({
   background: bg,
   borderRadius: 10,

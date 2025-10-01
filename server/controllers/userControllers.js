@@ -24,6 +24,31 @@ const verifyToken = (req, res, next) => {
   }
 };
 
+// ✅ Controller : validation de la session
+const validateSession = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const result = await db.query(
+      "SELECT session_closed, is_connected FROM users WHERE id = $1",
+      [userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ valid: false, message: "Utilisateur introuvable" });
+    }
+
+    const { session_closed, is_connected } = result.rows[0];
+
+    return res.json({
+      valid: !session_closed && is_connected
+    });
+  } catch (error) {
+    console.error("❌ Erreur validateSession:", error.message);
+    return res.status(500).json({ valid: false, error: "Erreur serveur" });
+  }
+};
+
 // Création d’un utilisateur avec génération automatique d'email + mot de passe
 const createUser = async (req, res) => {
   const { lastname, firstname, role, profil } = req.body;
@@ -147,11 +172,15 @@ const loginUser = async (req, res) => {
 const connectAgent = async (req, res) => {
   const { userId } = req.body;
   try {
-    await db.query("UPDATE users SET is_connected = TRUE WHERE id = $1", [userId]);
+    // Marquer agent connecté
+    await db.query("UPDATE users SET is_connected = TRUE, session_closed = FALSE WHERE id = $1", [userId]);
+
+    // Historique des connexions
     await db.query(
       "INSERT INTO agent_connections_history (user_id, event_type) VALUES ($1, 'connect')",
       [userId]
     );
+
     res.json({ success: true });
   } catch (err) {
     console.error(err);
@@ -193,49 +222,7 @@ const disconnectAgent = async (req, res) => {
   }
 };
 
-// controllers/agentController.js
-// const disconnectAgentForce = async (req, res) => {
-//   const { userId } = req.body;
-//   console.log("🔧 [DISCONNECT-FORCE] Reçu depuis frontend → userId:", userId);
-
-//   if (!userId) {
-//     return res.status(400).json({ error: "userId manquant" });
-//   }
-
-//   try {
-//     // 1. Fermer la session active et récupérer la ligne mise à jour
-//     const result = await db.query(
-//       `UPDATE session_agents
-//        SET end_time = NOW(),
-//            duration = EXTRACT(EPOCH FROM (NOW() - start_time))
-//        WHERE user_id = $1 AND end_time IS NULL
-//        RETURNING id, end_time, duration`,
-//       [userId]
-//     );
-
-//     if (result.rows.length > 0) {
-//       const { id, end_time, duration } = result.rows[0];
-//       console.log(`✅ Session #${id} fermée → end_time: ${end_time}, duration: ${duration}s`);
-//     } else {
-//       console.log(`⚠️ Aucune session active trouvée pour userId: ${userId}`);
-//     }
-
-//     // 2. Marquer l’agent comme déconnecté
-//     await db.query("UPDATE users SET is_connected = FALSE WHERE id = $1", [userId]);
-
-//     // 3. Historique
-//     await db.query(
-//       `INSERT INTO agent_connections_history (user_id, event_type, created_at) 
-//        VALUES ($1, 'deconnexion_forcee', NOW())`,
-//       [userId]
-//     );
-
-//     res.json({ success: true, message: "Déconnexion forcée sauvegardée." });
-//   } catch (err) {
-//     console.error("❌ Erreur disconnectAgentForce:", err);
-//     res.status(500).json({ error: "Erreur lors de la déconnexion forcée" });
-//   }
-// };
+// Déconnexion forcée de l'agent
 const disconnectAgentForce = async (req, res) => {
   const { userId } = req.body;
   console.log("🔧 [DISCONNECT-FORCE] Reçu depuis frontend → userId:", userId);
@@ -245,7 +232,7 @@ const disconnectAgentForce = async (req, res) => {
   }
 
   try {
-    // 1. Fermer la session active
+    // Fermer la session en cours s’il y en a une ouverte
     const sessionResult = await db.query(
       `UPDATE session_agents
        SET end_time = NOW(),
@@ -262,17 +249,17 @@ const disconnectAgentForce = async (req, res) => {
       console.log(`ℹ️ Aucune session active à fermer pour userId: ${userId}`);
     }
 
-    // 2. Marquer l’agent comme déconnecté
+    // Mise à jour is_connected = false
     await db.query("UPDATE users SET is_connected = FALSE WHERE id = $1", [userId]);
 
-    // 3. Historique (optionnel)
+    // Historique de déconnexion forcée
     await db.query(
-      "INSERT INTO agent_connections_history (user_id, event_type, created_at) VALUES ($1, 'disconnexion_forcé', NOW())",
+      "INSERT INTO agent_connections_history (user_id, event_type, event_time) VALUES ($1, 'deconnexion_forcee', NOW())",
       [userId]
     );
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       message: "Déconnexion forcée traitée.",
       sessionClosed: sessionResult.rows.length > 0
     });
@@ -483,4 +470,5 @@ module.exports = {
   disconnectAgent,
   getAllUsersBd,
   disconnectAgentForce,
+  validateSession,
 };

@@ -11,7 +11,7 @@ const StatGroup = ({ setActiveItem }) => {
 useEffect(() => {
   async function fetchAllStats() {
     try {
-        console.log(localStorage.getItem('token'));
+        // console.log(localStorage.getItem('token'));
       const [salesRes, filesRes] = await Promise.all([
         axiosInstance.get('/sales/today-summary', {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },

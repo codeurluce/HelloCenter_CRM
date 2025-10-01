@@ -31,7 +31,7 @@ useEffect(() => {
   async function fetchWeeklySales() {
     try {
       const { data: result } = await axiosInstance.get('/sales/weekly');
-      console.log('Données reçues:', result);
+      // console.log('Données reçues:', result);
 
       // jours de la semaine (Jusqu'à Dimanche = 0)
     //   const daysOfWeek = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
