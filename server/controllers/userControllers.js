@@ -28,6 +28,7 @@ const verifyToken = (req, res, next) => {
 const validateSession = async (req, res) => {
   try {
     const userId = req.user.id;
+    console.log("[BACK] validateSession appelé pour userId:", userId);
 
     const result = await db.query(
       "SELECT session_closed, is_connected FROM users WHERE id = $1",
@@ -35,14 +36,17 @@ const validateSession = async (req, res) => {
     );
 
     if (result.rows.length === 0) {
+      console.log("[BACK] Utilisateur introuvable");
       return res.status(404).json({ valid: false, message: "Utilisateur introuvable" });
     }
 
     const { session_closed, is_connected } = result.rows[0];
+    console.log("[BACK] session_closed:", session_closed, "is_connected:", is_connected);
 
-    return res.json({
-      valid: !session_closed && is_connected
-    });
+    const valid = !session_closed && is_connected;
+    console.log("[BACK] valid =", valid);
+
+    return res.json({ valid });
   } catch (error) {
     console.error("❌ Erreur validateSession:", error.message);
     return res.status(500).json({ valid: false, error: "Erreur serveur" });

@@ -3,6 +3,7 @@ const express = require('express');
 const router = express.Router();
 
 const sessionControllers = require('../controllers/sessionControllers');
+const { verifyToken } = require ('../controllers/userControllers');
 
 // 📌 Récupérer toutes les sessions avec leurs statuts/durées
 router.get('/', sessionControllers.getSessions);
@@ -17,8 +18,11 @@ router.post('/start', sessionControllers.startSession);
 // router.post('/close', sessionControllers.closeCurrentSession);
 router.post('/stop', sessionControllers.stopSession);
 
+// 📌 Heartbeat
+router.post('/heartbeat', verifyToken, sessionControllers.heartbeat);
+
 // 📌 ping une session
-router.post('/ping', sessionControllers.pingSession)
+router.post('/ping', sessionControllers.pingSession);
 
 // 📌 Forcer la fermeture d’une session
 router.post('/close-force', async (req, res) => {

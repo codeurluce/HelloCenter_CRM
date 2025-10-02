@@ -13,6 +13,7 @@ const cors = require('cors');
 const http = require('http');
 const cron = require('node-cron');
 
+require ('./inactivityChecker')
 const sessionRoutes = require('./routes/sessionRoutes');
 const salesRoutes = require('./routes/salesRoutes');
 const filesRoutes = require('./routes/filesRoutes');

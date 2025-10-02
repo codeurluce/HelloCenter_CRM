@@ -6,10 +6,10 @@ const dayjs = require("dayjs");
 exports.createSession = async (req, res) => {
   try {
     console.log('📥 Requête reçue pour session :', req.body);
-    const { user_id, status, pause_type, start_time, end_time } = req.body;
+    const { user_id, status, start_time, end_time } = req.body;
     console.log("🆕 CRÉATION SESSION - userId:", user_id, "status:", status); // ← LOG ICI
 
-    if (status === 'pause' && !pause_type) {
+    if (status === 'pause') {
       return res.status(400).json({ message: 'Le type de pause est requis pour une session de pause.' });
     }
 
@@ -27,10 +27,10 @@ exports.createSession = async (req, res) => {
     }
 
     await db.query(
-      `INSERT INTO session_agents (user_id, status, pause_type, start_time, end_time, duration)
-       VALUES ($1, $2, $3, $4, $5, $6)
+      `INSERT INTO session_agents (user_id, status, start_time, end_time, duration)
+       VALUES ($1, $2, $3, $4, $5,)
        RETURNING id`,
-      [user_id, status, pause_type || null, start_time, end_time || null, duration]
+      [user_id, status, start_time, end_time || null, duration]
     );
     res.status(201).json({ message: 'Session enregistrée avec succès' });
 
@@ -453,27 +453,6 @@ exports.startSession = async (req, res) => {
   }
 };
 
-exports.pingSession = async (req, res) => {
-  const { user_id } = req.body;
-  if (!user_id) return res.status(400).json({ error: 'user_id requis' });
-
-  try {
-    const result = await db.query(
-      `UPDATE session_agents SET last_ping = NOW() 
-       WHERE user_id = $1 AND end_time IS NULL
-       RETURNING id, start_time`,
-      [user_id]
-    );
-    if (result.rowCount === 0) {
-      return res.json({ success: false, message: 'no active session' });
-    }
-    res.json({ success: true, session_id: result.rows[0].id });
-  } catch (err) {
-    console.error('pingSession error', err);
-    res.status(500).json({ error: 'server error' });
-  }
-};
-
 exports.stopSession = async (req, res) => {
   const { user_id } = req.body;
   if (!user_id) return res.status(400).json({ error: 'user_id requis' });
@@ -496,6 +475,27 @@ exports.stopSession = async (req, res) => {
     res.json({ success: true, session: result.rows[0] });
   } catch (err) {
     console.error('stopSession error', err);
+    res.status(500).json({ error: 'server error' });
+  }
+};
+
+exports.pingSession = async (req, res) => {
+  const { user_id } = req.body;
+  if (!user_id) return res.status(400).json({ error: 'user_id requis' });
+
+  try {
+    const result = await db.query(
+      `UPDATE session_agents SET last_ping = NOW() 
+       WHERE user_id = $1 AND end_time IS NULL
+       RETURNING id, start_time`,
+      [user_id]
+    );
+    if (result.rowCount === 0) {
+      return res.json({ success: false, message: 'no active session' });
+    }
+    res.json({ success: true, session_id: result.rows[0].id });
+  } catch (err) {
+    console.error('pingSession error', err);
     res.status(500).json({ error: 'server error' });
   }
 };
@@ -540,6 +540,27 @@ exports.closeSessionForce = async (userId) => {
   } catch (err) {
     console.error('[SERVER] closeSessionForce error', err);
     throw err;
+  }
+};
+
+exports.heartbeat = async (req, res) => {
+  const user_id  = req.user?.id; // car tu utilises authenticateToken
+
+    if (!user_id) {
+    return res.status(401).json({ error: 'Non authentifié' });
+  }
+
+  try {
+    await db.query(
+      `UPDATE session_agents 
+       SET last_ping = NOW() 
+       WHERE user_id = $1 AND end_time IS NULL`,
+      [user_id]
+    );
+    return res.json({ success: true });
+  } catch (err) {
+    console.error("Heartbeat error", err);
+    return res.status(500).json({ error: "server error" });
   }
 };
 
@@ -701,7 +722,7 @@ exports.getActiveSession = async (req, res) => {
 // 📌 Changer de statut (Disponible → Pause → Indispo etc.)
 // POST /api/sessions/change
 exports.changeStatus = async (req, res) => {
-  const { user_id, new_status, pause_type } = req.body;
+  const { user_id, new_status } = req.body;
 
   try {
     // 1. Fermer la session active si elle existe
@@ -719,10 +740,10 @@ exports.changeStatus = async (req, res) => {
 
     // 2. Créer une nouvelle session avec le nouveau statut
     const { rows: newSession } = await db.query(
-      `INSERT INTO session_agents (user_id, status, pause_type, start_time) 
-       VALUES ($1, $2, $3, NOW()) 
+      `INSERT INTO session_agents (user_id, status, start_time) 
+       VALUES ($1, $2, NOW()) 
        RETURNING *`,
-      [user_id, new_status, pause_type || null]
+      [user_id, new_status]
     );
 
     res.json(newSession[0]);

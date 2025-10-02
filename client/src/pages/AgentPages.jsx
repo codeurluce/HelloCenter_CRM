@@ -87,21 +87,25 @@ const AgentDashboard = () => {
   };
 
   // Déconnexion manuelle
-  const handleLogout = async () => {
-    try {
-      const userStored = JSON.parse(localStorage.getItem('user'));
-      if (userStored) {
-        await axiosInstance.post('/agent/disconnect', { userId: userStored.id });
-        socket.emit('agent_disconnected', { userId: userStored.id });
-      }
-      localStorage.clear();
-      setUser(null);
-      navigate("/login");
-    } catch (err) {
-      console.error('Erreur déconnexion:', err);
-      toast.error("Impossible de se déconnecter correctement !");
-    }
-  };
+  // const handleLogout = async () => {
+  //   try {
+  //     const userStored = JSON.parse(localStorage.getItem('user'));
+  //     if (userStored) {
+  //       await axiosInstance.post('/agent/disconnect', { userId: userStored.id });
+  //       // socket.emit('agent_disconnected', { userId: userStored.id });
+  //     }
+  //     localStorage.clear();
+  //     setUser(null);
+  //     navigate("/login");
+  //   } catch (err) {
+  //     console.error('Erreur déconnexion:', err);
+  //     toast.error("Impossible de se déconnecter correctement !");
+  //   }
+  // };
+
+  const handleLogout = () => {
+  logoutAgent(); // ✅ parfait
+};
 
   // Fiches
   const { fiches, loadFiches, onTreatFiche, onCancelFiche, onCloseFiche, onProgramRdv } = useFiches(user);
