@@ -1,27 +1,25 @@
 // inactivityChecker.js
 const db = require('./db');
 
-const INACTIVITY_THRESHOLD_MS = 60_000; // 70s → pause auto
-// const LONG_INACTIVITY_MS = 30 * 60_000; // 30 min → déconnexion totale
-const LONG_INACTIVITY_MS = 70_000; // 30 min → déconnexion totale
+const INACTIVITY_THRESHOLD_MS = 60_000; // 60s d'inactivité en "Disponible"
 
 async function checkInactiveAgents() {
   try {
     const now = new Date();
-    const shortThreshold = new Date(now - INACTIVITY_THRESHOLD_MS);
-    const longThreshold = new Date(now - LONG_INACTIVITY_MS);
+    const threshold = new Date(now - INACTIVITY_THRESHOLD_MS);
 
-    // 🔹 Niveau 1 : Disponible → pause inactif (après 70s)
+    // 🔹 Seulement : Disponible → Absent technique (après 60s)
     const activeAvailable = await db.query(`
       SELECT id, user_id 
       FROM session_agents 
       WHERE status = 'Disponible' 
         AND end_time IS NULL 
         AND last_ping < $1
-    `, [shortThreshold]);
+    `, [threshold]);
 
     for (const row of activeAvailable.rows) {
-      console.log(`[AUTO-PAUSE] Agent ${row.user_id} → En ligne`);
+        const { id, user_id: userId } = row;
+      console.log(`[AUTO-ABSENCE] Agent ${row.user_id} → Absent technique`);
       
       // Clôturer "Disponible"
       await db.query(`
@@ -31,33 +29,11 @@ async function checkInactiveAgents() {
         WHERE id = $1
       `, [row.id]);
 
-      // Ouvrir "pause inactif"
+      // 1 Ouvrir "Absent technique" → durée indéfinie
       await db.query(`
         INSERT INTO session_agents (user_id, status, start_time, last_ping)
-        VALUES ($1, 'En ligne', NOW(), NOW())
+        VALUES ($1, 'Absent technique', NOW(), NOW())
       `, [row.user_id]);
-    }
-
-    // 🔹 Niveau 2 : pause inactif > 30 min → déconnexion totale
-    const longInactive = await db.query(`
-      SELECT DISTINCT user_id
-      FROM session_agents
-      WHERE status = 'En ligne'
-        AND end_time IS NULL
-        AND start_time < $1
-    `, [longThreshold]);
-
-    for (const row of longInactive.rows) {
-      const userId = row.user_id;
-      console.log(`[AUTO-DÉCONNEXION] Agent ${userId} inactif > 30 min`);
-
-      // 1. Clôturer toute session active
-      await db.query(`
-        UPDATE session_agents
-        SET end_time = NOW(),
-            duration = EXTRACT(EPOCH FROM (NOW() - start_time))::INT
-        WHERE user_id = $1 AND end_time IS NULL
-      `, [userId]);
 
       // 2. Marquer comme déconnecté → crucial pour /validate
       await db.query(`
@@ -72,10 +48,13 @@ async function checkInactiveAgents() {
         [userId]
       );
     }
+    // 🔸 PAS DE DÉCONNEXION AUTOMATIQUE ici
+    // La session "Absent technique" reste ouverte jusqu'au retour de l'agent
+
   } catch (err) {
     console.error('Inactivity checker error:', err);
   }
 }
 
-setInterval(checkInactiveAgents, 30_000);
+setInterval(checkInactiveAgents, 30_000); // Vérifie toutes les 30s
 module.exports = { checkInactiveAgents };

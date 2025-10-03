@@ -29,12 +29,12 @@ const Login = ({ onLogin }) => {
       const { user, token, mustChangePassword } = response.data;
 
       localStorage.setItem('token', token);
-      localStorage.setItem('role', user.role);
-      localStorage.setItem('univers', user.profil);
-      localStorage.setItem('mustChangePassword', mustChangePassword);
-      localStorage.setItem('user', JSON.stringify(user));
+      // localStorage.setItem('role', user.role);
+      // localStorage.setItem('univers', user.profil);
+      // localStorage.setItem('mustChangePassword', mustChangePassword);
+      // localStorage.setItem('user', JSON.stringify(user));
       setUser(user);
-  loginAgent(user);
+  loginAgent(user, mustChangePassword);
       // ⚡ Notifie le backend que l'agent est connecté
       if (user) {
         try {
@@ -44,6 +44,7 @@ const Login = ({ onLogin }) => {
           console.error("Impossible de notifier la connexion de l'agent", err.response?.data || err.message);
         }
       }
+      
       if (onLogin) onLogin(token, user, mustChangePassword);
 
       if (mustChangePassword) {

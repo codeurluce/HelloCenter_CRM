@@ -15,6 +15,7 @@ function initSockets(server) {
 
   const userSockets = new Map();
 
+    // Middleware d’auth
   io.use((socket, next) => {
     const userId = socket.handshake.auth?.userId;
     if (!userId) return next(new Error("userId manquant"));
@@ -22,6 +23,7 @@ function initSockets(server) {
     next();
   });
 
+    // Déconnexion forcée
   async function forceDisconnectSocket(userId, reason = "Déconnexion forcée") {
     try {
       await closeSessionForce(userId);
@@ -39,6 +41,7 @@ function initSockets(server) {
     }
   }
 
+    // Connexion socket
   io.on("connection", async (socket) => {
     const userId = socket.userId;
     console.log(`🔌 Connecté : ${socket.id} (user ${userId})`);
@@ -54,6 +57,7 @@ function initSockets(server) {
     //   forceDisconnectSocket(userId, "Déconnexion volontaire");
     // });
 
+     // Déconnexion socket
     socket.on("disconnect", () => {
       console.log(`[BACK] ❌ Déconnecté : ${socket.id} (user ${userId})`);
       const set = userSockets.get(userId);
