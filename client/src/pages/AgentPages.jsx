@@ -1,3 +1,4 @@
+// src/pages/AgentPages.jsx
 import React, { useState, useEffect, useContext } from 'react';
 import SidebarAgent from '../components/SidebarAgent.jsx';
 import DashboardHeader from '../components/dashbords/DashbordHeader.jsx';
@@ -9,7 +10,6 @@ import VentesInfoPanel from '../components/componentsdesongletsAgents/VentesInfo
 import FichesInfoPanel from '../components/componentsdesfiches/FichesInfoPanel.tsx';
 import useFiches from '../api/useAgentFiches.js';
 import axiosInstance from '../api/axiosInstance.js';
-import socket from '../socket.js';
 import { AuthContext } from './AuthContext.jsx';
 import { useAgentStatus } from '../api/AgentStatusContext.jsx';
 import { statuses } from '../shared/StatusSelector.jsx';
@@ -21,15 +21,13 @@ const AgentDashboard = () => {
   const { user, setUser } = useContext(AuthContext);
   const [activeItem, setActiveItem] = useState(localStorage.getItem("activeSidebarItem") || "dashboard");
   const navigate = useNavigate();
-  const { logoutAgent } = useAgentStatus();
+  const { logoutAgent, setCurrentStatus } = useAgentStatus();
 
-  // États partagés
   const [etat, setEtat] = useState(null);
   const [timers, setTimers] = useState({});
   const [currentSession, setCurrentSession] = useState(null);
   const [tick, setTick] = useState(0);
 
-  // Rafraîchir session et timers
   const refreshSessionData = async () => {
     if (!user?.id) return;
     try {
@@ -37,7 +35,6 @@ const AgentDashboard = () => {
       const data = res.data;
       if (!data) return;
 
-      // Reconstruction timers
       const newTimers = {};
       Object.entries(data.cumul_statuts || {}).forEach(([statusFr, sec]) => {
         const st = statuses.find(s => s.statusFr === statusFr);
@@ -53,9 +50,11 @@ const AgentDashboard = () => {
           cumul_statuts: data.cumul_statuts
         });
         setEtat(data.statut_actuel);
+        setCurrentStatus(data.statut_actuel); // 🔑 Synchronisation du statut
       } else {
         setCurrentSession(null);
         setEtat(null);
+        setCurrentStatus(null);
       }
     } catch (err) {
       console.error("Erreur récupération cumul agent:", err.response?.data || err.message);
@@ -68,16 +67,14 @@ const AgentDashboard = () => {
     return () => clearInterval(interval);
   }, [user]);
 
-  // Changement de statut (début ou changement de session)
   const handleStatusChange = async (newEtatFr, pause) => {
+    setCurrentStatus(newEtatFr); // 🔑 Synchronisation immédiate
     if (!user?.id) return;
     try {
-      // Clôturer session actuelle si existante
       await closeSession({ user_id: user.id });
     } catch (_) {}
 
     try {
-      // Démarrer nouvelle session
       await startSession({ user_id: user.id, status: newEtatFr, pause_type: pause });
       await refreshSessionData();
     } catch (error) {
@@ -86,28 +83,10 @@ const AgentDashboard = () => {
     }
   };
 
-  // Déconnexion manuelle
-  // const handleLogout = async () => {
-  //   try {
-  //     const userStored = JSON.parse(localStorage.getItem('user'));
-  //     if (userStored) {
-  //       await axiosInstance.post('/agent/disconnect', { userId: userStored.id });
-  //       // socket.emit('agent_disconnected', { userId: userStored.id });
-  //     }
-  //     localStorage.clear();
-  //     setUser(null);
-  //     navigate("/login");
-  //   } catch (err) {
-  //     console.error('Erreur déconnexion:', err);
-  //     toast.error("Impossible de se déconnecter correctement !");
-  //   }
-  // };
-
   const handleLogout = () => {
-  logoutAgent(); // ✅ parfait
-};
+    logoutAgent();
+  };
 
-  // Fiches
   const { fiches, loadFiches, onTreatFiche, onCancelFiche, onCloseFiche, onProgramRdv } = useFiches(user);
   const [loadingFiches, setLoadingFiches] = useState(false);
 

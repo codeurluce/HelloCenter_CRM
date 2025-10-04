@@ -8,7 +8,7 @@ async function checkInactiveAgents() {
     const now = new Date();
     const threshold = new Date(now - INACTIVITY_THRESHOLD_MS);
 
-    // 🔹 Seulement : Disponible → Absent technique (après 60s)
+    // 🔹 Seulement : Disponible → Aucun statut (après 60s)
     const activeAvailable = await db.query(`
       SELECT id, user_id 
       FROM session_agents 
@@ -19,7 +19,7 @@ async function checkInactiveAgents() {
 
     for (const row of activeAvailable.rows) {
         const { id, user_id: userId } = row;
-      console.log(`[AUTO-ABSENCE] Agent ${row.user_id} → Absent technique`);
+      console.log(`[AUTO-ABSENCE] Agent ${row.user_id} → Aucun statut`);
       
       // Clôturer "Disponible"
       await db.query(`
@@ -29,10 +29,10 @@ async function checkInactiveAgents() {
         WHERE id = $1
       `, [row.id]);
 
-      // 1 Ouvrir "Absent technique" → durée indéfinie
+      // 1 Ouvrir "Aucun statut" → durée indéfinie
       await db.query(`
         INSERT INTO session_agents (user_id, status, start_time, last_ping)
-        VALUES ($1, 'Absent technique', NOW(), NOW())
+        VALUES ($1, 'Aucun statut', NOW(), NOW())
       `, [row.user_id]);
 
       // 2. Marquer comme déconnecté → crucial pour /validate
@@ -49,7 +49,7 @@ async function checkInactiveAgents() {
       );
     }
     // 🔸 PAS DE DÉCONNEXION AUTOMATIQUE ici
-    // La session "Absent technique" reste ouverte jusqu'au retour de l'agent
+    // La session "Aucun statut" reste ouverte jusqu'au retour de l'agent
 
   } catch (err) {
     console.error('Inactivity checker error:', err);

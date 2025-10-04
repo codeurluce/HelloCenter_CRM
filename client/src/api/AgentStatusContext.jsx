@@ -16,12 +16,9 @@ const AgentStatusContext = createContext();
 export const useAgentStatus = () => useContext(AgentStatusContext);
 
 export const AgentStatusProvider = ({ children }) => {
-  // ----------------------------
-  // 🔧 States & Refs
-  // ----------------------------
-  const [status, setStatus] = useState("Hors ligne");
   const [user, setUser] = useState(null);
   const [isInactive, setIsInactive] = useState(false);
+  const [currentStatus, setCurrentStatus] = useState(null);
 
   const navigate = useNavigate();
   const userRef = useRef(user);
@@ -29,15 +26,11 @@ export const AgentStatusProvider = ({ children }) => {
   const recentlyConnectedRef = useRef(false);
   const validationRef = useRef(false);
 
-  // ----------------------------
-  // 📡 Socket management
-  // ----------------------------
+  // 📡 Gestion des déconnexions forcées (socket)
   const handleForcedLogout = useCallback(
     async (reason) => {
-      if (recentlyConnectedRef.current) {
-        console.log("[FRONT] Ignoré session_closed_force (connexion récente)");
-        return;
-      }
+      if (recentlyConnectedRef.current) return;
+
       if (manualLogoutRef.current && reason === "Déconnexion volontaire") {
         manualLogoutRef.current = false;
         return;
@@ -63,7 +56,7 @@ export const AgentStatusProvider = ({ children }) => {
           if (socket.connected) socket.disconnect();
           localStorage.clear();
           setUser(null);
-          setStatus("Hors ligne");
+          setCurrentStatus("Hors Ligne");
           navigate("/login");
         },
       });
@@ -71,6 +64,7 @@ export const AgentStatusProvider = ({ children }) => {
     [navigate]
   );
 
+  // 🔌 Socket
   const connectSocket = useCallback(
     (userId) => {
       if (!socket.connected) {
@@ -97,53 +91,51 @@ export const AgentStatusProvider = ({ children }) => {
     [handleForcedLogout]
   );
 
-  // ----------------------------
-  // 🕒 Gestion de l'inactivité utilisateur
-  // ----------------------------
+  // 🕒 Détection d'inactivité → SEULEMENT si "Disponible"
   useEffect(() => {
-    if (!user?.id || status !== "Disponible") return;
+    if (!user?.id || currentStatus !== "Disponible") return;
 
     let inactivityTimer;
 
-    const markInactive = async () => {
-      try {
-        await axiosInstance.post("/agent/stopSession", { user_id: user.id });
-        await axiosInstance.post("/agent/startSession", {
-          user_id: user.id,
-          status: "Absent technique",
-        });
-        setStatus("Absent technique");
-      } catch (err) {
-        console.error("Erreur mise en pause technique :", err);
-      }
+    const triggerForcedLogout = () => {
+      axiosInstance.post("/agent/disconnect-force", { userId: user.id }).catch(console.error);
+      if (socket.connected) socket.disconnect();
+      localStorage.clear();
+      setUser(null);
+      setCurrentStatus(null);
+      toast.warn("Vous avez été déconnecté pour inactivité. Veuillez vous reconnecter.", {
+        autoClose: 4000,
+        onClose: () => navigate("/login"),
+      });
     };
 
     const resetTimer = () => {
       clearTimeout(inactivityTimer);
-      inactivityTimer = setTimeout(markInactive, 60_000); // 60s d’inactivité
+      inactivityTimer = setTimeout(triggerForcedLogout, 60_000);
     };
 
     const events = [
-      "mousedown",
-      "mousemove",
-      "keypress",
-      "scroll",
-      "touchstart",
-      "click",
+      "mousedown",   // Quand un bouton de la souris est pressé (clic gauche, droit ou molette)
+      "mousemove",   // Quand la souris bouge sur la page
+      "keypress",    // Quand une touche du clavier est enfoncée (déprécié, on utilise souvent "keydown")
+      "scroll",      // Quand l’utilisateur fait défiler la page (barre de défilement, molette ou swipe)
+      "touchstart",  // Quand un utilisateur touche l’écran sur mobile/tablette
+      "click",       // Quand un clic complet est effectué (mousedown + mouseup)
+      "wheel",       // Quand l’utilisateur fait tourner la molette de la souris
+      "pointermove"  // Déplacement de tout type de pointeur (souris, stylet, tactile)
     ];
-    events.forEach((e) => window.addEventListener(e, resetTimer, true));
+
+    events.forEach((e) => window.addEventListener(e, resetTimer, { passive: true }));
 
     resetTimer();
 
     return () => {
-      events.forEach((e) => window.removeEventListener(e, resetTimer, true));
+      events.forEach((e) => window.removeEventListener(e, resetTimer, { passive: true }));
       clearTimeout(inactivityTimer);
     };
-  }, [user?.id, status]);
+  }, [user?.id, currentStatus, navigate]);
 
-  // ----------------------------
   // 🔁 Heartbeat HTTP toutes les 25s
-  // ----------------------------
   useEffect(() => {
     if (!user?.id) return;
 
@@ -151,7 +143,7 @@ export const AgentStatusProvider = ({ children }) => {
       try {
         await axiosInstance.post("/session_agents/heartbeat", {});
       } catch (err) {
-        console.warn("Heartbeat échoué – vérification de session nécessaire");
+        console.warn("Heartbeat échoué");
       }
     };
 
@@ -160,49 +152,40 @@ export const AgentStatusProvider = ({ children }) => {
     return () => clearInterval(hbInterval);
   }, [user?.id]);
 
-  // ----------------------------
-  // 🚨 Gestion de la déconnexion forcée (inactivité)
-  // ----------------------------
+  // 🚨 Gestion déconnexion forcée (inactivité backend)
   useEffect(() => {
     if (isInactive) {
-      toast.warn(
-        "Vous avez été déconnecté pour inactivité. Veuillez vous reconnecter.",
-        {
-          autoClose: 4000,
-          onClose: () => {
-            if (socket.connected) socket.disconnect();
-            localStorage.clear();
-            setUser(null);
-            setStatus("Hors ligne");
-            setIsInactive(false);
-            navigate("/login");
-          },
-        }
-      );
+      toast.warn("Vous avez été déconnecté pour inactivité. Veuillez vous reconnecter.", {
+        autoClose: 4000,
+        onClose: () => {
+          if (socket.connected) socket.disconnect();
+          localStorage.clear();
+          setUser(null);
+          setCurrentStatus(null);
+          setIsInactive(false);
+          navigate("/login");
+        },
+      });
     }
   }, [isInactive, navigate]);
 
-  // ----------------------------
-  // 🔄 Validation au chargement (1 seule fois)
-  // ----------------------------
+  // 🔄 Validation au chargement
   useEffect(() => {
     if (validationRef.current) return;
     validationRef.current = true;
 
-    const storedUser = localStorage.getItem("user");
     const token = localStorage.getItem("token");
+    const storedUser = localStorage.getItem("user");
 
-    if (storedUser && token) {
+    if (token && storedUser) {
       axiosInstance
-        .get("/users/validate", {
-          headers: { Authorization: `Bearer ${token}` },
-        })
+        .get("/users/validate", { headers: { Authorization: `Bearer ${token}` } })
         .then((res) => {
           if (res.data.valid) {
-            const parsedUser = JSON.parse(storedUser);
-            setUser(parsedUser);
-            userRef.current = parsedUser;
-            connectSocket(parsedUser.id);
+            const parsed = JSON.parse(storedUser);
+            setUser(parsed);
+            userRef.current = parsed;
+            connectSocket(parsed.id);
           } else {
             toast.warn(
               "Vous avez été déconnecté pour inactivité. Veuillez vous reconnecter.",
@@ -233,16 +216,14 @@ export const AgentStatusProvider = ({ children }) => {
     }
   }, [connectSocket, navigate]);
 
-  // ----------------------------
-  // 👁️ Revalidation quand l'onglet redevient visible
-  // ----------------------------
+  // 👁️ Revalidation au retour (Ctrl+Shift+T, veille…)
   useEffect(() => {
     const handleVisibilityChange = async () => {
       if (document.visibilityState === "visible" && user?.id) {
         const token = localStorage.getItem("token");
         if (!token) return;
 
-        try {
+try {
           const res = await axiosInstance.get("/users/validate", {
             headers: { Authorization: `Bearer ${token}` },
           });
@@ -255,7 +236,7 @@ export const AgentStatusProvider = ({ children }) => {
                 onClose: () => {
                   localStorage.clear();
                   setUser(null);
-                  setStatus("Hors ligne");
+                  setCurrentStatus("Hors ligne");
                   navigate("/login");
                 },
               }
@@ -281,18 +262,12 @@ export const AgentStatusProvider = ({ children }) => {
     };
   }, [user?.id, navigate]);
 
-  // ----------------------------
   // 🔐 Login / Logout
-  // ----------------------------
   const loginAgent = async (userData) => {
     setUser(userData);
     userRef.current = userData;
     recentlyConnectedRef.current = true;
-    setTimeout(() => {
-      recentlyConnectedRef.current = false;
-    }, 5000);
-
-    setStatus("Hors ligne");
+    setTimeout(() => { recentlyConnectedRef.current = false; }, 5000);
     localStorage.setItem("user", JSON.stringify(userData));
     connectSocket(userData.id);
     try {
@@ -305,25 +280,20 @@ export const AgentStatusProvider = ({ children }) => {
   const logoutAgent = async () => {
     manualLogoutRef.current = true;
     if (userRef.current?.id) {
-      await axiosInstance.post("/agent/disconnect-force", {
-        userId: userRef.current.id,
-      });
+      await axiosInstance.post("/agent/disconnect-force", { userId: userRef.current.id });
     }
     if (socket.connected) socket.disconnect();
     localStorage.clear();
     setUser(null);
-    setStatus("Hors ligne");
+    setCurrentStatus(null);
     navigate("/login");
   };
 
-  // ----------------------------
-  // ⬅️ Context Provider
-  // ----------------------------
   return (
     <AgentStatusContext.Provider
       value={{
-        status,
-        setStatus,
+        status: currentStatus,
+        setCurrentStatus,
         user,
         loginAgent,
         logoutAgent,
@@ -334,3 +304,5 @@ export const AgentStatusProvider = ({ children }) => {
     </AgentStatusContext.Provider>
   );
 };
+
+export default AgentStatusProvider;

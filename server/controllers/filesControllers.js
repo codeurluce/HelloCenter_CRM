@@ -5,7 +5,6 @@ const dayjs = require("dayjs");
 
 // Obtenir les nouvelles fiches par
 exports.getTodayNewFilesByUniverse = async (req, res) => {
-  console.log('👤 Agent connectee :', req.user);
 
   try {
     const agentFiles = req.user.id; // exemple: 'Energie' ou 'OffreMobile'
