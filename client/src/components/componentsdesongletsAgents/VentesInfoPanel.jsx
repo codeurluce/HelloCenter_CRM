@@ -266,7 +266,7 @@ useEffect(() => {
         return status || "Inconnu";
     }
   };
-console.log("Univers détecté:", univers);
+// console.log("Univers détecté:", univers);
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">

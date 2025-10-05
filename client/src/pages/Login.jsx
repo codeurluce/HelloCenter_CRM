@@ -29,7 +29,7 @@ const Login = ({ onLogin }) => {
       const { user, token, mustChangePassword } = response.data;
 
       localStorage.setItem('token', token);
-      // localStorage.setItem('role', user.role);
+      localStorage.setItem('role', user.role);
       // localStorage.setItem('univers', user.profil);
       // localStorage.setItem('mustChangePassword', mustChangePassword);
       // localStorage.setItem('user', JSON.stringify(user));
