@@ -28,9 +28,9 @@ const SimpleTimer = ({
   }, []);
 
   // Calcul dynamique temps écoulé
-  const elapsed = currentSession
-    ? Math.floor((Date.now() - new Date(currentSession.start_time).getTime()) / 1000)
-    : 0;
+const elapsed = currentSession?.start_time
+  ? Math.floor((Date.now() - new Date(currentSession.start_time).getTime()) / 1000)
+  : 0;
 
   const currentKey = currentSession
     ? statuses.find(s => s.statusFr === currentSession.status)?.key || null

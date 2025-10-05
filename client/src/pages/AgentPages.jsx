@@ -43,7 +43,7 @@ const AgentDashboard = () => {
       setTimers(newTimers);
 
       if (data.statut_actuel && data.statut_actuel !== 'Hors ligne') {
-        const start_time = new Date(Date.now() - data.depuis_sec * 1000);
+        const start_time = data.session_start_time ? new Date(data.session_start_time) : null;
         setCurrentSession({
           status: data.statut_actuel,
           start_time,

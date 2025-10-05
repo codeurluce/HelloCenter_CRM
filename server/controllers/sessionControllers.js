@@ -164,6 +164,76 @@ exports.getLiveSessionAgents = async (req, res) => {
 };
 
 // GET /api/sessions/agents/live/:userId
+// exports.getSessionAgent = async (req, res) => {
+//   const { userId } = req.params;
+
+//   if (!userId) {
+//     return res.status(400).json({ error: "userId manquant" });
+//   }
+
+//   try {
+//     const query = `
+//       WITH sessions_today AS (
+//         SELECT user_id, status, start_time, COALESCE(end_time, NOW()) AS end_time
+//         FROM session_agents
+//         WHERE DATE(start_time) = CURRENT_DATE
+//           AND user_id = $1
+//       ),
+//       cumuls AS (
+//         SELECT user_id, status, SUM(EXTRACT(EPOCH FROM (end_time - start_time)))::INT AS sec
+//         FROM sessions_today
+//         GROUP BY user_id, status
+//       ),
+//       cumul_total AS (
+//         SELECT user_id, SUM(sec)::INT AS presence_totale_sec
+//         FROM cumuls
+//         GROUP BY user_id
+//       ),
+//       last_status AS (
+//         SELECT DISTINCT ON (user_id)
+//                user_id,
+//                status AS statut_actuel,
+//                EXTRACT(EPOCH FROM (NOW() - start_time))::INT AS depuis_sec
+//         FROM session_agents
+//         WHERE end_time IS NULL
+//           AND DATE(start_time) = CURRENT_DATE
+//           AND user_id = $1
+//         ORDER BY user_id, start_time DESC
+//       ),
+//       cumul_json AS (
+//         SELECT c.user_id,
+//                json_object_agg(c.status, c.sec) AS cumul_statuts
+//         FROM cumuls c
+//         GROUP BY c.user_id
+//       )
+//       SELECT 
+//         u.id AS user_id,
+//         u.lastname,
+//         u.firstname,
+//         COALESCE(ls.statut_actuel, 
+//                  CASE WHEN u.is_connected = false THEN 'Hors ligne' ELSE 'En ligne' END
+//         ) AS statut_actuel,
+//         COALESCE(ls.depuis_sec, 0) AS depuis_sec,
+//         COALESCE(ct.presence_totale_sec, 0) AS presence_totale_sec,
+//         u.is_connected,
+//         COALESCE(cj.cumul_statuts, '{}'::json) AS cumul_statuts
+//       FROM users u
+//       LEFT JOIN last_status ls ON u.id = ls.user_id
+//       LEFT JOIN cumul_total ct ON u.id = ct.user_id
+//       LEFT JOIN cumul_json cj ON u.id = cj.user_id
+//       WHERE u.id = $1
+//       ORDER BY u.lastname, u.firstname;
+//     `;
+
+//     const result = await db.query(query, [userId]);
+//     res.json(result.rows[0] || null); // renvoie l'agent unique
+//   } catch (err) {
+//     console.error("Erreur getLiveSessionAgent:", err);
+//     res.status(500).json({ error: "Erreur récupération session live" });
+//   }
+// };
+
+// GET /api/session_agents/user/live/:userId
 exports.getSessionAgent = async (req, res) => {
   const { userId } = req.params;
 
@@ -179,9 +249,13 @@ exports.getSessionAgent = async (req, res) => {
         WHERE DATE(start_time) = CURRENT_DATE
           AND user_id = $1
       ),
+      -- ✅ Exclure les sessions actives (end_time IS NULL) du cumul
       cumuls AS (
         SELECT user_id, status, SUM(EXTRACT(EPOCH FROM (end_time - start_time)))::INT AS sec
-        FROM sessions_today
+        FROM session_agents
+        WHERE DATE(start_time) = CURRENT_DATE
+          AND user_id = $1
+          AND end_time IS NOT NULL  -- ← SEULE MODIFICATION
         GROUP BY user_id, status
       ),
       cumul_total AS (
@@ -189,16 +263,14 @@ exports.getSessionAgent = async (req, res) => {
         FROM cumuls
         GROUP BY user_id
       ),
-      last_status AS (
-        SELECT DISTINCT ON (user_id)
-               user_id,
-               status AS statut_actuel,
-               EXTRACT(EPOCH FROM (NOW() - start_time))::INT AS depuis_sec
+      last_session AS (
+        SELECT user_id, status, start_time
         FROM session_agents
         WHERE end_time IS NULL
           AND DATE(start_time) = CURRENT_DATE
           AND user_id = $1
-        ORDER BY user_id, start_time DESC
+        ORDER BY start_time DESC
+        LIMIT 1
       ),
       cumul_json AS (
         SELECT c.user_id,
@@ -210,23 +282,22 @@ exports.getSessionAgent = async (req, res) => {
         u.id AS user_id,
         u.lastname,
         u.firstname,
-        COALESCE(ls.statut_actuel, 
+        COALESCE(ls.status, 
                  CASE WHEN u.is_connected = false THEN 'Hors ligne' ELSE 'En ligne' END
         ) AS statut_actuel,
-        COALESCE(ls.depuis_sec, 0) AS depuis_sec,
+        ls.start_time AS session_start_time,
         COALESCE(ct.presence_totale_sec, 0) AS presence_totale_sec,
         u.is_connected,
         COALESCE(cj.cumul_statuts, '{}'::json) AS cumul_statuts
       FROM users u
-      LEFT JOIN last_status ls ON u.id = ls.user_id
+      LEFT JOIN last_session ls ON u.id = ls.user_id
       LEFT JOIN cumul_total ct ON u.id = ct.user_id
       LEFT JOIN cumul_json cj ON u.id = cj.user_id
-      WHERE u.id = $1
-      ORDER BY u.lastname, u.firstname;
+      WHERE u.id = $1;
     `;
 
     const result = await db.query(query, [userId]);
-    res.json(result.rows[0] || null); // renvoie l'agent unique
+    res.json(result.rows[0] || null);
   } catch (err) {
     console.error("Erreur getLiveSessionAgent:", err);
     res.status(500).json({ error: "Erreur récupération session live" });

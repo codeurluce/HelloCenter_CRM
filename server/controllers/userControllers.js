@@ -273,7 +273,6 @@ const disconnectAgentForce = async (req, res) => {
   }
 };
 
-
 // Infos utilisateur connecté
 const getMe = async (req, res) => {
   const userId = req.user.id;
