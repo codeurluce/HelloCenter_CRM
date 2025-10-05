@@ -44,7 +44,7 @@ const Login = ({ onLogin }) => {
           console.error("Impossible de notifier la connexion de l'agent", err.response?.data || err.message);
         }
       }
-      
+
       if (onLogin) onLogin(token, user, mustChangePassword);
 
       if (mustChangePassword) {

@@ -14,19 +14,21 @@ import { AuthContext } from './AuthContext.jsx';
 import { useAgentStatus } from '../api/AgentStatusContext.jsx';
 import { statuses } from '../shared/StatusSelector.jsx';
 import { toast } from 'react-toastify';
-import { useNavigate } from 'react-router-dom';
+// import { useNavigate } from 'react-router-dom';
 import { closeSession, startSession } from '../api/saveSessionToDB.js';
 
 const AgentDashboard = () => {
   const { user, setUser } = useContext(AuthContext);
   const [activeItem, setActiveItem] = useState(localStorage.getItem("activeSidebarItem") || "dashboard");
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   const { logoutAgent, setCurrentStatus } = useAgentStatus();
 
   const [etat, setEtat] = useState(null);
   const [timers, setTimers] = useState({});
   const [currentSession, setCurrentSession] = useState(null);
   const [tick, setTick] = useState(0);
+  const { fiches, loadFiches, onTreatFiche, onCancelFiche, onCloseFiche, onProgramRdv } = useFiches(user);
+  const [loadingFiches, setLoadingFiches] = useState(false);
 
   const refreshSessionData = async () => {
     if (!user?.id) return;
@@ -86,9 +88,6 @@ const AgentDashboard = () => {
   const handleLogout = () => {
     logoutAgent();
   };
-
-  const { fiches, loadFiches, onTreatFiche, onCancelFiche, onCloseFiche, onProgramRdv } = useFiches(user);
-  const [loadingFiches, setLoadingFiches] = useState(false);
 
   const fetchFichesFromBackend = async () => {
     setLoadingFiches(true);

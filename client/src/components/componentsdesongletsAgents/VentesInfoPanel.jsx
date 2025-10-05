@@ -51,7 +51,7 @@ useEffect(() => {
     fetchSales();
   }
 }, [connectedAgent]);
-
+// console.log("🔍 Rôle détecté :", role, "| isAdminRole =", isAdminRole);
   // Charger les ventes au montage
   const fetchSales = async () => {
     setLoading(true);
