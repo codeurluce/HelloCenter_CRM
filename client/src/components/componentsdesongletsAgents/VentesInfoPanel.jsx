@@ -2,22 +2,22 @@ import React, { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import Swal from "sweetalert2";
 import { toast } from "react-toastify";
-
 import SalesFormEnergie from "../componentsdesventes/SalesFormEnergie";
 import SalesFormOffreMobile from "../componentsdesventes/SalesFormOffreMobile";
 import FormTypeSelector from "../componentsdesventes/FormTypeSelector";
 import FiltreSalesList from "../componentsdesventes/FiltreSalesList";
+import SaleDetailsModalOffreMobile from "../componentsdesventes/SaleDetailsModalOffreMobile";
 import SaleDetailsModal from "../componentsdesventes/SaleDetailsModal";
 import { deleteSale, updateSale, updateSaleMobile, createSale } from "../../api/salesActions";
 import axiosInstance from "../../api/axiosInstance";
-import SaleDetailsModalOffreMobile from "../componentsdesventes/SaleDetailsModalOffreMobile";
 
 
 const VentesInfoPanel = ({ agentId }) => {
   // Lecture hors React des valeurs dans localStorage pour initialisation immédiate
   const role = localStorage.getItem("role");
-  const isAdminRole = role === "Admin";
-  const isAdmin = localStorage.getItem("role") === "Admin";
+  const isAdmin = role === "Admin";
+  const isManager = role === "Manager";
+  const isAdminOrManager = isAdmin || isManager;
 
   // États avec valeurs initiales calculées hors React
   const [univers, setUnivers] = useState(null);
@@ -37,26 +37,26 @@ const VentesInfoPanel = ({ agentId }) => {
 
 
   useEffect(() => {
-  const storedAgent = localStorage.getItem("user");
-  if (storedAgent) {
-    const parsedAgent = JSON.parse(storedAgent);
-    setConnectedAgent(parsedAgent);
-    setUnivers(parsedAgent.univers || null); // 🔑 récup univers
-  }
-}, []);
+    const storedAgent = localStorage.getItem("user");
+    if (storedAgent) {
+      const parsedAgent = JSON.parse(storedAgent);
+      setConnectedAgent(parsedAgent);
+      setUnivers(parsedAgent.univers || null); // 🔑 récup univers
+    }
+  }, []);
 
-// Charger les ventes une fois l'agent connu
-useEffect(() => {
-  if (connectedAgent) {
-    fetchSales();
-  }
-}, [connectedAgent]);
-// console.log("🔍 Rôle détecté :", role, "| isAdminRole =", isAdminRole);
+  // Charger les ventes une fois l'agent connu
+  useEffect(() => {
+    if (connectedAgent) {
+      fetchSales();
+    }
+  }, [connectedAgent]);
+  // console.log("🔍 Rôle détecté :", role, "| isAdminRole =", isAdminRole);
   // Charger les ventes au montage
   const fetchSales = async () => {
     setLoading(true);
     try {
-      const endpoint = isAdminRole ? "/sales/admin" : "/sales";
+      const endpoint = isAdminOrManager ? "/sales/admin" : "/sales";
       const response = await axiosInstance.get(endpoint);
       setSales([...response.data]);
     } catch (error) {
@@ -68,9 +68,9 @@ useEffect(() => {
   };
 
   const handleViewSale = (sale, type) => {
-  setSelectedSale(sale);
-  setModalType(type);
-};
+    setSelectedSale(sale);
+    setModalType(type);
+  };
 
   // Sélecteur de type de formulaire
   const handleOpenSelector = () => setShowSelector(true);
@@ -137,12 +137,12 @@ useEffect(() => {
     try {
       let response;
       if (saleToEdit) {
-          // On choisit la bonne méthode selon le type de vente
-      if (saleToEdit.product_type === "energie") {
-        response = await updateSale(saleToEdit.id, data);
-      } else if (saleToEdit.product_type === "offreMobile") {
-         response = await updateSaleMobile(saleToEdit.id, data);
-      }
+        // On choisit la bonne méthode selon le type de vente
+        if (saleToEdit.product_type === "energie") {
+          response = await updateSale(saleToEdit.id, data);
+        } else if (saleToEdit.product_type === "offreMobile") {
+          response = await updateSaleMobile(saleToEdit.id, data);
+        }
 
         // Mise à jour du state
         setSales((prev) =>
@@ -150,7 +150,7 @@ useEffect(() => {
         );
 
         // Mettre à jour selectedSale si le modal est ouvert
-      setSelectedSale(response);
+        setSelectedSale(response);
 
         toast.success("✅ Vente modifiée avec succès !");
         setSaleToEdit(null);
@@ -194,7 +194,7 @@ useEffect(() => {
 
   // Mise à jour statut (admin)
   const handleUpdateStatus = async (saleId, newStatus, motif = null) => {
-    if (!isAdmin) return;
+    if (!isAdminOrManager) return;
 
     if (newStatus === "cancelled" && !motif) {
       const { value } = await Swal.fire({
@@ -234,25 +234,25 @@ useEffect(() => {
 
   // Marquer une vente comme auditée
   const handleAuditeSale = async (saleId, auditeValue = true) => {
-      try {
-    const response = await axiosInstance.put(`/sales/${saleId}/audit`, {
-      audite: auditeValue,
-    });
+    try {
+      const response = await axiosInstance.put(`/sales/${saleId}/audit`, {
+        audite: auditeValue,
+      });
 
-    // Met à jour le state local avec la réponse backend
-    setSales((prev) =>
-      prev.map((s) => (s.id === saleId ? response.data : s))
-    );
-  toast.success(
-      auditeValue
-        ? "✅ Vente marquée comme auditée"
-        : "❌ Audit retiré de la vente"
-    );
-  } catch (error) {
-    console.error("Erreur mise à jour audit:", error.response?.data?.message || error.message);
-    toast.error(error.response?.data?.message || "Impossible de mettre à jour l'audit");
-  }
-};
+      // Met à jour le state local avec la réponse backend
+      setSales((prev) =>
+        prev.map((s) => (s.id === saleId ? response.data : s))
+      );
+      toast.success(
+        auditeValue
+          ? "✅ Vente marquée comme auditée"
+          : "❌ Audit retiré de la vente"
+      );
+    } catch (error) {
+      console.error("Erreur mise à jour audit:", error.response?.data?.message || error.message);
+      toast.error(error.response?.data?.message || "Impossible de mettre à jour l'audit");
+    }
+  };
 
   const getStatusText = (status) => {
     switch (status) {
@@ -266,7 +266,7 @@ useEffect(() => {
         return status || "Inconnu";
     }
   };
-// console.log("Univers détecté:", univers);
+  // console.log("Univers détecté:", univers);
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
@@ -287,6 +287,8 @@ useEffect(() => {
         onViewSale={handleViewSale}
         onEditSale={handleEditSale}
         isAdmin={isAdmin}
+        isManager={isManager}
+        isAdminOrManager={isAdminOrManager}
         getStatusText={getStatusText}
         onRefresh={fetchSales}
         loading={loading}
@@ -295,24 +297,28 @@ useEffect(() => {
       />
 
       {selectedSale && modalType === "energie" && (
-  <SaleDetailsModal
-    sale={selectedSale}
-    onClose={() => setSelectedSale(null)}
-    onEdit={() => handleEditSale(selectedSale)}
-    getStatusText={getStatusText}
-    isAdmin={isAdmin}
-  />
-)}
+        <SaleDetailsModal
+          sale={selectedSale}
+          onClose={() => setSelectedSale(null)}
+          onEdit={() => handleEditSale(selectedSale)}
+          getStatusText={getStatusText}
+          isAdmin={isAdmin}
+          isManager={isManager}
+          isAdminOrManager={isAdminOrManager}
+        />
+      )}
 
-{selectedSale && modalType === "offremobile" && (
-  <SaleDetailsModalOffreMobile
-    sale={selectedSale}
-    onClose={() => setSelectedSale(null)}
-    onEdit={() => handleEditSale(selectedSale)}
-    getStatusText={getStatusText}
-    isAdmin={isAdmin}
-  />
-)}
+      {selectedSale && modalType === "offremobile" && (
+        <SaleDetailsModalOffreMobile
+          sale={selectedSale}
+          onClose={() => setSelectedSale(null)}
+          onEdit={() => handleEditSale(selectedSale)}
+          getStatusText={getStatusText}
+          isAdmin={isAdmin}
+          isManager={isManager}
+          isAdminOrManager={isAdminOrManager}
+        />
+      )}
       {showSelector && (
         <FormTypeSelector
           onSelect={handleSelectFormType}
@@ -350,7 +356,7 @@ useEffect(() => {
                 setFormData={setFormData}
                 onSubmit={handleSubmitSale}
                 onClose={handleCloseForm}
-              /> 
+              />
             )}
           </div>
         </div>

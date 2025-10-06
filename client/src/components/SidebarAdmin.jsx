@@ -17,9 +17,9 @@ const SidebarAdmin = ({ activeItem, setActiveItem, onLogout }) => {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard Admin', icon: LayoutDashboard },
     { id: 'files', label: 'fichiers', icon: Folder },
-    { id: 'sales', label: 'Ventes', icon: ShoppingCart },
-    { id: 'sessions', label: 'Sessions', icon: Clock },
+    { id: 'sales', label: 'Ventes', icon: ShoppingCart },    
     { id: 'activité', label: 'Activité', icon: CircleUser },
+    { id: 'sessions', label: 'Sessions', icon: Clock },
     { id: 'administration', label: 'Administration', icon: Users },
   ];
 

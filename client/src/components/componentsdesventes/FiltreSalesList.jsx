@@ -29,6 +29,8 @@ const FiltreSalesList = ({
   onAuditeSale,
   getStatusText,
   isAdmin,
+  isManager,
+  isAdminOrManager,
   onRefresh,
   loading,
   onOpenNewSale,
@@ -225,7 +227,7 @@ const FiltreSalesList = ({
                       </>
                     )}
 
-                    {!isAdmin && univers === "OffreMobile" && (
+                    {!isAdminOrManager && univers === "OffreMobile" && (
                       <>
                         <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
                           Réf. CMD
@@ -237,7 +239,7 @@ const FiltreSalesList = ({
                     )}
 
                     {/* Colonnes Admin */}
-                    {isAdmin && (
+                    {isAdminOrManager && (
                       <>
                         <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
                           Type de vente
@@ -258,7 +260,7 @@ const FiltreSalesList = ({
                     <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
                       Statut
                     </th>
-                    {isAdmin && (
+                    {isAdminOrManager && (
                       <>
                         <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
                           Agent
@@ -281,7 +283,7 @@ const FiltreSalesList = ({
                       className="border-b border-gray-100 hover:bg-blue-50"
                     >
                       {/* Colonnes selon univers */}
-                      {!isAdmin && univers === "Energie" && (
+                      {!isAdminOrManager && univers === "Energie" && (
                         <>
                           <td className="py-3 px-4 font-medium">
                             {sale.ref_client || "-"}
@@ -292,7 +294,7 @@ const FiltreSalesList = ({
                         </>
                       )}
 
-                      {!isAdmin && univers === "OffreMobile" && (
+                      {!isAdminOrManager && univers === "OffreMobile" && (
                         <>
                           <td className="py-3 px-4 font-medium">
                             {sale.ref_cmd || "-"}
@@ -304,7 +306,7 @@ const FiltreSalesList = ({
                       )}
 
                       {/* Colonnes Admin */}
-                      {isAdmin && (
+                      {isAdminOrManager && (
                         <>
                           <td className="py-3 px-4 font-medium">{sale.product_type || "-"}</td>
                           <td className="py-3 px-4 font-medium">
@@ -324,14 +326,14 @@ const FiltreSalesList = ({
                           : "-"}
                       </td>
                       <td className="py-3 px-4">{getStatusText(sale.status)}</td>
-                      {isAdmin && (
+                      {isAdminOrManager && (
                         <td className="py-3 px-4">
                           {sale.agent_firstname && sale.agent_name
                             ? `${sale.agent_firstname} ${sale.agent_name}`
                             : "Inconnu"}
                         </td>
                       )}
-                      {isAdmin && (
+                      {isAdminOrManager && (
                         <td className="py-3 px-4 text-center items-center">
                           {sale.audite ? "0ui" : "Non"}
                         </td>
@@ -340,34 +342,34 @@ const FiltreSalesList = ({
                       <td className="py-3 px-4">
                         <div className="flex justify-center gap-2 items-center">
                           {/* Voir */}
-                            <div className="relative group">
-                          <button
-                            title=""
-                            type="button"
-                            onClick={() => {
-                              if (!onViewSale) return;
+                          <div className="relative group">
+                            <button
+                              title=""
+                              type="button"
+                              onClick={() => {
+                                if (!onViewSale) return;
 
-                              // Condition selon le type de vente
-                              if (sale.product_type === "energie") {
-                                onViewSale(sale, "energie"); // tu passes un paramètre pour savoir quel modal ouvrir
-                              } else if (sale.product_type === "offreMobile") {
-                                onViewSale(sale, "offremobile");
-                              } else {
-                                console.warn("Type de vente inconnu :", sale.product_type);
-                              }
-                            }}
-                            className="px-3 py-1.5 rounded-lg border border-blue-100 text-blue-600 hover:bg-blue-600 hover:text-white transition-transform hover:scale-105"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
-                          <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-blue-600 text-white text-xs whitespace-nowrap">
-                                   Détails Vente
-                                </span>
-                                </div>
+                                // Condition selon le type de vente
+                                if (sale.product_type === "energie") {
+                                  onViewSale(sale, "energie"); // tu passes un paramètre pour savoir quel modal ouvrir
+                                } else if (sale.product_type === "offreMobile") {
+                                  onViewSale(sale, "offremobile");
+                                } else {
+                                  console.warn("Type de vente inconnu :", sale.product_type);
+                                }
+                              }}
+                              className="px-3 py-1.5 rounded-lg border border-blue-100 text-blue-600 hover:bg-blue-600 hover:text-white transition-transform hover:scale-105"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                            <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-blue-600 text-white text-xs whitespace-nowrap">
+                              Détails Vente
+                            </span>
+                          </div>
 
                           {/* Modifier / Supprimer seulement si vente en attente */}
-                          {(isAdmin) && (
-                            <>
+                          {(isAdminOrManager) && (
+
                             <div className="relative group">
                               <button
                                 title=""
@@ -378,9 +380,12 @@ const FiltreSalesList = ({
                                 <Pencil className="w-4 h-4" />
                               </button>
                               <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-green-600 text-white text-xs whitespace-nowrap">
-                                   Modifier 
-                                </span>
-                                </div>
+                                Modifier
+                              </span>
+                            </div>
+                          )}
+                          {/* Bouton Supprimer → visible uniquement pour Admin */}
+                          {isAdmin && (
 
                             <div className="relative group">
                               <button
@@ -392,121 +397,121 @@ const FiltreSalesList = ({
                                 <Trash2 className="w-4 h-4" />
                               </button>
                               <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-yellow-600 text-white text-xs whitespace-nowrap">
-                                   Supprimer 
-                                </span>
-                                </div>
-                            </>
+                                Supprimer
+                              </span>
+                            </div>
+
                           )}
 
                           {/* Actions admin */}
-                          {isAdmin && onUpdateStatus && (
+                          {isAdminOrManager && onUpdateStatus && (
                             <>
-                            <div className="relative group">
-                              <button
-                                className="px-3 py-1.5 rounded-lg border border-green-100 text-green-600 hover:bg-green-400 hover:text-white transition-transform hover:scale-105"
-                                title=""
-                                onClick={() => {
-                                  Swal.fire({
-                                    title: "Payer cette vente",
-                                    text:
-                                      "Voulez-vous marquer cette vente comme payée ?",
-                                    icon: "warning",
-                                    showCancelButton: true,
-                                    confirmButtonColor: "#22c55e",
-                                    cancelButtonColor: "#9ca3af",
-                                    confirmButtonText: "Oui, payer",
-                                    cancelButtonText: "Fermer",
-                                  }).then((result) => {
-                                    if (result.isConfirmed) {
-                                      onUpdateStatus(sale.id, "validated");
-                                      Swal.fire(
-                                        "Payée !",
-                                        "La vente a été marquée comme payée.",
-                                        "success"
-                                      );
-                                    }
-                                  });
-                                }}
-                              >
-                                <BadgeCheck className="w-4 h-4" />
-                              </button>
-                              <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-green-400 text-white text-xs whitespace-nowrap">
+                              <div className="relative group">
+                                <button
+                                  className="px-3 py-1.5 rounded-lg border border-green-100 text-green-600 hover:bg-green-400 hover:text-white transition-transform hover:scale-105"
+                                  title=""
+                                  onClick={() => {
+                                    Swal.fire({
+                                      title: "Payer cette vente",
+                                      text:
+                                        "Voulez-vous marquer cette vente comme payée ?",
+                                      icon: "warning",
+                                      showCancelButton: true,
+                                      confirmButtonColor: "#22c55e",
+                                      cancelButtonColor: "#9ca3af",
+                                      confirmButtonText: "Oui, payer",
+                                      cancelButtonText: "Fermer",
+                                    }).then((result) => {
+                                      if (result.isConfirmed) {
+                                        onUpdateStatus(sale.id, "validated");
+                                        Swal.fire(
+                                          "Payée !",
+                                          "La vente a été marquée comme payée.",
+                                          "success"
+                                        );
+                                      }
+                                    });
+                                  }}
+                                >
+                                  <BadgeCheck className="w-4 h-4" />
+                                </button>
+                                <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-green-400 text-white text-xs whitespace-nowrap">
                                   Payer la vente
                                 </span>
-                                </div>
+                              </div>
 
-                            <div className="relative group">
-                              <button
-                                className="px-3 py-1.5 rounded-lg border border-red-100 text-red-600 hover:bg-red-400 hover:text-white transition-transform hover:scale-105"
-                                title=""
-                                onClick={async () => {
-                                  const { value: motif } = await Swal.fire({
-                                    title: "Annuler cette vente",
-                                    input: "textarea",
-                                    inputPlaceholder: "Saisissez le motif de l’annulation...",
-                                    text: "Voulez-vous vraiment annuler cette vente ?",
-                                    icon: "warning",
-                                    showCancelButton: true,
-                                    confirmButtonColor: "#22c55e",
-                                    cancelButtonColor: "#9ca3af",
-                                    confirmButtonText: "Oui, annuler",
-                                    cancelButtonText: "Fermer",
-                                    inputValidator: (value) => {
-                                      if (!value) return "Vous devez renseigner un motif !";
-                                    },
-                                  });
+                              <div className="relative group">
+                                <button
+                                  className="px-3 py-1.5 rounded-lg border border-red-100 text-red-600 hover:bg-red-400 hover:text-white transition-transform hover:scale-105"
+                                  title=""
+                                  onClick={async () => {
+                                    const { value: motif } = await Swal.fire({
+                                      title: "Annuler cette vente",
+                                      input: "textarea",
+                                      inputPlaceholder: "Saisissez le motif de l’annulation...",
+                                      text: "Voulez-vous vraiment annuler cette vente ?",
+                                      icon: "warning",
+                                      showCancelButton: true,
+                                      confirmButtonColor: "#22c55e",
+                                      cancelButtonColor: "#9ca3af",
+                                      confirmButtonText: "Oui, annuler",
+                                      cancelButtonText: "Fermer",
+                                      inputValidator: (value) => {
+                                        if (!value) return "Vous devez renseigner un motif !";
+                                      },
+                                    });
 
-                                  if (motif) {
-                                    onUpdateStatus(sale.id, "cancelled", motif);
-                                    Swal.fire(
-                                      "Annulée !",
-                                      "La vente a été annulée.",
-                                      "success"
-                                    );
-                                  }
-                                }}
-                              >
-                                <BadgeX className="w-4 h-4" />
-                              </button>
-                              <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-red-400 text-white text-xs whitespace-nowrap">
-                                  Annuler la vente
-                                </span>
-                                </div>
-
-                              
-<div className="relative group">
-                              <button
-                                className="px-3 py-1.5 rounded-lg border border-gray-100 text-black-600 hover:bg-gray-900 hover:text-white transition-transform hover:scale-105"
-                                title=""
-                                onClick={() => {
-                                  Swal.fire({
-                                    title: "Auditer cette vente",
-                                    text:
-                                      "Voulez-vous marquer cette vente comme auditée ?",
-                                    icon: "warning",
-                                    showCancelButton: true,
-                                    confirmButtonColor: "#22c55e",
-                                    cancelButtonColor: "#9ca3af",
-                                    confirmButtonText: "Oui, auditer",
-                                    cancelButtonText: "Fermer",
-                                  }).then((result) => {
-                                    if (result.isConfirmed) {
-                                      onAuditeSale(sale.id, "true");
+                                    if (motif) {
+                                      onUpdateStatus(sale.id, "cancelled", motif);
                                       Swal.fire(
-                                        "Auditée !",
-                                        "La vente a été marquée comme auditée.",
+                                        "Annulée !",
+                                        "La vente a été annulée.",
                                         "success"
                                       );
                                     }
-                                  });
-                                }}
-                              >
-                                <Headphones className="w-4 h-4" />
-                              </button>
+                                  }}
+                                >
+                                  <BadgeX className="w-4 h-4" />
+                                </button>
+                                <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-red-400 text-white text-xs whitespace-nowrap">
+                                  Annuler la vente
+                                </span>
+                              </div>
+
+
+                              <div className="relative group">
+                                <button
+                                  className="px-3 py-1.5 rounded-lg border border-gray-100 text-black-600 hover:bg-gray-900 hover:text-white transition-transform hover:scale-105"
+                                  title=""
+                                  onClick={() => {
+                                    Swal.fire({
+                                      title: "Auditer cette vente",
+                                      text:
+                                        "Voulez-vous marquer cette vente comme auditée ?",
+                                      icon: "warning",
+                                      showCancelButton: true,
+                                      confirmButtonColor: "#22c55e",
+                                      cancelButtonColor: "#9ca3af",
+                                      confirmButtonText: "Oui, auditer",
+                                      cancelButtonText: "Fermer",
+                                    }).then((result) => {
+                                      if (result.isConfirmed) {
+                                        onAuditeSale(sale.id, "true");
+                                        Swal.fire(
+                                          "Auditée !",
+                                          "La vente a été marquée comme auditée.",
+                                          "success"
+                                        );
+                                      }
+                                    });
+                                  }}
+                                >
+                                  <Headphones className="w-4 h-4" />
+                                </button>
                                 <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-gray-900 text-white text-xs whitespace-nowrap">
                                   Auditer
                                 </span>
-                                </div>
+                              </div>
 
                               <div className="relative group">
                                 <button
