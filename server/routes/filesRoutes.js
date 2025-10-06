@@ -23,7 +23,8 @@ router.put('/:id/annuler', filesControllers.annulerFiche); // => PUT    /api/fil
 router.put('/:id/cloturer', filesControllers.cloturerFiche); // => PUT    /api/files/:id/cloturer
 router.put('/:id/programmer-rdv', filesControllers.programRdv, filesControllers.getFilesToRDV); // => PUT    /api/files/:id/programmer-rdv
 router.get('/rendezvous/upcoming/:agentId', filesControllers.getUpcomingRendezVous);
-router.get('/today-summary', auth, filesControllers.getTodayNewFilesByUniverse);
+router.get('/today-summary', auth, filesControllers.getNewFilesCountByAgent);
+router.get('/admin-summary', auth, filesControllers.getAdminFilesSummary);
 router.get('/files_by_agents', filesControllers.getFilesbyAgent);// => GET    /api/files/AssignedTo/agentId
 router.get('/all_files', filesControllers.getAllFiches)
 router.put('/assigned_To', auth, filesControllers.getAssignedFichesTo);

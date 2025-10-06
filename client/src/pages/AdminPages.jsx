@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import SidebarAdmin from '../components/SidebarAdmin.jsx';
 import DashboardHeader from '../components/dashbords/DashbordHeader.jsx';
+import StatGroup from '../components/cards/StatGroup.js';
 import { AgentStatusProvider } from '../api/AgentStatusContext.jsx';
 import { AuthContext } from './AuthContext.jsx';
 import { useContext } from 'react';
@@ -8,7 +9,6 @@ import useTimers from '../api/useTimers.js';
 import AgentInfoPanel from '../components/componentsdesongletsAgents/AgentInfoPanel.jsx';
 import AdministrationUsers from '../components/componentsdesongletsAdmins/AdministrationUsers.jsx';
 import AdminSessionsUsers from '../components/componentsdesongletsAdmins/AdminSessionsUsers.jsx';
-import socket from '../socket.js';
 import useAgentFiches from '../api/useAgentFiches.js';
 import axiosInstance from '../api/axiosInstance.js';
 import VentesInfoPanel from '../components/componentsdesongletsAgents/VentesInfoPanel.jsx';
@@ -207,7 +207,17 @@ const AdminDashboard = () => {
             currentSession={currentSession}
           />
           <main className="flex-1 p-6 bg-gray-100 overflow-auto">
-            {activeItem === 'dashboard' && <p> tableau de bord de l'administrateur</p>}
+             {activeItem === 'dashboard' && (
+            <>
+              <StatGroup setActiveItem={setActiveItem} />
+              <div className="mt-12 flex flex-col md:flex-row gap-6">
+                <div className="flex-1">
+                {/* <WeeklySalesChart /> */}
+                </div>
+                {/* <TodayRecap /> */}
+              </div>
+            </>
+          )}
 
             {activeItem === 'activité' &&
               <AgentInfoPanel
@@ -217,10 +227,6 @@ const AdminDashboard = () => {
                 setEtat={setEtat}
                 timers={timers}
                 setTimers={setTimers}
-                // elapsed={elapsed}
-                // setElapsed={setElapsed}
-                // lastChange={lastChange}
-                // setLastChange={setLastChange}
                 onStatusChange={handleStatusChange}
                 currentSession={currentSession}
 

@@ -11,12 +11,15 @@ const {
     getAllSales,
     updateSaleStatus,
     updateSaleMobile,
-    auditeSale
+    auditeSale,
+    getAdminSalesSummary
     } = require('../controllers/salesControllers');
 const auth = require('../middlewares/authMiddleware');
 
 
 router.get('/today-summary', auth, getTodaySummary); // Résumé des ventes du jour (protégé)
+router.get('/admin-summary', auth, getAdminSalesSummary); // Résumé de toutes les ventes pour l'admin (protégé)
+
 router.get('/weekly', auth, getWeeklySales); // Ventes hebdomadaires (protégé)
 
 router.get('/admin', auth, getAllSales)

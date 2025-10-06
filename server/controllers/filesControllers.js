@@ -3,8 +3,8 @@ const XLSX = require("xlsx");
 const columnOptions = require("../shared/columnsConfig");
 const dayjs = require("dayjs");
 
-// Obtenir les nouvelles fiches par
-exports.getTodayNewFilesByUniverse = async (req, res) => {
+// Obtenir les nouvelles fiches avec le statut nouvelle
+exports.getNewFilesCountByAgent = async (req, res) => {
 
   try {
     const agentFiles = req.user.id; // exemple: 'Energie' ou 'OffreMobile'
@@ -20,6 +20,23 @@ exports.getTodayNewFilesByUniverse = async (req, res) => {
   } catch (error) {
     console.error('Erreur getTodayNewFilesByUniverse:', error);
     res.status(500).json({ error: 'Erreur serveur' });
+  }
+};
+
+// obtenir le nombre total de nouvelles fiches aujourdhui
+exports.getAdminFilesSummary = async (req, res) => {
+  try {
+    const result = await db.query(`
+      SELECT COUNT(*) AS total_files_today
+      FROM files
+      WHERE DATE(date_import) = CURRENT_DATE
+      AND statut = 'nouvelle'
+    `);
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error("Erreur getAdminFilesSummary:", error);
+    res.status(500).json({ message: "Erreur serveur" });
   }
 };
 

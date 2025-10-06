@@ -46,6 +46,26 @@ exports.getTodaySummary = async (req, res) => {
   }
 };
 
+// Avoir le nombre total de ventes du jour pour l'admin
+exports.getAdminSalesSummary = async (req, res) => {
+  try {
+    const result = await db.query(`
+      SELECT
+        COUNT(*) AS total_sales_today,
+        COUNT(*) FILTER (WHERE status = 'pending') AS pending_sales_today,
+        COUNT(*) FILTER (WHERE status = 'validated') AS validated_sales_today,
+        COUNT(*) FILTER (WHERE status = 'cancelled') AS cancelled_sales_today
+      FROM sales
+      WHERE DATE(created_at) = CURRENT_DATE
+    `);
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error("Erreur getAdminSalesSummary:", error);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+};
+
 // ✅ Résumé des Ventes hebdomadaires de l’agent connecté
 exports.getWeeklySales = async (req, res) => {
   try {
