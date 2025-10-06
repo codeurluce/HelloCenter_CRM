@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import SidebarAdmin from '../components/SidebarAdmin.jsx';
 import DashboardHeader from '../components/dashbords/DashbordHeader.jsx';
 import StatGroup from '../components/cards/StatGroup.js';
+import WeeklySalesChart from '../components/cards/WeeklySalesChart.jsx';
 import { AgentStatusProvider } from '../api/AgentStatusContext.jsx';
 import { AuthContext } from './AuthContext.jsx';
 import { useContext } from 'react';
@@ -17,6 +18,7 @@ import { toast } from 'react-toastify';
 import { statuses } from '../shared/StatusSelector.jsx';
 import { useAgentStatus } from '../api/AgentStatusContext';
 import { closeSession, startSession } from '../api/saveSessionToDB.js';
+import WeeklySalesChartAdmin from '../components/cards/WeeklySalesChartAdmin.jsx';
 
 
 const AdminDashboard = () => {
@@ -211,11 +213,14 @@ const AdminDashboard = () => {
             <>
               <StatGroup setActiveItem={setActiveItem} />
               <div className="mt-12 flex flex-col md:flex-row gap-6">
-                <div className="flex-1">
-                {/* <WeeklySalesChart /> */}
-                </div>
-                {/* <TodayRecap /> */}
-              </div>
+  <div className="flex-1">
+    <WeeklySalesChart />
+  </div>
+  <div className="flex-1">
+    <WeeklySalesChartAdmin />
+  </div>
+</div>
+
             </>
           )}
 

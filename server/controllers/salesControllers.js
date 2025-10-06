@@ -93,6 +93,64 @@ ORDER BY date;
   }
 };
 
+// Résumé hebdomadaire de tous les agents par jour
+exports.getWeeklySalesAllAgents = async (req, res) => {
+  try {
+    const query = `
+      SELECT 
+        TO_CHAR(created_at, 'Dy') AS day,
+        COUNT(*) AS validated_sales
+      FROM sales
+      WHERE created_at >= date_trunc('week', CURRENT_DATE)
+        AND created_at < date_trunc('week', CURRENT_DATE) + interval '7 days'
+      GROUP BY day
+  ORDER BY MIN(created_at)
+      `;
+    const { rows } = await db.query(query);
+
+    // Transforme pour frontend
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+    const result = days.map(day => {
+      const found = rows.find(r => r.day === day);
+      return { day, ventes: found ? parseInt(found.validated_sales, 10) : 0 };
+    });
+
+    res.json(result);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+};
+
+// Résumé hebdo par agent (empilé par jour)
+exports.getAgentsWeeklySales = async (req, res) => {
+  try {
+    const query = `
+      SELECT 
+        name_agent,
+        TO_CHAR(created_at, 'Dy') AS day,
+        COUNT(*) AS validated_sales
+      FROM sales
+      WHERE created_at >= date_trunc('week', CURRENT_DATE)
+        AND created_at < date_trunc('week', CURRENT_DATE) + interval '7 days'
+      GROUP BY name_agent, day
+      ORDER BY name_agent, day;
+    `;
+    const { rows } = await db.query(query);
+
+    const result = {};
+    rows.forEach(row => {
+      if (!result[row.name_agent]) result[row.name_agent] = {};
+      result[row.name_agent][row.day] = parseInt(row.validated_sales, 10);
+    });
+
+    res.json(result);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+};
+
 exports.getAllSales = async (req, res) => {
   try {
     const result = await db.query(

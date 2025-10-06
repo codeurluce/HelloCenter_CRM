@@ -12,7 +12,9 @@ const {
     updateSaleStatus,
     updateSaleMobile,
     auditeSale,
-    getAdminSalesSummary
+    getAdminSalesSummary,
+    getWeeklySalesAllAgents,
+    getAgentsWeeklySales, // diagramme horizontal
     } = require('../controllers/salesControllers');
 const auth = require('../middlewares/authMiddleware');
 
@@ -21,6 +23,8 @@ router.get('/today-summary', auth, getTodaySummary); // Résumé des ventes du j
 router.get('/admin-summary', auth, getAdminSalesSummary); // Résumé de toutes les ventes pour l'admin (protégé)
 
 router.get('/weekly', auth, getWeeklySales); // Ventes hebdomadaires (protégé)
+router.get('/weekly-agents', getWeeklySalesAllAgents) // Ventes hebdomadaires de tous les agents pour l'admin
+router.get('/weekly-agents-charthorizontal', getAgentsWeeklySales) // diagramme horizontal
 
 router.get('/admin', auth, getAllSales)
 router.get('/', auth, getSales); // Récupérer tous les ventes de l'agent
