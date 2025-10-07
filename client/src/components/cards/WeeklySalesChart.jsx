@@ -1,3 +1,10 @@
+/**
+ * src/cards/WeeklySalesChart
+ * ------------------------------------------------------------
+ * ➤  Afficher un graphique en barres des ventes hebdomadaires pour l'agent
+ * ➤  Afficher un graphique en barres de tous les ventes hebdomadaires pour l'admin
+ */
+
 import React, { useEffect, useState } from 'react';
 import axiosInstance from '../../api/axiosInstance';
 
@@ -94,10 +101,11 @@ const WeeklySalesChart = () => {
   if (!data.length) return <p>Aucune donnée disponible.</p>;
 
   return (
-    <div className="bg-white p-6 rounded-2xl shadow w-full h-80">
-      <h2 className="text-lg font-semibold mb-4">Ventes hebdomadaires globales</h2>
+    <div className="bg-white p-6 rounded-2xl shadow w-full h-[400px]">
+      <h2 className="text-lg font-semibold mb-4">Ventes quotidiennes globales</h2>
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data}>
+        <BarChart data={data}
+          margin={{ top: 20, right: 20, left: 20, bottom: 60 }}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
           <XAxis dataKey="day" tickFormatter={(day) => translateDaysEnToFr[day] || day} />
           <YAxis tickLine={false} axisLine={false} />
@@ -107,7 +115,7 @@ const WeeklySalesChart = () => {
           />
           <Bar
             dataKey="ventes"
-            fill="#6366F1"
+            fill="#3B82F6 "
             radius={[6, 6, 0, 0]}
             barSize={40}
             animationDuration={500}
@@ -235,10 +243,10 @@ export default WeeklySalesChart;
 //   if (!data.length) return <p>Aucune donnée disponible.</p>;
 
 //   return (
-//     <div className="bg-white p-6 rounded-2xl shadow w-full h-80">
+//     <div className="bg-white p-6 rounded-2xl shadow w-full h-[400px]">
 //       <h2 className="text-lg font-semibold mb-4">Ventes hebdomadaires globales</h2>
 //       <ResponsiveContainer width="100%" height="100%">
-//         <BarChart data={data}>
+//         <BarChart data={data} margin={{ top: 20, right: 20, left: 20, bottom: 60 }}>
 //           <CartesianGrid strokeDasharray="3 3" vertical={false} />
 //           <XAxis dataKey="day" />
 //           <YAxis tickLine={false} axisLine={false} />

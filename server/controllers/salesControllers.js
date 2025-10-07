@@ -7,8 +7,7 @@ const { logSaleHistory, getActorName } = require('../salesHistory');
 //   cancelled: 'signifie les ventes qui sont annules',
 
 
-
-// ✅ Résumé des ventes du jour pour l'agent connecté
+// Récupère le nombre total de ventes du jour pour l'agent connecté, et le nombre total de fichiers "nouvelle" assignés à cet agent.
 exports.getTodaySummary = async (req, res) => {
   try {
     const agentId = req.user.id;
@@ -46,7 +45,7 @@ exports.getTodaySummary = async (req, res) => {
   }
 };
 
-// Avoir le nombre total de ventes du jour pour l'admin
+// Recupere le nombre total de ventes par jour pour l'admin
 exports.getAdminSalesSummary = async (req, res) => {
   try {
     const result = await db.query(`
@@ -66,7 +65,7 @@ exports.getAdminSalesSummary = async (req, res) => {
   }
 };
 
-// ✅ Résumé des Ventes hebdomadaires de l’agent connecté
+// Récupère, pour l'agent connecté, le nombre de ventes validées chaque jour depuis le début de la semaine en cours.
 exports.getWeeklySales = async (req, res) => {
   try {
     const agentId = req.user.id;
@@ -93,7 +92,7 @@ ORDER BY date;
   }
 };
 
-// Résumé hebdomadaire de tous les agents par jour
+// Récupère les ventes hebdomadaires de tous les agents pour l'adamin
 exports.getWeeklySalesAllAgents = async (req, res) => {
   try {
     const query = `
@@ -151,6 +150,74 @@ exports.getAgentsWeeklySales = async (req, res) => {
   }
 };
 
+// Résumé mensuel par semaine pour manager/admin
+exports.getMonthlySalesAllAgents = async (req, res) => {
+  try {
+    const query = `
+      SELECT 
+        EXTRACT(WEEK FROM created_at) AS week_number,
+        COUNT(*) AS validated_sales
+      FROM sales
+      WHERE created_at >= date_trunc('month', CURRENT_DATE)
+        AND created_at < date_trunc('month', CURRENT_DATE) + interval '1 month'
+      GROUP BY week_number
+      ORDER BY week_number;
+    `;
+
+    const { rows } = await db.query(query);
+
+    // Transformation frontend-friendly
+    const formatted = rows.map(r => ({
+      week: `Semaine ${r.week_number}`,
+      ventes: parseInt(r.validated_sales, 10),
+    }));
+
+    res.json(formatted);
+
+  } catch (error) {
+    console.error('Erreur getMonthlySalesAllAgents:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+};
+
+// ✅ Résumé mensuel groupé par agent et par jour
+exports.getAgentsMonthlySales = async (req, res) => {
+  try {
+    const query = `
+      SELECT 
+        name_agent,
+        EXTRACT(WEEK FROM created_at) AS week_number,
+        TO_CHAR(created_at, 'Dy') AS day,
+        COUNT(*) AS validated_sales
+      FROM sales
+      WHERE created_at >= date_trunc('month', CURRENT_DATE)
+        AND created_at < date_trunc('month', CURRENT_DATE) + interval '1 month'
+      GROUP BY name_agent, week_number, day
+      ORDER BY name_agent, week_number, day;
+    `;
+    const { rows } = await db.query(query);
+
+    const result = {};
+
+    rows.forEach(row => {
+      const agent = row.name_agent;
+      const weekLabel = `Semaine ${row.week_number}`;
+      const day = row.day;
+
+      if (!result[agent]) result[agent] = {};
+      if (!result[agent][weekLabel]) result[agent][weekLabel] = { Mon:0, Tue:0, Wed:0, Thu:0, Fri:0 };
+
+      result[agent][weekLabel][day] = parseInt(row.validated_sales, 10);
+    });
+
+    res.json(result);
+  } catch (error) {
+    console.error('Erreur getAgentsMonthlySales:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+};
+
+// Récupère toutes les ventes dans la base, avec les informations des agents associés (prénom, nom), triées par date de création décroissante.
 exports.getAllSales = async (req, res) => {
   try {
     const result = await db.query(
@@ -343,7 +410,6 @@ exports.deleteSale = async (req, res) => {
   }
 };
 
-
 // Export pour mettre à jour une vente energie
 exports.updateSale = async (req, res) => {
   try {
@@ -469,7 +535,6 @@ exports.updateSale = async (req, res) => {
     res.status(500).json({ message: "Erreur serveur", error });
   }
 };
-
 
 // Export pour mettre à jour une vente Mobile
 exports.updateSaleMobile = async (req, res) => {
@@ -706,6 +771,7 @@ exports.updateSaleStatus = async (req, res) => {
   }
 };
 
+// Mettre a jour le champ audite d'une vente.
 exports.auditeSale = async (req, res) => {
   const { id } = req.params;
   const { audite } = req.body;

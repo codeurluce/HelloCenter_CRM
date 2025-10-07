@@ -19,14 +19,17 @@ import { statuses } from '../shared/StatusSelector.jsx';
 import { useAgentStatus } from '../api/AgentStatusContext';
 import { closeSession, startSession } from '../api/saveSessionToDB.js';
 import WeeklySalesChartAdmin from '../components/cards/WeeklySalesChartAdmin.jsx';
+import MonthlySalesChart from '../components/cards/MonthlySalesChart.jsx';
+import MonthlySalesChartAdmin from '../components/cards/MonthlySalesChartAdmin.jsx';
+import MonthlyAgentSalesPieChart from '../components/cards/MonthlyAgentSalesPieChart.jsx';
 
 
 const AdminDashboard = () => {
   const { user, setUser } = useContext(AuthContext);
   const [activeItem, setActiveItem] = useState(() => { return localStorage.getItem("activeSidebarItem") || "dashboard"; });
   const { logoutAgent, setCurrentStatus } = useAgentStatus();
-  
-    const { sessionTime, pauseTime, dispoTime } = useAgentStatus();
+
+  const { sessionTime, pauseTime, dispoTime } = useAgentStatus();
   const timersData = useTimers();
 
   const fichesData = useAgentFiches(user);
@@ -101,53 +104,53 @@ const AdminDashboard = () => {
   }, [user]);
 
   // Timer qui incrémente elapsed en live depuis lastChange
-//   useEffect(() => {
-//     if (!etat || !lastChange || isNaN(new Date(lastChange).getTime())) {
-//       setElapsed(0);
-//       clearInterval(intervalRef.current);
-//       return;
-//     }
+  //   useEffect(() => {
+  //     if (!etat || !lastChange || isNaN(new Date(lastChange).getTime())) {
+  //       setElapsed(0);
+  //       clearInterval(intervalRef.current);
+  //       return;
+  //     }
 
-//     const update = () => {
-//       const diff = Math.floor(
-//         (Date.now() - new Date(lastChange).getTime()) / 1000
-//       );
-//       setElapsed(diff >= 0 ? diff : 0);
-//     };
+  //     const update = () => {
+  //       const diff = Math.floor(
+  //         (Date.now() - new Date(lastChange).getTime()) / 1000
+  //       );
+  //       setElapsed(diff >= 0 ? diff : 0);
+  //     };
 
-//     update();
-//     intervalRef.current = setInterval(update, 1000);
-//     return () => clearInterval(intervalRef.current);
-//   }, [etat, lastChange, setElapsed]);
+  //     update();
+  //     intervalRef.current = setInterval(update, 1000);
+  //     return () => clearInterval(intervalRef.current);
+  //   }, [etat, lastChange, setElapsed]);
 
-//   useEffect(() => {
-//   try {
-//     const saved = localStorage.getItem("timers");
-//     if (saved) {
-//       const parsed = JSON.parse(saved);
-//       if (parsed) {
-//         if (parsed.etat) setEtat(parsed.etat);
-//         if (parsed.timers) setTimers(parsed.timers);
-//         if (parsed.lastChange) setLastChange(new Date(parsed.lastChange));
-//       }
-//     }
-//   } catch {
+  //   useEffect(() => {
+  //   try {
+  //     const saved = localStorage.getItem("timers");
+  //     if (saved) {
+  //       const parsed = JSON.parse(saved);
+  //       if (parsed) {
+  //         if (parsed.etat) setEtat(parsed.etat);
+  //         if (parsed.timers) setTimers(parsed.timers);
+  //         if (parsed.lastChange) setLastChange(new Date(parsed.lastChange));
+  //       }
+  //     }
+  //   } catch {
 
-//   }
-// }, []);
+  //   }
+  // }, []);
 
-/**
-   * ⚡ Changement de statut (ex: Disponible → Pause → Hors ligne)
-   * - Ferme la session courante
-   * - Démarre une nouvelle session avec le nouveau statut
-   * - Synchronise le contexte global (useAgentStatus)
-   */
+  /**
+     * ⚡ Changement de statut (ex: Disponible → Pause → Hors ligne)
+     * - Ferme la session courante
+     * - Démarre une nouvelle session avec le nouveau statut
+     * - Synchronise le contexte global (useAgentStatus)
+     */
   const handleStatusChange = async (newEtatFr, pause) => {
     setCurrentStatus(newEtatFr); // synchro immédiate côté front
     if (!user?.id) return;
     try {
       await closeSession({ user_id: user.id }); // clôture de la session en DB
-    } catch (_) {}
+    } catch (_) { }
 
     try {
       await startSession({ user_id: user.id, status: newEtatFr, pause_type: pause }); // nouvelle session
@@ -202,27 +205,37 @@ const AdminDashboard = () => {
             key={tick}
             etat={etat}
             timers={timers}
-            // elapsed={elapsed}
             onStatusChange={handleStatusChange}
             currentAgent={user?.id}
             activePage={activeItem}
             currentSession={currentSession}
           />
           <main className="flex-1 p-6 bg-gray-100 overflow-auto">
-             {activeItem === 'dashboard' && (
-            <>
-              <StatGroup setActiveItem={setActiveItem} />
-              <div className="mt-12 flex flex-col md:flex-row gap-6">
-  <div className="flex-1">
-    <WeeklySalesChart />
-  </div>
-  <div className="flex-1">
-    <WeeklySalesChartAdmin />
-  </div>
-</div>
+            {activeItem === 'dashboard' && (
+              <>
+                <StatGroup setActiveItem={setActiveItem} />
+                <div className="mt-12 flex flex-col md:flex-row gap-6">
+                  <div className="flex-1">
+                    <WeeklySalesChart />
+                  </div>
+                  <div className="flex-1">
+                    <WeeklySalesChartAdmin />
+                  </div>
 
-            </>
-          )}
+                </div>
+                <div className="mt-12 flex flex-col md:flex-row gap-6 mb-14">
+                  <div className="flex-1">
+                    <MonthlySalesChart />
+                  </div>
+                  <div className="flex-1">
+                    <MonthlySalesChartAdmin />
+                  </div>
+                </div>
+                {/* <div className="flex-1">
+                  <MonthlyAgentSalesPieChart />
+                </div> */}
+              </>
+            )}
 
             {activeItem === 'activité' &&
               <AgentInfoPanel

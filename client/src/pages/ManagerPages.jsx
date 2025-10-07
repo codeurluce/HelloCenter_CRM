@@ -14,6 +14,9 @@ import { toast } from 'react-toastify';
 import { statuses } from '../shared/StatusSelector.jsx';
 import { useAgentStatus } from '../api/AgentStatusContext';
 import { closeSession, startSession } from '../api/saveSessionToDB.js';
+import WeeklySalesChart from '../components/cards/WeeklySalesChart.jsx';
+import WeeklySalesChartAdmin from '../components/cards/WeeklySalesChartAdmin.jsx';
+import StatGroup from '../components/cards/StatGroup.js';
 
 
 const ManagerDashboard = () => {
@@ -119,15 +122,25 @@ const ManagerDashboard = () => {
             key={tick}
             etat={etat}
             timers={timers}
-            // elapsed={elapsed}
             onStatusChange={handleStatusChange}
             currentAgent={user?.id}
             activePage={activeItem}
             currentSession={currentSession}
           />
           <main className="flex-1 p-6 bg-gray-100 overflow-auto">
-            {activeItem === 'dashboard' && <p> tableau de bord de l'administrateur</p>}
-
+          {activeItem === 'dashboard' && (
+              <>
+                <StatGroup setActiveItem={setActiveItem} />
+                <div className="mt-12 flex flex-col md:flex-row gap-6">
+                  <div className="flex-1">
+                    <WeeklySalesChart />
+                  </div>
+                  <div className="flex-1">
+                    <WeeklySalesChartAdmin />
+                  </div>
+                </div>
+              </>
+            )}
             {activeItem === 'activité' &&
               <AgentInfoPanel
                 key={tick}

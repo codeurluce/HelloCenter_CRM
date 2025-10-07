@@ -23,14 +23,13 @@ exports.getNewFilesCountByAgent = async (req, res) => {
   }
 };
 
-// obtenir le nombre total de nouvelles fiches aujourdhui
+// obtenir le nombre total de nouvelles fiches (statut = nouvelle) pour l'admin
 exports.getAdminFilesSummary = async (req, res) => {
   try {
     const result = await db.query(`
       SELECT COUNT(*) AS total_files_today
       FROM files
-      WHERE DATE(date_import) = CURRENT_DATE
-      AND statut = 'nouvelle'
+      WHERE statut = 'nouvelle'
     `);
 
     res.json(result.rows[0]);

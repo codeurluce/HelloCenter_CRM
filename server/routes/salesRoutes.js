@@ -15,28 +15,34 @@ const {
     getAdminSalesSummary,
     getWeeklySalesAllAgents,
     getAgentsWeeklySales, // diagramme horizontal
+    getMonthlySalesAllAgents,
+    getAgentsMonthlySales,
     } = require('../controllers/salesControllers');
 const auth = require('../middlewares/authMiddleware');
 
+// Routes GET : récupération des données
 
-router.get('/today-summary', auth, getTodaySummary); // Résumé des ventes du jour (protégé)
-router.get('/admin-summary', auth, getAdminSalesSummary); // Résumé de toutes les ventes pour l'admin (protégé)
+router.get('/today-summary', auth, getTodaySummary); // Récupère le résumé des ventes du jour pour l'agent connecté (authentification requise) // Méthode : GET /api/sales/today-sum
+router.get('/admin-summary', auth, getAdminSalesSummary); // Récupère le résumé global des ventes du jour pour l'administration (authentification requise) // Méthode : GET /api/sales/admin-summary
+router.get('/weekly', auth, getWeeklySales); // Récupère les ventes hebdomadaires de l'agent connecté (authentification requise) // Méthode : GET /api/sales/weekly
+router.get('/weekly-agents', auth, getWeeklySalesAllAgents); // Récupère les ventes hebdomadaires de tous les agents pour l'administration (authentification requise) // Méthode : GET /api/sales/weekly-agents
+router.get('/weekly-agents-charthorizontal', auth, getAgentsWeeklySales);// Récupère les ventes hebdomadaires détaillées par agent sous forme de diagramme horizontal (authentification requise) // Méthode : GET /api/sales/weekly-agents-charthorizontal
+router.get('/monthly-agents', getMonthlySalesAllAgents); // Récupère le résumé mensuel des ventes de tous les agents, regroupé par semaine // Méthode : GET /api/sales/monthly-agents
+router.get('/monthly-agents-charthorizontal', getAgentsMonthlySales); // Récupère le résumé mensuel détaillé par agent sous forme de diagramme horizontal // Méthode : GET /api/sales/monthly-agents-charthorizontal
+router.get('/admin', auth, getAllSales); // Récupère toutes les ventes pour l'administration (authentification requise) // Méthode : GET /api/sales/admin
+router.get('/', auth, getSales); // Récupère toutes les ventes de l'agent connecté (authentification requise) // Méthode : GET /api/sales
+router.get('/:id', auth, getSaleById); // Récupère une vente spécifique par son ID pour l'agent connecté (authentification requise) // Méthode : GET /api/sales/:id
 
-router.get('/weekly', auth, getWeeklySales); // Ventes hebdomadaires (protégé)
-router.get('/weekly-agents', getWeeklySalesAllAgents) // Ventes hebdomadaires de tous les agents pour l'admin
-router.get('/weekly-agents-charthorizontal', getAgentsWeeklySales) // diagramme horizontal
+// Route POST : création de données
+router.post('/', auth, createSale); // Crée/enregistre une nouvelle vente (authentification requise) // Méthode : POST /api/sales
 
-router.get('/admin', auth, getAllSales)
-router.get('/', auth, getSales); // Récupérer tous les ventes de l'agent
+// Routes PUT : modification de données
+router.put('/:id/change-status', auth, updateSaleStatus); // Met à jour le statut d'une vente spécifique par son ID (authentification requise) // Méthode : PUT /api/sales/:id/change-status
+router.put('/energie/:id', auth, updateSale); // Modifie une vente énergie par son ID (authentification requise) // Méthode : PUT /api/sales/energie/:id
+router.put('/offre-mobile/:id', auth, updateSaleMobile); // Modifie une vente offre mobile par son ID (authentification requise) // Méthode : PUT /api/sales/offre-mobile/:id
+router.put('/:id/audit', auth, auditeSale); // Audite une vente spécifique par ID (authentification requise) // Méthode : PUT /api/sales/:id/audit
 
-router.put('/:id/change-status', auth, updateSaleStatus);
-router.get('/:id', auth, getSaleById); // Recuperer une vente par son ID (protégé)
-router.put('/energie/:id', auth, updateSale); // Modifier une vente Energie (protégé)
-router.put('/offre-mobile/:id', auth, updateSaleMobile); // Modifier une vente OffreMobile (protégé)
-router.delete('/:id', auth, deleteSale); // Supprimer une vente (protégé)
-router.put('/:id/audit', auth, auditeSale)  // Auditer une vente
-
-
-router.post('/', auth, createSale); // Enregistrer une vente (protégé)
+// Route DELETE : suppression de données
+router.delete('/:id', auth, deleteSale); // Supprime une vente spécifique par son ID (authentification requise) // Méthode : DELETE /api/sales/:id
 
 module.exports = router;

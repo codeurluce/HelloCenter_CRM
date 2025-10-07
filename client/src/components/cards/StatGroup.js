@@ -99,7 +99,7 @@ const StatGroup = ({ setActiveItem }) => {
           onClick: () => setActiveItem('sales'),
         },
         {
-          title: 'Mes ventes en attente',
+          title: 'Mes ventes',
           value: statsData.ventesEnAttente,
           icon: BarChart3,
       // icon: CircleArrowOutUpRight,
