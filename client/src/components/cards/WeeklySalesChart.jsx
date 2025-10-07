@@ -108,7 +108,7 @@ const WeeklySalesChart = () => {
           margin={{ top: 20, right: 20, left: 20, bottom: 60 }}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
           <XAxis dataKey="day" tickFormatter={(day) => translateDaysEnToFr[day] || day} />
-          <YAxis tickLine={false} axisLine={false} />
+          <YAxis tickLine={false} axisLine={false} allowDecimals={false} />
           <Tooltip
             content={<CustomTooltip />}
             labelFormatter={(day) => translateDaysEnToFr[day] || day}

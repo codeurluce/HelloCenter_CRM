@@ -61,7 +61,7 @@ const MonthlySalesChart = () => {
                     margin={{ top: 20, right: 20, left: 20, bottom: 60 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
                     <XAxis dataKey="week" />
-                    <YAxis tickLine={false} axisLine={false} />
+                    <YAxis tickLine={false} axisLine={false} allowDecimals={false} />
                     <Tooltip
                         content={<CustomTooltip />}
                     />
