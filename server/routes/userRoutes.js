@@ -19,42 +19,35 @@ const {
 } = require("../controllers/userControllers");
 
 /**
- * AUTHENTIFICATION & COMPTE
+ * AUTHENTIFICATION & COMPTE UTILISATEUR
  */
 
-// Créer un utilisateur avec mot de passe temporaire (généré automatiquement)
-router.post("/register", createUser);
+router.get("/me", verifyToken, getMe); // 📌 Récupérer les informations du profil connecté (authentification requise) // Méthode : GET /api/users/me
+router.get('/validate', verifyToken, validateSession); // 📌 Validation de session (authentification requise) // Méthode : GET /api/users/validate
 
-// Connexion utilisateur
-router.post("/login", loginUser);
-router.post('/agent/connect', connectAgent);
-router.post('/agent/disconnect', disconnectAgent);
-router.post('/agent/disconnect-force', disconnectAgentForce)
-
-// Changer mot de passe au premier login
-router.post("/change-password-first-login", verifyToken, changePasswordFirstLogin);
-
-// Infos du profil connecté
-router.get("/me", verifyToken, getMe);
-
-router.get ('/validate', verifyToken, validateSession);
+router.post("/register", createUser); // 📌 Création d’un utilisateur avec mot de passe temporaire généré // Méthode : POST /api/users/register
+router.post("/login", loginUser); // 📌 Connexion utilisateur // Méthode : POST /api/users/login
+router.post('/agent/connect', connectAgent); // 📌 Connexion d’un agent (mise à jour état connecté) // Méthode : POST /api/users/agent/connect
+router.post('/agent/disconnect', disconnectAgent); // 📌 Déconnexion d’un agent (mise à jour état déconnecté) // Méthode : POST /api/users/agent/disconnect
+router.post('/agent/disconnect-force', disconnectAgentForce); // 📌 Déconnexion forcée d’un agent (admin ou automatisée) // Méthode : POST /api/users/agent/disconnect-force
+router.post("/change-password-first-login", verifyToken, changePasswordFirstLogin); // 📌 Changement du mot de passe au premier login (authentification requise) // Méthode : POST /api/users/change-password-first-login
 
 
 /**
  * GESTION DES UTILISATEURS (ADMIN)
  */
 
-// Récupérer tous les utilisateurs
-router.get("/users", verifyToken, getAllUsers);
-router.get("/users_bd", verifyToken, getAllUsersBd);
+/**
+ * GESTION DES UTILISATEURS (ADMINISTRATION)
+ */
 
-// Activer / désactiver un utilisateur
-router.put("/:id/toggle-active", verifyToken, toggleActiveUser);
+router.get("/users", verifyToken, getAllUsers);// 📌 Récupérer tous les utilisateurs (authentification requise) // Méthode : GET /api/users/users
+router.get("/users_bd", verifyToken, getAllUsersBd); // 📌 Récupérer tous les utilisateurs depuis la base (authentification nécessaire) // Méthode : GET /api/users/users_bd
 
-// Mettre à jour un utilisateur
-router.put("/:id/update", verifyToken, updateUser);
+router.post("/:id/reset-password", verifyToken, resetPasswordByAdmin); // 📌 Réinitialiser le mot de passe d’un utilisateur par son ID (admin uniquement, auth requise) // Méthode : POST /api/users/:id/reset-password
 
-// Réinitialiser le mot de passe (admin uniquement)
-router.post("/:id/reset-password", verifyToken, resetPasswordByAdmin);
+router.put("/:id/toggle-active", verifyToken, toggleActiveUser); // 📌 Activer ou désactiver un utilisateur par son ID (authentification requise) // Méthode : PUT /api/users/:id/toggle-active
+router.put("/:id/update", verifyToken, updateUser); // 📌 Mettre à jour les informations d’un utilisateur par son ID (authentification requise) // Méthode : PUT /api/users/:id/update
 
 module.exports = router;
+
