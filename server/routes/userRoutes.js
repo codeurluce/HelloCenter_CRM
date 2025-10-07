@@ -50,4 +50,3 @@ router.put("/:id/toggle-active", verifyToken, toggleActiveUser); // 📌 Activer
 router.put("/:id/update", verifyToken, updateUser); // 📌 Mettre à jour les informations d’un utilisateur par son ID (authentification requise) // Méthode : PUT /api/users/:id/update
 
 module.exports = router;
-
