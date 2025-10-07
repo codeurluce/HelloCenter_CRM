@@ -98,14 +98,14 @@ const StatGroup = ({ setActiveItem }) => {
           color: 'border-blue-500 text-blue-600',
           onClick: () => setActiveItem('sales'),
         },
-        {
-          title: 'Mes ventes',
-          value: statsData.ventesEnAttente,
-          icon: BarChart3,
-      // icon: CircleArrowOutUpRight,
-          color: 'border-yellow-500 text-yellow-600',
-          onClick: () => setActiveItem('sales'),
-        },
+      //   {
+      //     title: 'Mes ventes',
+      //     value: statsData.ventesEnAttente,
+      //     icon: BarChart3,
+      // // icon: CircleArrowOutUpRight,
+      //     color: 'border-yellow-500 text-yellow-600',
+      //     onClick: () => setActiveItem('sales'),
+      //   },
         {
           title: 'Ventes payées',
           value: statsData.ventesValidees,
@@ -125,7 +125,7 @@ const StatGroup = ({ setActiveItem }) => {
       ];
 
   return (
-    <div className={`grid grid-cols-1 sm:grid-cols-2 ${!isAdminOrManager ? 'lg:grid-cols-3 xl:grid-cols-5' : 'lg:grid-cols-2'} gap-6 w-full`}>
+    <div className={`grid grid-cols-1 sm:grid-cols-2 ${!isAdminOrManager ? 'lg:grid-cols-3 xl:grid-cols-4' : 'lg:grid-cols-2'} gap-6 w-full`}>
       {stats.map((stat, index) => (
         <StatCard key={index} {...stat} />
       ))}
