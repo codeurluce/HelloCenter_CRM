@@ -119,9 +119,9 @@ const StatusSelector = ({ currentStatus, onSelect, mode = 'icons' }) => {
                             title={status.iconLabel}
                         >
                             <Icon
-                                className={`text-xl transition-all ${isActive ? status.color : 'text-gray-400'} ${isActive ? 'scale-125' : 'opacity-70'}`}
+                                className={`text-xl transition-all ${isActive ? status.color : 'text-gray-400 dark:text-gray-500'} ${isActive ? 'scale-125' : 'opacity-70'}`}
                             />
-                            <div className="absolute left-1/2 -translate-x-1/2 mt-8 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-all z-10">
+                            <div className="absolute left-1/2 -translate-x-1/2 mt-8 bg-black dark:bg-gray-800 text-white dark:text-gray-200 text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-all z-10">
                                 {status.iconLabel}
                             </div>
                         </div>
@@ -132,6 +132,7 @@ const StatusSelector = ({ currentStatus, onSelect, mode = 'icons' }) => {
                             key={status.key}
                             onClick={() => onSelect(status.statusFr, pauseType)}
                             disabled={isActive}
+                            // className={`flex flex-col items-center justify-center gap-1 p-2 rounded font-semibold text-sm ${isActive ? 'bg-green-600 text-white dark:bg-green-500 dark:text-black' : 'bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200'}`}
                             style={{
                                 background: isActive ? status.activeBg : '#ddd',
                                 color: isActive ? status.activeText : '#333',

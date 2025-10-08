@@ -1,6 +1,6 @@
 // src/pages/AgentPages.jsx
 import React, { useState, useEffect, useContext } from 'react';
-import SidebarAgent from '../components/SidebarAgent.jsx';
+import SidebarAgent from '../components/sidebars/SidebarAgent.jsx';
 import DashboardHeader from '../components/dashbords/DashbordHeader.jsx';
 import StatGroup from '../components/cards/StatGroup.js';
 import WeeklySalesChart from '../components/cards/WeeklySalesChart.jsx';

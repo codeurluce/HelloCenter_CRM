@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import SidebarAdmin from '../components/SidebarAdmin.jsx';
+import SidebarAdmin from '../components/sidebars/SidebarAdmin.jsx';
 import DashboardHeader from '../components/dashbords/DashbordHeader.jsx';
 import StatGroup from '../components/cards/StatGroup.js';
 import WeeklySalesChart from '../components/cards/WeeklySalesChart.jsx';
@@ -22,7 +22,7 @@ import WeeklySalesChartAdmin from '../components/cards/WeeklySalesChartAdmin.jsx
 import MonthlySalesChart from '../components/cards/MonthlySalesChart.jsx';
 import MonthlySalesChartAdmin from '../components/cards/MonthlySalesChartAdmin.jsx';
 import MonthlyAgentSalesPieChart from '../components/cards/MonthlyAgentSalesPieChart.jsx';
-
+import AdminSettings from '../components/componentsdesongletsAdmins/AdminSettings.jsx';
 
 const AdminDashboard = () => {
   const { user, setUser } = useContext(AuthContext);
@@ -253,7 +253,7 @@ const AdminDashboard = () => {
             {activeItem === 'files' && <AdminFichiersPanel />}
             {activeItem === 'sessions' && <AdminSessionsUsers />}
             {activeItem === 'administration' && <AdministrationUsers />}
-            {activeItem === 'settings' && <p> doit contenir les paramètres de l'administrateur</p>}
+            {activeItem === 'settings' && <AdminSettings />}
           </main>
         </div>
       </div>

@@ -15,14 +15,21 @@ import AgentDashboard from './pages/AgentPages';
 import AdminDashboard from './pages/AdminPages';
 import ManagerDashboard from './pages/ManagerPages';
 import { AuthProvider } from './pages/AuthContext';
+import { ThemeProvider } from './shared/ThemeContext';
+import { ThemeProvider as NextThemeProvider } from "next-themes";
+
 
 function AppWrapper() {
   return (
     <AuthProvider>
       <Router>
-            <AgentStatusProvider>
-      <App />
-    </AgentStatusProvider>
+        <AgentStatusProvider>
+          <ThemeProvider>
+          <NextThemeProvider attribute="class" defaultTheme="system" enableSystem={true}>
+          <App />
+          </NextThemeProvider>
+          </ThemeProvider>
+        </AgentStatusProvider>
         <ToastContainer position="top-right" autoClose={3000} />
       </Router>
     </AuthProvider>
@@ -48,28 +55,28 @@ const App = () => {
   });
 
   // ✅ Redirection automatique au refresh
-useEffect(() => {
-  if (!token || !user) return;
+  useEffect(() => {
+    if (!token || !user) return;
 
-  const currentPath = window.location.pathname;
+    const currentPath = window.location.pathname;
 
-  // ✅ Cas 1 : refresh sur une route déjà correcte (/agent, /agent/files, etc.)
-  // 👉 on ne fait rien → React Router charge cette page normalement
+    // ✅ Cas 1 : refresh sur une route déjà correcte (/agent, /agent/files, etc.)
+    // 👉 on ne fait rien → React Router charge cette page normalement
 
-  // ✅ Cas 2 : user est loggé mais est resté sur "/" ou "/login"
-  if (currentPath === "/" || currentPath === "/login") {
-    const target = user.mustChangePassword
-      ? "/change-password"
-      : routeByRole(user.role);
-    navigate(target, { replace: true }); // redirection uniquement dans ce cas
-  }
-}, [token, user]);
+    // ✅ Cas 2 : user est loggé mais est resté sur "/" ou "/login"
+    if (currentPath === "/" || currentPath === "/login") {
+      const target = user.mustChangePassword
+        ? "/change-password"
+        : routeByRole(user.role);
+      navigate(target, { replace: true }); // redirection uniquement dans ce cas
+    }
+  }, [token, user]);
 
   const handleLogin = (newToken, newUser, mustChangePasswordObj) => {
-    const updatedUser = { 
-      ...newUser, 
-      mustChangePassword: mustChangePasswordObj.required, 
-      mustChangePasswordReason: mustChangePasswordObj.reason 
+    const updatedUser = {
+      ...newUser,
+      mustChangePassword: mustChangePasswordObj.required,
+      mustChangePasswordReason: mustChangePasswordObj.reason
     };
 
     localStorage.setItem('token', newToken);
@@ -129,7 +136,7 @@ useEffect(() => {
         </ProtectedRoute>
       } />
 
-      <Route path="*" element={ token && user?.role ? <Navigate to={routeByRole(user.role)} replace /> : <Navigate to="/login" replace /> } />
+      <Route path="*" element={token && user?.role ? <Navigate to={routeByRole(user.role)} replace /> : <Navigate to="/login" replace />} />
     </Routes>
   );
 };

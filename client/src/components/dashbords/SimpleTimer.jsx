@@ -76,16 +76,16 @@ const elapsed = currentSession?.start_time
   };
 
   return (
-    <div className="flex flex-col items-start gap-4 text-sm">
+    <div className="flex flex-col items-start gap-4 text-sm text-black dark:text-white">
       <StatusSelector
         currentStatus={status}
         onSelect={handleStatusChange}
         mode="icons"
       />
 
-      <div>⏱️ Temps de travail : <strong>{formatTime(totalDispo)}</strong></div>
-      <div>💤 Pause totale : <strong>{formatTime(totalPause)}</strong></div>
-      {totalIndispo > 0 && <div>🚫 Indisponibilités : <strong>{formatTime(totalIndispo)}</strong></div>}
+      <div>⏱️ Temps de travail : <strong className="dark:text-white">{formatTime(totalDispo)}</strong></div>
+      <div>💤 Pause totale : <strong className="dark:text-white">{formatTime(totalPause)}</strong></div>
+      {totalIndispo > 0 && <div>🚫 Indisponibilités : <strong className="dark:text-white">{formatTime(totalIndispo)}</strong></div>}
     </div>
   );
 };

@@ -78,13 +78,15 @@ const DashboardHeader = ({
   const displayTitle = pageTitles[activePage] || 'Page';
 
   return (
-    <div className="flex items-center justify-between p-4 bg-white shadow rounded-lg sticky top-0 z-50">
+    // <div className="flex items-center justify-between p-4 bg-white shadow rounded-lg sticky top-0 z-50">
+    <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 text-black dark:text-white shadow rounded-lg sticky top-0 z-50">
       <div className="flex items-center space-x-4">
         <h1 className="text-2xl font-semibold">{displayTitle}</h1>
         <div
           onClick={() => calendarRef.current?.setOpen(true)}
-          className="flex items-center space-x-2 bg-blue-100 text-blue-600 px-3 py-1 rounded-lg cursor-pointer"
-        >
+          // className="flex items-center space-x-2 bg-blue-100 text-blue-600 px-3 py-1 rounded-lg cursor-pointer"
+          className="flex items-center space-x-2 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 px-3 py-1 rounded-lg cursor-pointer"
+          >
           <CalendarDays size={18} />
           <DatePicker
             ref={calendarRef}
@@ -108,7 +110,8 @@ const DashboardHeader = ({
             </>
           )}
           {showNotif && (
-            <div className="absolute top-8 right-0 w-72 bg-white shadow-lg rounded-lg p-3 z-10">
+            <div className="absolute top-8 right-0 w-72 bg-white dark:bg-gray-700 shadow-lg rounded-lg p-3 z-10">
+           {/* <div className="absolute top-8 right-0 w-72 bg-white shadow-lg rounded-lg p-3 z-10"> */}
               {rdvNotifications.length === 0 ? (
                 <p className="text-sm text-gray-500">Aucune notification</p>
               ) : (
@@ -122,8 +125,10 @@ const DashboardHeader = ({
                       localStorage.setItem(`rdvNotifications_${connectedAgent.id}`, JSON.stringify(updated));
                     }}
                   >
-                    <p className="text-sm font-medium text-black">{notif.message}</p>
-                    <p className="text-xs text-gray-500">📌 {notif.commentaire}</p>
+                    {/* <p className="text-sm font-medium text-black">{notif.message}</p> */}
+                    <p className="text-sm font-medium text-black dark:text-white">{notif.message}</p>
+                    {/* <p className="text-xs text-gray-500">📌 {notif.commentaire}</p> */}
+                    <p className="text-xs text-gray-500 dark:text-gray-300">📌 {notif.commentaire}</p>
                   </div>
                 ))
               )}
@@ -137,13 +142,16 @@ const DashboardHeader = ({
             className="flex items-center space-x-1 cursor-pointer"
             onClick={() => setShowAgentMenu(!showAgentMenu)}
           >
-            <User size={22} className="text-gray-700" />
-            <span className="text-sm font-medium text-gray-700">
+            {/* <User size={22} className="text-gray-700" /> */}
+            <User size={22} className="text-gray-700 dark:text-gray-200" />
+            {/* <span className="text-sm font-medium text-gray-700"> */}
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
               {connectedAgent ? `${connectedAgent.firstname} ${connectedAgent.lastname}` : '...'}
             </span>
           </div>
           {showAgentMenu && connectedAgent && (
-            <div className="absolute top-8 right-0 w-56 bg-white shadow-lg rounded-lg p-4 z-10 text-sm">
+            <div className="absolute top-8 right-0 w-56 bg-white dark:bg-gray-700 shadow-lg rounded-lg p-4 z-10 text-sm text-black dark:text-white">
+            {/* <div className="absolute top-8 right-0 w-56 bg-white shadow-lg rounded-lg p-4 z-10 text-sm"> */}
               <p><strong>Nom :</strong> {connectedAgent.firstname}</p>
               <p><strong>Prénom :</strong> {connectedAgent.lastname}</p>
               <p><strong>Profil :</strong> {connectedAgent.univers}</p>

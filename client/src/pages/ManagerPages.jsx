@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import SidebarManager from '../components/SidebarManager.jsx'
+import SidebarManager from '../components/sidebars/SidebarManager.jsx'
 import DashboardHeader from '../components/dashbords/DashbordHeader.jsx';
 import { AgentStatusProvider } from '../api/AgentStatusContext.jsx';
 import { AuthContext } from './AuthContext.jsx';
 import { useContext } from 'react';
 import AgentInfoPanel from '../components/componentsdesongletsAgents/AgentInfoPanel.jsx';
-import AdministrationUsers from '../components/componentsdesongletsAdmins/AdministrationUsers.jsx';
+// import AdministrationUsers from '../components/componentsdesongletsAdmins/AdministrationUsers.jsx';
 import AdminSessionsUsers from '../components/componentsdesongletsAdmins/AdminSessionsUsers.jsx';
 import axiosInstance from '../api/axiosInstance.js';
 import VentesInfoPanel from '../components/componentsdesongletsAgents/VentesInfoPanel.jsx';
