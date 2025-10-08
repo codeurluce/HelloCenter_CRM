@@ -39,7 +39,7 @@ const createUserWithGeneratedEmail = async (lastname, firstname, role = 'Agent',
 
     // Chercher un email unique en ajoutant suffixe numérique si besoin
     while (userExists) {
-        email = generateCompanyEmail(firstname, lastname, 'hellocenter.sn', suffix);
+        email = generateCompanyEmail(firstname, lastname, 'hellocenter.org', suffix);
         const existingUser = await findUserByEmail(email);
         if (existingUser) {
             counter++;
