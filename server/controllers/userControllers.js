@@ -279,7 +279,7 @@ const getMe = async (req, res) => {
 
   try {
     const result = await db.query(
-      `SELECT id, lastname, firstname, email, role, profil FROM users WHERE id = $1`,
+      `SELECT id, lastname, firstname, email, role, profil, created_at FROM users WHERE id = $1`,
       [userId]
     );
     const user = result.rows[0];

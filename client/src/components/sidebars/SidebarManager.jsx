@@ -10,9 +10,13 @@ import {
 import { ShoppingCart, Folder, Clock } from 'react-feather';
 import { Users } from 'lucide-react';
 import Swal from "sweetalert2";
+import { colorThemes } from '../../shared/colorThemes';
+import { ThemeContext, useTheme } from '../../shared/ThemeContext';
 
 const SidebarAdmin = ({ activeItem, setActiveItem, onLogout }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
+      const { theme } = useTheme();
+      const sidebarClass = colorThemes[theme] || colorThemes.blue;
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard Admin', icon: LayoutDashboard },
@@ -76,8 +80,8 @@ const SidebarAdmin = ({ activeItem, setActiveItem, onLogout }) => {
   );
 
   return (
-    <div className={`bg-gradient-to-b from-blue-500 to-blue-700 h-screen flex flex-col transition-all duration-300 
-      ${isCollapsed ? 'w-20' : 'w-64'}`}>
+    // <div className={`bg-gradient-to-b from-blue-500 to-blue-700 h-screen flex flex-col transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'}`}>
+    <div className={`${sidebarClass} h-screen flex flex-col transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'}`}>
 
       {/* Logo */}
       <div className="p-6 border-b border-blue-400 border-opacity-30">

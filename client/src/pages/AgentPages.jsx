@@ -16,6 +16,7 @@ import { statuses } from '../shared/StatusSelector.jsx';
 import { toast } from 'react-toastify';
 // import { useNavigate } from 'react-router-dom';
 import { closeSession, startSession } from '../api/saveSessionToDB.js';
+import AdminSettings from '../components/componentsdesongletsAdmins/AdminSettings.jsx';
 
 const AgentDashboard = () => {
   const { user, setUser } = useContext(AuthContext);
@@ -146,6 +147,7 @@ const AgentDashboard = () => {
               onProgramRdv={onProgramRdv}
             />
           )}
+          {activeItem === 'settings' && <AdminSettings />}
         </main>
       </div>
     </div>

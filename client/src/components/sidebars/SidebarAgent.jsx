@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, CircleUser, LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, CircleUser, LogOut, ChevronLeft, ChevronRight, Settings } from 'lucide-react';
 import { ShoppingCart, Folder } from 'react-feather';
 import Swal from "sweetalert2";
+import { colorThemes } from '../../shared/colorThemes';
+import { ThemeContext, useTheme } from '../../shared/ThemeContext';
 
 const SidebarAgent = ({ activeItem, setActiveItem, onLogout }) => {
     const [isCollapsed, setIsCollapsed] = useState(false);
+    const { theme } = useTheme();
+    const sidebarClass = colorThemes[theme] || colorThemes.blue;
 
     const menuItems = [
         { id: 'dashboard', label: 'Dashbord Agent', icon: LayoutDashboard },
@@ -15,7 +19,7 @@ const SidebarAgent = ({ activeItem, setActiveItem, onLogout }) => {
     ];
 
     const bottomItems = [
-        // { id: 'settings', label: 'Paramètres', icon: Settings },
+        { id: 'settings', label: 'Paramètres', icon: Settings },
         {
             id: 'logout',
             label: 'Déconnexion',
@@ -36,20 +40,20 @@ const SidebarAgent = ({ activeItem, setActiveItem, onLogout }) => {
         },
     ];
 
-          // 🔹 Charger l’item actif depuis localStorage au montage
-        useEffect(() => {
-            const savedItem = localStorage.getItem("activeSidebarItem");
-            if (savedItem) {
-                setActiveItem(savedItem);
-            }
-        }, [setActiveItem]);
-    
-        // 🔹 Sauvegarder à chaque changement
-        useEffect(() => {
-            if (activeItem) {
-                localStorage.setItem("activeSidebarItem", activeItem);
-            }
-        }, [activeItem]);
+    // 🔹 Charger l’item actif depuis localStorage au montage
+    useEffect(() => {
+        const savedItem = localStorage.getItem("activeSidebarItem");
+        if (savedItem) {
+            setActiveItem(savedItem);
+        }
+    }, [setActiveItem]);
+
+    // 🔹 Sauvegarder à chaque changement
+    useEffect(() => {
+        if (activeItem) {
+            localStorage.setItem("activeSidebarItem", activeItem);
+        }
+    }, [activeItem]);
 
     const MenuItem = ({ item, isBottom = false }) => (
         <button
@@ -67,8 +71,9 @@ const SidebarAgent = ({ activeItem, setActiveItem, onLogout }) => {
     );
 
     return (
-        <div className={`bg-gradient-to-b from-blue-500 to-blue-700 h-screen flex flex-col transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'
-            }`}>
+        // <div className={`bg-gradient-to-b from-blue-500 to-blue-700 h-screen flex flex-col transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'}`}>
+        <div className={`${sidebarClass} h-screen flex flex-col transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'}`}>
+
             {/* Logo */}
             <div className="p-6 border-b border-blue-400 border-opacity-30">
                 <div className="flex items-center justify-between">
