@@ -48,21 +48,21 @@ export default function UserFormModal({ show, setShow, editingUser, onSave, savi
     e.preventDefault();
     onSave(form);
 
-    try {
-      // Envoi des données modifiées au backend
-      const res = await axiosInstance.put(`/users/${editingUser.id}/update`, {
-        firstname: form.firstname,
-        lastname: form.lastname,
-        email: form.email,
-        role: form.role,
-        profil: form.profil,
-      });
+    // try {
+    //   // Envoi des données modifiées au backend
+    //   const res = await axiosInstance.put(`/users/${editingUser.id}/update`, {
+    //     firstname: form.firstname,
+    //     lastname: form.lastname,
+    //     email: form.email,
+    //     role: form.role,
+    //     profil: form.profil,
+    //   });
 
-      onSave(res.data); // mettre à jour la liste frontend
-      setShow(false);
-    } catch (err) {
-      console.error("Erreur update user:", err.response?.data || err.message);
-    }
+    //   onSave(res.data); // mettre à jour la liste frontend
+    //   setShow(false);
+    // } catch (err) {
+    //   console.error("Erreur update user:", err.response?.data || err.message);
+    // }
   };
 
   if (!show) return null;
