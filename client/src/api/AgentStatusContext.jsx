@@ -112,7 +112,7 @@ export const AgentStatusProvider = ({ children }) => {
 
     const resetTimer = () => {
       clearTimeout(inactivityTimer);
-      inactivityTimer = setTimeout(triggerForcedLogout, 60_000);
+      inactivityTimer = setTimeout(triggerForcedLogout, 600_000); // 10 minutes d'inactivité en mode disponible
     };
 
     const events = [
