@@ -54,6 +54,8 @@ app.get('/', (req, res) => res.send('API CRM en ligne ✅'));
 
 // Configuration Socket.IO
 const io = initSockets(server);
+const { setIo } = require("./socketInstance");
+setIo(io);
 
 // Tâche cron pour minuit
 cron.schedule('0 0 * * *', async () => {

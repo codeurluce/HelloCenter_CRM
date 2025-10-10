@@ -1,6 +1,7 @@
 // server/controllers/sessionControllers.js
 const db = require('../db');
 const dayjs = require("dayjs");
+const { getIo } = require("../socketInstance");
 
 // Activer la session active 
 exports.createSession = async (req, res) => {
@@ -134,6 +135,8 @@ exports.forcePauseByAdmin = async (req, res) => {
       [userId, 'Déjeuner', now, "forcée par l'admin"]
     );
 
+    const io = getIo();
+    io.emit("agent_status_changed", { userId, newStatus: "Déjeuner" });
     // Émettre un événement socket pour mettre à jour le front
     // socket.emit("agent_status_changed", { userId, newStatus: "Déjeuner" });
 

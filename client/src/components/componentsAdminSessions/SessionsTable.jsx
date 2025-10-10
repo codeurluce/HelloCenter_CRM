@@ -48,7 +48,7 @@ const handleForcePause = async (agentId, firstname, lastname) => {
 
   try {
     await axiosInstance.post(`/session_agents/${agentId}/forcePause`);
-    toast.success(`${firstname} est maintenant en pause.`);
+    toast.success(`${firstname} ${lastname} est maintenant en pause.`);
   } catch (err) {
     console.error("Erreur mise en pause agent :", err.response?.data || err.message);
     toast.error(err.response?.data?.error || "Impossible de mettre l'agent en pause");
@@ -160,6 +160,7 @@ export default function SessionsTable({ sessions, loading, refresh }) {
                 </td>
                 <td className="px-6 py-3 font-mono text-sm text-gray-700">{formatTime(s.presence_totale_sec)}</td>
                 <td className="px-6 py-3 text-center flex justify-center gap-3">
+                
                   {/* Bouton consulter */}
                   <div className="relative group">
                     <button
@@ -180,11 +181,11 @@ export default function SessionsTable({ sessions, loading, refresh }) {
                     <button
                       onClick={() => handleForcePause(s.user_id, s.firstname, s.lastname)}
                       title=""
-                      className="px-3 py-1.5 rounded-lg border border-yellow-100 text-yellow-600 hover:bg-yellow-600 hover:text-white transition-transform transform focus:outline-none focus:ring-2 focus:ring-offset-1 hover:scale-105"
+                      className="px-3 py-1.5 rounded-lg border border-orange-200 text-orange-600 hover:bg-orange-600 hover:text-white transition-transform transform focus:outline-none focus:ring-2 focus:ring-offset-1 hover:scale-105"
                     >
                       <Pause className="w-4 h-4" />
                     </button>
-                    <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-yellow-600 text-white text-xs whitespace-nowrap">
+                    <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-orange-600 text-white text-xs whitespace-nowrap">
                       Mettre en pause
                     </span>
                   </div>
@@ -208,8 +209,6 @@ export default function SessionsTable({ sessions, loading, refresh }) {
                       agent={selectedAgent}
                       onClose={() => setSelectedAgent(null)}
                     />)}
-                  {/* <button className="text-yellow-600 hover:text-yellow-800" title="Forcer Pause"><Pause size={18} /></button>
-                  <button className="text-green-600 hover:text-green-800" title="Mettre en disponible"><Play size={18} /></button> */}
                 </td>
               </tr>
             ))
