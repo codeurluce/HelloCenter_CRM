@@ -194,14 +194,14 @@ const connectAgent = async (req, res) => {
 
 // Déconnexion de l'agent
 const disconnectAgent = async (req, res) => {
-  const { userId } = req.body; 
+  const { userId } = req.body;
 
-    if (!userId) {
+  if (!userId) {
     return res.status(400).json({ error: "userId manquant" });
   }
 
   try {
-        // Fermer la session active
+    // Fermer la session active
     await db.query(
       `UPDATE session_agents
        SET end_time = NOW(),
@@ -226,7 +226,7 @@ const disconnectAgent = async (req, res) => {
   }
 };
 
-// Déconnexion forcée de l'agent
+// Déconnexion forcée de l'agent pour inactivité
 const disconnectAgentForce = async (req, res) => {
   const { userId } = req.body;
   console.log("🔧 [DISCONNECT-FORCE] Reçu depuis frontend → userId:", userId);
@@ -272,6 +272,51 @@ const disconnectAgentForce = async (req, res) => {
     res.status(500).json({ error: "Erreur lors de la déconnexion forcée" });
   }
 };
+
+// POST /agents/disconnect
+const disconnectAgentbyAdmin = async (req, res) => {
+  const userId = req.params.id;
+  const requester = req.user; // info du token : id + role
+
+  if (!userId) {
+    return res.status(400).json({ error: "userId manquant" });
+  }
+
+  try {
+    // Vérifier si c'est soi-même ou un admin
+    if (requester.id !== userId && requester.role !== "Admin") {
+      return res.status(403).json({ error: "Vous n'avez pas la permission de déconnecter cet agent." });
+    }
+    // Empecher un admin de se deconnecter lui mm via cet endpoint
+    if (requester.id.toString() === userId) {
+      return res.status(400).json({ error: "Vous ne pouvez pas vous déconnecter vous-même via cet endpoint." });
+    }
+
+    // Fermer la session active
+    await db.query(
+      `UPDATE session_agents
+       SET end_time = NOW(),
+           duration = EXTRACT(EPOCH FROM (NOW() - start_time))
+       WHERE user_id = $1 AND end_time IS NULL`,
+      [userId]
+    );
+
+    // Marquer l’agent comme déconnecté
+    await db.query("UPDATE users SET is_connected = FALSE WHERE id = $1", [userId]);
+
+    // Ajouter un événement dans l’historique des connexions
+    await db.query(
+      "INSERT INTO agent_connections_history (user_id, event_type) VALUES ($1, 'disconnectByAdmin')",
+      [userId]
+    );
+
+    res.json({ success: true, message: "Déconnexion réussie" });
+  } catch (err) {
+    console.error("Erreur disconnectAgent:", err);
+    res.status(500).json({ error: "Erreur lors de la déconnexion de l’agent" });
+  }
+};
+
 
 // Infos utilisateur connecté
 const getMe = async (req, res) => {
@@ -474,4 +519,5 @@ module.exports = {
   getAllUsersBd,
   disconnectAgentForce,
   validateSession,
+  disconnectAgentbyAdmin,
 };

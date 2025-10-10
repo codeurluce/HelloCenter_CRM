@@ -40,11 +40,11 @@ export default function AdminSettings({ user }) {
         setTheme(newTheme);          // pour propager immédiatement au sidebar
     };
 
-useEffect(() => {
-  if (currentUser && currentUser.role === "Admin") {
-    fetchAgents();
-  }
-}, [currentUser, refreshFlag]);
+    useEffect(() => {
+        if (currentUser && currentUser.role === "Admin") {
+            fetchAgents();
+        }
+    }, [currentUser, refreshFlag]);
 
     useEffect(() => {
         // Appliquer le mode sombre immédiatement
@@ -100,6 +100,31 @@ useEffect(() => {
         } catch (err) {
             console.error("Erreur suppression agent:", err.response?.data || err.message);
             toast.error(err.response?.data?.message || "Erreur lors de la suppression");
+        }
+    };
+
+    const handleDisconnect = async (agentId, agentName) => {
+        // Afficher une confirmation
+        const result = await Swal.fire({
+            title: `Déconnecter ${agentName}?`,
+            text: "Êtes-vous sûr de vouloir déconnecter cet agent ?",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Oui, déconnecter",
+            cancelButtonText: "Annuler",
+            confirmButtonColor: "#dc2626",
+            reverseButtons: true,
+        });
+
+        if (!result.isConfirmed) return; // Si l'utilisateur annule, on sort
+
+        // Sinon, on effectue la déconnexion
+        try {
+            await axiosInstance.post(`/agent/${agentId}/disconnectByAdmin`);
+            toast.success("Agent déconnecté avec succès");
+        } catch (err) {
+            console.error("Erreur déconnexion agent :", err.response?.data || err.message);
+            toast.error(err.response?.data?.error || "Impossible de déconnecter l'agent");
         }
     };
 
@@ -322,17 +347,23 @@ useEffect(() => {
                                                 </td>
                                                 <td className="py-3 text-sm">
                                                     <div className="flex items-center gap-2">
-                                                        <button
+                                                        {/* <button
                                                             onClick={() => handleDelete(agent.id, false)}
                                                             className="px-3 py-1 rounded bg-yellow-100 text-yellow-800 text-sm"
                                                         >
                                                             Supprimer
-                                                        </button>
+                                                        </button> */}
                                                         <button
                                                             onClick={() => handleDelete(agent.id, true)}
                                                             className="px-3 py-1 rounded bg-red-600 text-white text-sm flex items-center gap-2"
                                                         >
                                                             <Trash2 size={14} /> Forcer
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDisconnect(agent.id)}
+                                                            className="px-3 py-1 rounded bg-blue-600 text-white text-sm"
+                                                        >
+                                                            Déconnexion
                                                         </button>
                                                     </div>
                                                 </td>
