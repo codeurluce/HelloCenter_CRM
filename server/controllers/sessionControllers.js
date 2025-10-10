@@ -135,10 +135,10 @@ exports.forcePauseByAdmin = async (req, res) => {
       [userId, 'Déjeuner', now, "forcée par l'admin"]
     );
 
+    // Émettre un événement Socket.IO pour notifier l'agent
     const io = getIo();
     io.emit("agent_status_changed", { userId, newStatus: "Déjeuner" });
-    // Émettre un événement socket pour mettre à jour le front
-    // socket.emit("agent_status_changed", { userId, newStatus: "Déjeuner" });
+    io.to(`agent_${userId}`).emit("force_pause_by_admin", { reason: "Pause forcée par l’admin" });
 
     res.json({ success: true, message: "L'agent est maintenant en pause déjeuner." });
   } catch (err) {
