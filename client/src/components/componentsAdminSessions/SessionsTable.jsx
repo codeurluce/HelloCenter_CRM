@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { RefreshCw, Eye, } from "lucide-react";
+import { RefreshCw, Eye, LogOut, } from "lucide-react";
 import SessionAgentDetailsModal from "./SessionAgentDetailsModal";
+import axiosInstance from "../../api/axiosInstance";
+import Swal from "sweetalert2";
+import { toast } from "react-toastify"
 
 // Formatage hh:mm:ss
 const formatTime = (seconds) => {
@@ -27,6 +30,31 @@ const renderTooltip = (cumul) => {
     .map(([statut, sec]) => `${statut}: ${formatTime(sec)}`)
     .join("\n");
 };
+
+    const handleDisconnect = async (agentId, firstname, lastname) => {
+        // Afficher une confirmation
+        const result = await Swal.fire({
+            title: `Déconnecter ${firstname} ${lastname} `,
+            text: "Êtes-vous sûr de vouloir déconnecter cet agent ?",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Oui, déconnecter",
+            cancelButtonText: "Annuler",
+            confirmButtonColor: "#dc2626",
+            reverseButtons: true,
+        });
+
+        if (!result.isConfirmed) return; // Si l'utilisateur annule, on sort
+
+        // Sinon, on effectue la déconnexion
+        try {
+            await axiosInstance.post(`/agent/${agentId}/disconnectByAdmin`);
+            toast.success("Agent déconnecté avec succès");
+        } catch (err) {
+            console.error("Erreur déconnexion agent :", err.response?.data || err.message);
+            toast.error(err.response?.data?.error || "Impossible de déconnecter l'agent");
+        }
+    };
 
 export default function SessionsTable({ sessions, loading, refresh }) {
   const [tick, setTick] = useState(0);
@@ -77,25 +105,25 @@ export default function SessionsTable({ sessions, loading, refresh }) {
                 <td className="px-6 py-3">
                   <span
                     className={`inline-block px-3 py-1 rounded-full text-xs font-semibold cursor-default ${getDisplayStatus(s) === "Disponible"
-                      ? "bg-green-200 text-green-900"
-                      : getDisplayStatus(s).includes("Pause") || getDisplayStatus(s).includes("Pausette")
-                        ? "bg-yellow-200 text-yellow-900"
-                        : getDisplayStatus(s).includes("Déjeuner")
+                        ? "bg-green-200 text-green-900"
+                        : getDisplayStatus(s).includes("Pause") || getDisplayStatus(s).includes("Pausette")
                           ? "bg-yellow-200 text-yellow-900"
-                          : getDisplayStatus(s).includes("Formation")
-                            ? "bg-red-200 text-red-900"
-                            : getDisplayStatus(s).includes("Réunion")
+                          : getDisplayStatus(s).includes("Déjeuner")
+                            ? "bg-yellow-200 text-yellow-900"
+                            : getDisplayStatus(s).includes("Formation")
                               ? "bg-red-200 text-red-900"
-                              : getDisplayStatus(s).includes("Brief")
+                              : getDisplayStatus(s).includes("Réunion")
                                 ? "bg-red-200 text-red-900"
-                                //   ? "bg-teal-200 text-teal-900"
-                                : getDisplayStatus(s).includes("En ligne")
-                                  ? "bg-green-50 text-green-500"
-                                  // : getDisplayStatus(s).includes("Indisponible")
-                                  //   ? "bg-red-100 text-red-800"
-                                  : getDisplayStatus(s).includes("Hors ligne") || getDisplayStatus(s).includes("Déconnecté")
-                                    ? "bg-gray-300 text-gray-700"
-                                    : "bg-gray-100 text-gray-800"
+                                : getDisplayStatus(s).includes("Brief")
+                                  ? "bg-red-200 text-red-900"
+                             //   ? "bg-teal-200 text-teal-900"
+                                  : getDisplayStatus(s).includes("En ligne")
+                                    ? "bg-green-50 text-green-500"
+                                    // : getDisplayStatus(s).includes("Indisponible")
+                                    //   ? "bg-red-100 text-red-800"
+                                      : getDisplayStatus(s).includes("Hors ligne") || getDisplayStatus(s).includes("Déconnecté")
+                                        ? "bg-gray-300 text-gray-700"
+                                        : "bg-gray-100 text-gray-800"
                       }`}
                     title={renderTooltip(s.cumul_statuts)}
                   >
@@ -119,12 +147,19 @@ export default function SessionsTable({ sessions, loading, refresh }) {
                     <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-blue-600 text-white text-xs whitespace-nowrap">
                       Consulter
                     </span>
-                    {/* <button
-                      onClick={() => handleDisconnect(agent.id)}
-                      className="px-3 py-1 rounded bg-blue-600 text-white text-sm"
+                  </div>
+                  <div className="relative group">
+                    <button
+                      onClick={() => handleDisconnect(s.user_id, s.firstname, s.lastname)}
+                      title=""
+                      className="px-3 py-1.5 rounded-lg border border-red-100 text-red-600 hover:bg-red-600 hover:text-white 
+                                                        transition-transform transform focus:outline-none focus:ring-2 focus:ring-offset-1 hover:scale-105"
                     >
-                      Déconnexion
-                    </button> */}
+                      <LogOut className="w-4 h-4" />
+                    </button>
+                    <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-red-600 text-white text-xs whitespace-nowrap">
+                      Deconnexion
+                    </span>
                   </div>
                   {selectedAgent && (
                     <SessionAgentDetailsModal

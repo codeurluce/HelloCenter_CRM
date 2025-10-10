@@ -289,7 +289,7 @@ const disconnectAgentbyAdmin = async (req, res) => {
     }
     // Empecher un admin de se deconnecter lui mm via cet endpoint
     if (requester.id.toString() === userId) {
-      return res.status(400).json({ error: "Vous ne pouvez pas vous déconnecter vous-même via cet endpoint." });
+      return res.status(400).json({ error: "Vous ne pouvez pas vous déconnecter vous-même via cet methode." });
     }
 
     // Fermer la session active
