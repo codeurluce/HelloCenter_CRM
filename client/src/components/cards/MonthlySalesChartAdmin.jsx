@@ -83,12 +83,12 @@ const MonthlySalesChartAdmin = () => {
                     });
                 });
 
-                // 2) trier NUMÉRIQUEMENT les semaines (Semaine 40, 41, 42 ...)
+                // 2) trier NUMÉRIQUEMENT les semaines (Semaine 01, 02, 03 ...)
                 const sortedWeeks = Array.from(allWeeks)
                     .sort((a, b) => extractWeekNumber(a) - extractWeekNumber(b));
 
                 // 3) construire les données : une ligne par agent, une colonne par semaine
-                const formattedData = Object.entries(result).map(([agent, weeksObj]) => {
+                let formattedData = Object.entries(result).map(([agent, weeksObj]) => {
                     const row = { agent_name: agent };
                     sortedWeeks.forEach(week => {
                         const daysObj = weeksObj[week] || {};
@@ -98,10 +98,27 @@ const MonthlySalesChartAdmin = () => {
                     return row;
                 });
 
-                setWeeks(sortedWeeks); // <-- ordre garanti ici
+                // 🧩 Si aucune donnée, construire une base vide
+                if (!formattedData.length) {
+                    const defaultWeeks =
+                        sortedWeeks.length > 0
+                            ? sortedWeeks
+                            : ['Semaine 1', 'Semaine 2', 'Semaine 3', 'Semaine 4'];
+
+                    formattedData = [
+                        {
+                            agent_name: 'Aucun agent',
+                            ...Object.fromEntries(defaultWeeks.map(w => [w, 0])),
+                        },
+                    ];
+                    setWeeks(defaultWeeks);
+                } else {
+                    setWeeks(sortedWeeks);
+                }
+
                 setData(formattedData);
             } catch (err) {
-                console.error("Erreur chargement ventes mensuelles :", err);
+                console.error('Erreur chargement ventes mensuelles :', err);
             } finally {
                 setLoading(false);
             }

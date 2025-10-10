@@ -96,7 +96,7 @@ const WeeklySalesChartAdmin = () => {
                 const { data: result } = await axiosInstance.get('/sales/weekly-agents-charthorizontal');
 
                 // remplir avec les vraies données
-                const formattedData = Object.entries(result).map(([agent, ventes]) => ({
+                let formattedData = Object.entries(result).map(([agent, ventes]) => ({
                     agent_name: agent,
                     Mon: ventes['Mon'] || 0,
                     Tue: ventes['Tue'] || 0,
@@ -104,15 +104,18 @@ const WeeklySalesChartAdmin = () => {
                     Thu: ventes['Thu'] || 0,
                     Fri: ventes['Fri'] || 0,
                 }));
-                setData(formattedData);
 
+                // 🔹 Si aucune donnée, créer au moins un agent "Aucun agent"
+                if (!formattedData.length) {
+                    formattedData = [{
+                        agent_name: 'Aucun agent',
+                        Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0,
+                    }];
+                }
 
                 setData(formattedData);
             } catch (err) {
-                console.error(
-                    "❌ Erreur chargement ventes de la semaine :",
-                    err.response?.data || err.message
-                );
+                console.error("❌ Erreur chargement ventes de la semaine :", err.response?.data || err.message);
             } finally {
                 setLoading(false);
             }

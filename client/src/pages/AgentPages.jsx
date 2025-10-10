@@ -104,7 +104,7 @@ const AgentDashboard = () => {
       <SidebarAgent activeItem={activeItem} setActiveItem={setActiveItem} onLogout={handleLogout} />
       <div className="flex-1 flex flex-col overflow-hidden">
         <DashboardHeader
-          key={tick}
+          // key={tick}
           etat={etat}
           timers={timers}
           onStatusChange={handleStatusChange}
@@ -125,7 +125,7 @@ const AgentDashboard = () => {
           )}
           {activeItem === 'activité' && (
             <AgentInfoPanel
-              key={tick}
+              // key={tick}
               userId={user?.id}
               etat={etat}
               setEtat={setEtat}

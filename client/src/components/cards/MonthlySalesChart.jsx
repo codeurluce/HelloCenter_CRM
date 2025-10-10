@@ -36,11 +36,53 @@ const MonthlySalesChart = () => {
     useEffect(() => {
         async function fetchMonthlySales() {
             try {
-                const { data: result } = await axiosInstance.get('/sales/monthly-agents'); console.log(result); // <-- vérifie ici
+                const { data: result } = await axiosInstance.get('/sales/monthly-agents');
 
-                setData(result); // directement, plus de mapping inutile
+                // 🧩 Si aucune donnée, on crée un mois "vide"
+                let formattedData = result;
+
+                if (!result || !result.length) {
+                    // 🔹 Valeurs par défaut : 4 semaines avec 0 ventes
+                    formattedData = [
+                        { week: 'Semaine 1', ventes: 0 },
+                        { week: 'Semaine 2', ventes: 0 },
+                        { week: 'Semaine 3', ventes: 0 },
+                        { week: 'Semaine 4', ventes: 0 },
+                    ];
+                } else {
+                    // 🔹 S’assure que chaque semaine manquante ait 0 ventes
+                    const allWeeks = ['Semaine 1', 'Semaine 2', 'Semaine 3', 'Semaine 4'];
+                    const existingWeeks = result.map(r => r.week);
+                    const missingWeeks = allWeeks.filter(w => !existingWeeks.includes(w));
+
+                    // Ajoute les semaines manquantes à 0
+                    formattedData = [
+                        ...result,
+                        ...missingWeeks.map(w => ({ week: w, ventes: 0 })),
+                    ];
+
+                    // Trie par ordre croissant de numéro de semaine
+                    formattedData.sort((a, b) => {
+                        const numA = parseInt(a.week.match(/\d+/)?.[0] || '0', 10);
+                        const numB = parseInt(b.week.match(/\d+/)?.[0] || '0', 10);
+                        return numA - numB;
+                    });
+                }
+
+                setData(formattedData);
             } catch (err) {
-                console.error("❌ Erreur chargement ventes mensuelles :", err.response?.data || err.message);
+                console.error(
+                    "❌ Erreur chargement ventes mensuelles :",
+                    err.response?.data || err.message
+                );
+
+                // 🔹 En cas d’erreur API, on affiche un mois vide
+                setData([
+                    { week: 'Semaine 1', ventes: 0 },
+                    { week: 'Semaine 2', ventes: 0 },
+                    { week: 'Semaine 3', ventes: 0 },
+                    { week: 'Semaine 4', ventes: 0 },
+                ]);
             } finally {
                 setLoading(false);
             }
@@ -48,7 +90,6 @@ const MonthlySalesChart = () => {
 
         fetchMonthlySales();
     }, []);
-
 
     if (loading) return <p>Chargement des ventes de la semaine...</p>;
     if (!data.length) return <p>Aucune donnée disponible.</p>;

@@ -97,11 +97,9 @@ const AdminDashboard = () => {
    * - Lancer un intervalle pour incrémenter `tick` toutes les secondes
    *   (sert de "force refresh" pour recalculer les timers côté front)
    */
-  useEffect(() => {
-    if (user?.id) refreshSessionData();
-    const interval = setInterval(() => setTick(t => t + 1), 1000);
-    return () => clearInterval(interval);
-  }, [user]);
+useEffect(() => {
+  if (user?.id) refreshSessionData();
+}, [user]);
 
   // Timer qui incrémente elapsed en live depuis lastChange
   //   useEffect(() => {
@@ -202,7 +200,7 @@ const AdminDashboard = () => {
         <SidebarAdmin activeItem={activeItem} setActiveItem={setActiveItem} onLogout={handleLogout} />
         <div className="flex-1 flex flex-col overflow-hidden">
           <DashboardHeader
-            key={tick}
+            // key={tick}
             etat={etat}
             timers={timers}
             onStatusChange={handleStatusChange}
@@ -239,7 +237,7 @@ const AdminDashboard = () => {
 
             {activeItem === 'activité' &&
               <AgentInfoPanel
-                key={tick}
+                // key={tick}
                 userId={user?.id}
                 etat={etat}
                 setEtat={setEtat}

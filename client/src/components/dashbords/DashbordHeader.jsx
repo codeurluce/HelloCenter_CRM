@@ -17,7 +17,6 @@ const DashboardHeader = ({
 }) => {
   const [connectedAgent, setConnectedAgent] = useState(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [tick, setTick] = useState(0);
 
   const [showNotif, setShowNotif] = useState(false);
   const [showAgentMenu, setShowAgentMenu] = useState(false);
@@ -28,11 +27,6 @@ const DashboardHeader = ({
   const agentMenuRef = useRef(null);
   const calendarRef = useRef(null);
   const notifiedIdsRef = useRef(new Set());
-
-  useEffect(() => {
-    const interval = setInterval(() => setTick(t => t + 1), 1000);
-    return () => clearInterval(interval);
-  }, []);
 
   // Charge agent depuis localStorage
   useEffect(() => {
@@ -162,7 +156,6 @@ const DashboardHeader = ({
 
         {/* SimpleTimer */}
         <SimpleTimer
-          key={tick}
           userId={connectedAgent?.id || null}
           timers={timers}
           status={etat}
