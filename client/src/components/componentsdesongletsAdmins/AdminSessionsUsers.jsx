@@ -118,9 +118,20 @@ export default function AdminLiveSessions() {
       );
     });
 
+    socket.on("agent_status_changed", ({ userId, newStatus }) => {
+      setAgents(prev =>
+        prev.map(agent =>
+          agent.user_id === userId
+            ? { ...agent, statut_actuel: newStatus, depuis_sec: 0 }
+            : agent
+        )
+      );
+    });
+
     return () => {
       socket.off("agent_disconnected");
       socket.off("agent_connected");
+      socket.off("agent_status_changed");
     };
   }, []);
 
@@ -143,7 +154,7 @@ export default function AdminLiveSessions() {
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-     {/* Titre de section */}
+      {/* Titre de section */}
       <h2 className="text-2xl font-bold mb-4"> Suivi en live des agents</h2>
       <div className="flex items-center mb-4">
         <SessionFilters

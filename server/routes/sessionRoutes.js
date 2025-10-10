@@ -30,6 +30,7 @@ router.get('/user/:id/status-today', sessionControllers.getUserStatusToday); // 
 
 router.post('/start', sessionControllers.startSession); // 📌 Démarre une nouvelle session // Méthode : POST /api/sessions/start
 router.post('/stop', sessionControllers.stopSession); // 📌 Ferme la session en cours // Méthode : POST /api/sessions/stop
+router.post('/:id/forcePause', verifyToken, sessionControllers.forcePauseByAdmin); // 📌 Change le statut d’une session en cours par l'admin (ex: Disponible → Pause) // Méthode : POST /api/sessions/change-status
 router.post('/heartbeat', verifyToken, sessionControllers.heartbeat); // 📌 Heartbeat : maintient la session active, vérification token nécessaire // Méthode : POST /api/sessions/heartbeat
 router.post('/ping', sessionControllers.pingSession); // 📌 Ping une session pour vérifier sa disponibilité // Méthode : POST /api/sessions/ping
 router.post('/close-force', async (req, res) => {

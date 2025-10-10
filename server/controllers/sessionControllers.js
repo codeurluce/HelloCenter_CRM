@@ -103,6 +103,48 @@ exports.closeCurrentSession = async (req, res) => {
   }
 };
 
+// POST /agent/:id/forcePause - Mettre un agent en pause déjeuner forcée par l'admin
+exports.forcePauseByAdmin = async (req, res) => {
+  try {
+    const userId = Number(req.params.id);
+    const requester = req.user; // info du token : id + role
+
+    if (!userId) return res.status(400).json({ error: "userId manquant" });
+
+    // Vérifier que c'est un admin
+    if (requester.role !== "Admin") {
+      return res.status(403).json({ error: "Vous n'avez pas la permission de mettre un agent en pause." });
+    }
+
+    // On ferme la session actuelle de l'agent
+    const now = new Date();
+    await db.query(
+      `UPDATE session_agents
+       SET end_time = $1,
+           duration = EXTRACT(EPOCH FROM ($1 - start_time))
+       WHERE user_id = $2
+         AND end_time IS NULL`,
+      [now, userId]
+    );
+
+    // Créer une nouvelle session "pause_dejeuner"
+    await db.query(
+      `INSERT INTO session_agents (user_id, status, start_time, pause_type)
+      VALUES ($1, $2, $3, $4)`,
+      [userId, 'Déjeuner', now, "forcée par l'admin"]
+    );
+
+    // Émettre un événement socket pour mettre à jour le front
+    // socket.emit("agent_status_changed", { userId, newStatus: "Déjeuner" });
+
+    res.json({ success: true, message: "L'agent est maintenant en pause déjeuner." });
+  } catch (err) {
+    console.error("Erreur forcePauseByAdmin:", err);
+    res.status(500).json({ error: "Erreur serveur lors de la mise en pause de l'agent." });
+  }
+};
+
+
 // GET /api/sessions/agents/live
 exports.getLiveSessionAgents = async (req, res) => {
   try {
@@ -615,9 +657,9 @@ exports.closeSessionForce = async (userId) => {
 };
 
 exports.heartbeat = async (req, res) => {
-  const user_id  = req.user?.id; // car tu utilises authenticateToken
+  const user_id = req.user?.id; // car tu utilises authenticateToken
 
-    if (!user_id) {
+  if (!user_id) {
     return res.status(401).json({ error: 'Non authentifié' });
   }
 
