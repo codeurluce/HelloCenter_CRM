@@ -82,7 +82,7 @@ export default function AdminSettings({ user }) {
             : "Désactiver ou supprimer cet agent ?";
 
         const { isConfirmed } = await Swal.fire({
-            title: `Supprimer ${agent?.name || agent?.email || 'cet agent'}`,
+            title: `Supprimer ${agent?.firstname && agent?.lastname ? `${agent.firstname} ${agent.lastname}` : agent?.email || 'cet agent'}`,            
             text,
             icon: force ? 'warning' : 'question',
             showCancelButton: true,
@@ -103,10 +103,11 @@ export default function AdminSettings({ user }) {
         }
     };
 
-    const handleDisconnect = async (agentId, agentName) => {
+    const handleDisconnect = async (agentId) => {
+            const agent = agents.find(a => a.id === Number(agentId)); // conversion en number
         // Afficher une confirmation
         const result = await Swal.fire({
-            title: `Déconnecter ${agentName}?`,
+            title: `Déconnecter ${agent?.firstname} ${agent?.lastname} `,
             text: "Êtes-vous sûr de vouloir déconnecter cet agent ?",
             icon: "warning",
             showCancelButton: true,
