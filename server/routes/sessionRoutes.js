@@ -10,16 +10,7 @@ const { verifyToken } = require ('../controllers/userControllers');
 
 router.get('/', sessionControllers.getSessions); // 📌 Récupère toutes les sessions avec leurs statuts et durées  // Méthode : GET /api/sessions
 router.get('/check', sessionControllers.checkSessionActive);  // 📌 Vérifie si une session est active // Méthode : GET /api/sessions/check
-router.get("/last-status/:userId", async (req, res) => {
-  try {
-    const { userId } = req.params;
-    const status = await getLastAgentStatus(userId);
-    res.json({ status });
-  } catch (err) {
-    console.error("Erreur route /last-status:", err);
-    res.status(500).json({ error: "Erreur serveur" });
-  }
-}); // 📌 Récupère le dernier statut d’un agent par son userId (utile pour restauration après reconnexion) // Méthode : GET /api/sessions/last-status/:userId
+router.get('/last-status/:userId', sessionControllers.getLastAgentStatus); // 📌 Récupère le dernier statut d’un agent par son userId (utile pour restauration après reconnexion) // Méthode : GET /api/sessions/last-status/:userId
 router.get('/user/live', sessionControllers.getLiveSessionAgents); // 📌 Récupère toutes les sessions en ligne des agents actifs // Méthode : GET /api/sessions/user/live
 router.get('/user/live/:userId', sessionControllers.getSessionAgent); // 📌 Récupère la session active d’un agent spécifique par userId // Méthode : GET /api/sessions/user/live/:userId
 router.get('/user/agent_connection_details', sessionControllers.getDailyConnectionTimes); // 📌 Récupère le détail des connexions journalières des agents // Méthode : GET /api/sessions/user/agent_connection_details

@@ -131,7 +131,7 @@ const FiltreSalesList = ({
     return matchesSearch && matchesStatus && matchesDate;
   });
 
-  console.log("univers dans FiltreSalesList:", univers);
+  // console.log("univers dans FiltreSalesList:", univers);
 
   return (
     <div>

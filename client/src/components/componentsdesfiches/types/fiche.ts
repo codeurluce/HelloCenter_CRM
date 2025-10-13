@@ -8,6 +8,7 @@ export interface Fiche {
   prenom_client: string;
   adresse_client?: string;
   code_postal?: string;
+  ville_client?: string;
   mail_client?: string;
   numero_mobile?: string;
   statut: 'nouvelle' | 'en_traitement' | 'rendez_vous' | 'cloturee';

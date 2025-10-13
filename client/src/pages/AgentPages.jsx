@@ -7,7 +7,7 @@ import WeeklySalesChart from '../components/cards/WeeklySalesChart.jsx';
 import TodayRecap from '../components/cards/TodayRecap.jsx';
 import AgentInfoPanel from '../components/componentsdesongletsAgents/AgentInfoPanel.jsx';
 import VentesInfoPanel from '../components/componentsdesongletsAgents/VentesInfoPanel.jsx';
-import FichesInfoPanel from '../components/componentsdesfiches/FichesInfoPanel.tsx';
+import FichesInfoPanel from '../components/componentsdesongletsAgents/FichesInfoPanel.tsx';
 import useFiches from '../api/useAgentFiches.js';
 import axiosInstance from '../api/axiosInstance.js';
 import { AuthContext } from './AuthContext.jsx';

@@ -1,10 +1,10 @@
 import React, { useState, useMemo, useContext } from 'react';
 import { FileText, Clock, CheckCircle, CalendarClock, Filter, RefreshCw } from 'lucide-react';
-import { Fiche, ClotureData } from './types/fiche';
-import FicheCard from './FicheCard.tsx';
-import ClotureModal from './ClotureModal.tsx';
+import { Fiche, ClotureData } from '../componentsdesfiches/types/fiche.ts';
+import FicheCard from '../componentsdesfiches/FicheCard.tsx';
+import ClotureModal from '../componentsdesfiches/ClotureModal.tsx';
 import { AuthContext } from '../../pages/AuthContext.jsx';
-import RendezVousModal from './RendezVousModal.jsx';
+import RendezVousModal from '../componentsdesfiches/RendezVousModal.jsx';
 
 interface FichesInfoPanelProps {
   fiches: Fiche[];
@@ -280,7 +280,6 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
                           onProgramRdv={() => handleOpenRdvModal(fiche.id)}
                           onVoirRdvDetails={() => handleVoirRdvDetails(fiche)}
                         />
-
                       </div>
                     ))}
                   </div>

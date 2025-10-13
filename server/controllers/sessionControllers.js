@@ -2,6 +2,7 @@
 const db = require('../db');
 const dayjs = require("dayjs");
 const { getIo } = require("../socketInstance");
+const { getLastAgentStatus } = require('../models/sessionModel');
 
 // Activer la session active 
 exports.createSession = async (req, res) => {
@@ -138,7 +139,7 @@ exports.forcePauseByAdmin = async (req, res) => {
     // Émettre un événement Socket.IO pour notifier l'agent
     const io = getIo();
     io.emit("agent_status_changed", { userId, newStatus: "Déjeuner" });
-    io.to(`agent_${userId}`).emit("force_pause_by_admin", { reason: "Pause forcée par l’admin" });
+    io.to(`agent_${userId}`).emit("force_pause_by_admin", { reason: "Pause forcée par l’admin, Veuillez Actualiser" });
 
     res.json({ success: true, message: "L'agent est maintenant en pause déjeuner." });
   } catch (err) {
@@ -686,7 +687,32 @@ exports.heartbeat = async (req, res) => {
  * @returns {Promise<string|null>} statut ou null si rien trouvé
  */
 
-exports.getLastAgentStatus = async (userId) => {
+// exports.getLastAgentStatus = async (userId) => {
+//   try {
+//     const result = await db.query(
+//       `SELECT status
+//        FROM session_agents
+//        WHERE user_id = $1
+//        ORDER BY start_time DESC
+//        LIMIT 1`,
+//       [userId]
+//     );
+
+//     if (result.rows.length > 0) {
+//       return result.rows[0].status;
+//     } else {
+//       return null; // aucun enregistrement trouvé
+//     }
+//   } catch (err) {
+//     console.error("❌ Erreur getLastAgentStatus:", err);
+//     return null;
+//   }
+// }
+
+
+
+// 🔹 Fonction utilitaire interne (non exportée directement comme route)
+const fetchLastAgentStatus = async (userId) => {
   try {
     const result = await db.query(
       `SELECT status
@@ -696,17 +722,33 @@ exports.getLastAgentStatus = async (userId) => {
        LIMIT 1`,
       [userId]
     );
-
-    if (result.rows.length > 0) {
-      return result.rows[0].status;
-    } else {
-      return null; // aucun enregistrement trouvé
-    }
+    return result.rows[0]?.status || null;
   } catch (err) {
-    console.error("❌ Erreur getLastAgentStatus:", err);
-    return null;
+    console.error("❌ Erreur fetchLastAgentStatus:", err);
+    throw err;
   }
-}
+};
+
+// 🔹 Contrôleur Express compatible avec router.get(...)
+exports.getLastAgentStatus = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const status = await fetchLastAgentStatus(userId);
+
+    if (status === null) {
+      return res.status(404).json({ message: "Aucun statut trouvé pour cet agent." });
+    }
+
+    res.json({ status });
+  } catch (err) {
+    console.error("❌ Erreur route /last-status:", err);
+    res.status(500).json({ error: "Erreur serveur lors de la récupération du statut" });
+  }
+};
+
+// 🔹 Tu exportes aussi la fonction interne si tu veux la réutiliser ailleurs
+exports.fetchLastAgentStatus = fetchLastAgentStatus;
+
 
 exports.checkSessionActive = async (req, res) => {
   try {

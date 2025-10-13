@@ -31,7 +31,7 @@ export const AgentStatusProvider = ({ children }) => {
   const refreshStatusFromBackend = async () => {
     if (!userRef.current?.id) return;
     try {
-      const res = await axiosInstance.get(`/session_agents/${userRef.current.id}`);
+      const res = await axiosInstance.get(`/session_agents/last-status/${userRef.current.id}`);
       const backendStatus = res.data?.statut_actuel || "Hors Ligne";
       setCurrentStatus(backendStatus);
     } catch (err) {
@@ -114,6 +114,12 @@ export const AgentStatusProvider = ({ children }) => {
 
           // Synchroniser avec le backend pour récupérer le vrai statut
           await refreshStatusFromBackend();
+
+          // Attendre que le toast s'affiche avant de recharger la page 
+          setTimeout(() => {
+            console.log("⏳ Reload automatique lancé...");
+            window.location.reload();
+          }, 5500); // 5.5 secondes = le temps du toast
         } catch (err) {
           console.error("Erreur traitement pause forcée :", err);
         } finally {
