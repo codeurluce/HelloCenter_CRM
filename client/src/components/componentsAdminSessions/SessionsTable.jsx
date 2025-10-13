@@ -40,7 +40,7 @@ const handleForcePause = async (agentId, firstname, lastname) => {
     showCancelButton: true,
     confirmButtonText: "Oui, mettre en pause",
     cancelButtonText: "Annuler",
-    confirmButtonColor: "#f1c40f",
+    confirmButtonColor: "#ea580c",
     reverseButtons: true,
   });
 
