@@ -32,6 +32,8 @@ const ImportModal: React.FC<ImportModalProps> = ({
     'mail_client',
     'code_postal',
     'univers',
+    'pce',
+    'pdl'
   ];
 
   const sampleData = [
@@ -45,6 +47,8 @@ const ImportModal: React.FC<ImportModalProps> = ({
       ville_client: 'Paris',
       code_postal: '75001',
       univers: 'Assurance Auto',
+      pdl: '12345678901234',
+      pce: '56789012345678'
       // commentaire: 'Client intéressé par une nouvelle police'
     },
     {
@@ -57,6 +61,8 @@ const ImportModal: React.FC<ImportModalProps> = ({
       ville_client: 'Lyon',
       code_postal: '69001',
       univers: 'Assurance Habitation',
+      pdl: '04568329743280',
+      pce: '98765432109876'
       // commentaire: 'Demande de devis pour appartement'
     }
   ];

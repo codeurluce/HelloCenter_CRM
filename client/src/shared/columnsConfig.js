@@ -12,6 +12,8 @@ const columnOptions = [
     { key: "code_postal", label: "Code postal" },
     { key: "mail_client", label: "Email" },
     { key: "numero_mobile", label: "Téléphone" },
+    { key: "pdl", label: "Pdl" },
+    { key: "pce", label: "Pce" },
     { key: "statut", label: "Statut" },
     //   { key: "assigned_to", label: "Agent assigné (ID)" },
     { key: "assigned_to_name", label: "Assigné à" },

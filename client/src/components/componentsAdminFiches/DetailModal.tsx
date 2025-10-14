@@ -30,12 +30,13 @@ export default function DetailModal({ isOpen, onClose, fiche }: DetailModalProps
         {/* Body */}
         <div className="grid grid-cols-2 gap-4 text-sm text-gray-700">
           <div>
-            
+
             <p><span className="font-semibold">Nom :</span> {fiche.nom_client}</p>
             <p><span className="font-semibold">Prénom :</span> {fiche.prenom_client}</p>
             <p><span className="font-semibold">Email :</span> {fiche.mail_client}</p>
             <p><span className="font-semibold">Téléphone Mobile :</span> {fiche.numero_mobile}</p>
             <p><span className="font-semibold">Téléphone fixe :</span> {fiche.numero_fixe || 'Non renseignée'}</p>
+            <p><span className="font-semibold">Pdl :</span> {fiche.pdl || 'Non renseignée'}</p>
           </div>
           <div>
             <p><span className="font-semibold">Univers :</span> {fiche.univers}</p>
@@ -43,25 +44,26 @@ export default function DetailModal({ isOpen, onClose, fiche }: DetailModalProps
             <p><span className="font-semibold">Ville :</span> {fiche.ville_client || 'Non renseignée'}</p>
             <p><span className="font-semibold">Adresse :</span> {fiche.adresse_client}</p>
             <p><span className="font-semibold">Code postal :</span> {fiche.code_postal}</p>
+            <p><span className="font-semibold">Pce :</span> {fiche.pce || 'Non renseignée'}</p>
           </div>
         </div>
 
         {/* Commentaire */}
         {(fiche.statut === 'cloturee' && fiche.commentaire) && (
-            <section>
-              <h3 className="text-lg font-semibold mb-2">Commentaire clôture</h3>
-              <p className="italic bg-gray-50 p-3 rounded">{fiche.commentaire}</p>
-            </section>
-          )}
-          {(fiche.statut === 'rendez_vous' && fiche.rendez_vous_commentaire) && (
-            <section>
-              <h3 className="text-lg font-semibold mb-2">Commentaire RDV</h3>
-              <p className="italic bg-gray-50 p-3 rounded">{fiche.rendez_vous_commentaire}</p>
-            </section>
-          )}
+          <section>
+            <h3 className="text-lg font-semibold mb-2">Commentaire clôture</h3>
+            <p className="italic bg-gray-50 p-3 rounded">{fiche.commentaire}</p>
+          </section>
+        )}
+        {(fiche.statut === 'rendez_vous' && fiche.rendez_vous_commentaire) && (
+          <section>
+            <h3 className="text-lg font-semibold mb-2">Commentaire RDV</h3>
+            <p className="italic bg-gray-50 p-3 rounded">{fiche.rendez_vous_commentaire}</p>
+          </section>
+        )}
         {/* Dates */}
         <div className="mt-4 grid grid-cols-3 gap-4 text-xs text-gray-500">
-          <p>Créée le : {fiche.date_creation ? new Date(fiche.date_creation).toLocaleString() : "—"}</p>          
+          <p>Créée le : {fiche.date_creation ? new Date(fiche.date_creation).toLocaleString() : "—"}</p>
         </div>
       </div>
     </div>
@@ -105,107 +107,119 @@ export default function DetailModal({ isOpen, onClose, fiche }: DetailModalProps
 // const DetailModal: React.FC<DetailModalProps> = ({ fiche, isOpen, onClose }) => {
 //   if (!isOpen || !fiche) return null;
 
-//  return (
-//   <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50 p-4">
-//     <div className="bg-white rounded-xl shadow-xl max-w-xl w-full max-h-[90vh] overflow-y-auto relative p-6">
-//       {/* Bouton fermer */}
-//       <button
-//         onClick={onClose}
-//         className="absolute top-4 right-4 text-gray-500 hover:text-gray-900 transition"
-//         aria-label="Fermer la fenêtre"
-//       >
-//         <X size={20} />
-//       </button>
+//   return (
+//     <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50 p-4">
+//       <div className="bg-white rounded-xl shadow-xl max-w-xl w-full max-h-[90vh] overflow-y-auto relative p-6">
+//         {/* Bouton fermer */}
+//         <button
+//           onClick={onClose}
+//           className="absolute top-4 right-4 text-gray-500 hover:text-gray-900 transition"
+//           aria-label="Fermer la fenêtre"
+//         >
+//           <X size={20} />
+//         </button>
 
-//       {/* Titre */}
-//       <h2 className="text-2xl font-bold mb-6 text-gray-900">
-//         Détails de la fiche N° {fiche.id}
-//       </h2>
+//         {/* Titre */}
+//         <h2 className="text-2xl font-bold mb-6 text-gray-900">
+//           Détails de la fiche N° {fiche.id}
+//         </h2>
 
-//       {/* Contenu */}
-//       <div className="space-y-4 text-gray-700 text-sm">
+//         {/* Contenu */}
+//         <div className="space-y-4 text-gray-700 text-sm">
 
-//         <div className="flex items-center gap-2">
-//           <BookmarkCheck size={18} className="text-gray-400" />
-//           <span className="font-medium">Univers:</span>
-//           <span>{fiche.univers}</span>
-//         </div>
-
-//         <div className="flex items-center gap-2">
-//           <File size={18} className="text-gray-400" />
-//           <span className="font-medium">Statut:</span>
-//           <span>{fiche.statut}</span>
-//         </div>
-
-//         <div className="flex items-center gap-2">
-//           <User size={18} className="text-gray-400" />
-//           <span className="font-medium">Client:</span>
-//           <span>{fiche.nom_client} {fiche.prenom_client}</span>
-//         </div>
-
-//         <div className="flex items-center gap-2">
-//           <Smartphone size={18} className="text-gray-400" />
-//           <span className="font-medium">Mobile:</span>
-//           <span>{fiche.numero_mobile || 'Non renseigné'}</span>
-//         </div>
-
-//         <div className="flex items-center gap-2">
-//           <Phone size={18} className="text-gray-400" />
-//           <span className="font-medium">Fixe:</span>
-//           <span>{fiche.numero_fixe || 'Non renseigné'}</span>
-//         </div>
-
-//         <div className="flex items-center gap-2">
-//           <Mail size={18} className="text-gray-400" />
-//           <span className="font-medium">Email:</span>
-//           <span>{fiche.mail_client || 'Non renseigné'}</span>
-//         </div>
-
-//         <div className="flex items-center gap-2">
-//           <Building2 size={18} className="text-gray-400" />
-//           <span className="font-medium">Ville:</span>
-//           <span>{fiche.ville_client || 'Non renseigné'}</span>
-//         </div>
-
-//         <div className="flex items-center gap-2">
-//           <MapPin size={18} className="text-gray-400" />
-//           <span className="font-medium">Adresse:</span>
-//           <span>{fiche.adresse_client || 'Non renseigné'}</span>
-//         </div>
-
-//         <div className="flex items-center gap-2">
-//           <Mailbox size={18} className="text-gray-400" />
-//           <span className="font-medium">Code postal:</span>
-//           <span>{fiche.code_postal || 'Non renseigné'}</span>
-//         </div>
-
-//         <div className="flex items-center gap-2">
-//           <Redo size={18} className="text-gray-400" />
-//           <span className="font-medium">Assignée à:</span>
-//           <span>{fiche.assignedToName || 'Non assignée'}</span>
-//         </div>
-
-//         <div className="flex items-center gap-2">
-//           <Clock size={16} className="text-gray-400" />
-//           <span className="font-medium">Date création:</span>
-//           <span>{new Date(fiche.date_creation).toLocaleDateString('fr-FR')}</span>
-//         </div>
-
-//         {fiche.commentaire && (
-//           <div className="bg-gray-50 p-3 rounded-md italic text-gray-600">
-//             "{fiche.commentaire}"
+//           <div className="flex items-center gap-2">
+//             <BookmarkCheck size={18} className="text-gray-400" />
+//             <span className="font-medium">Univers:</span>
+//             <span>{fiche.univers}</span>
 //           </div>
-//         )}
 
-//         {fiche.tag && (
-//           <div className="inline-block bg-purple-100 text-purple-800 px-2 py-1 rounded uppercase tracking-wide font-semibold text-xs">
-//             {fiche.tag}
+//           <div className="flex items-center gap-2">
+//             <File size={18} className="text-gray-400" />
+//             <span className="font-medium">Statut:</span>
+//             <span>{fiche.statut}</span>
 //           </div>
-//         )}
+
+//           <div className="flex items-center gap-2">
+//             <User size={18} className="text-gray-400" />
+//             <span className="font-medium">Client:</span>
+//             <span>{fiche.nom_client} {fiche.prenom_client}</span>
+//           </div>
+
+//           <div className="flex items-center gap-2">
+//             <Smartphone size={18} className="text-gray-400" />
+//             <span className="font-medium">Mobile:</span>
+//             <span>{fiche.numero_mobile || 'Non renseigné'}</span>
+//           </div>
+
+//           <div className="flex items-center gap-2">
+//             <Phone size={18} className="text-gray-400" />
+//             <span className="font-medium">Fixe:</span>
+//             <span>{fiche.numero_fixe || 'Non renseigné'}</span>
+//           </div>
+
+//           <div className="flex items-center gap-2">
+//             <Mail size={18} className="text-gray-400" />
+//             <span className="font-medium">Email:</span>
+//             <span>{fiche.mail_client || 'Non renseigné'}</span>
+//           </div>
+
+//           <div className="flex items-center gap-2">
+//             <Building2 size={18} className="text-gray-400" />
+//             <span className="font-medium">Ville:</span>
+//             <span>{fiche.ville_client || 'Non renseigné'}</span>
+//           </div>
+
+//           <div className="flex items-center gap-2">
+//             <MapPin size={18} className="text-gray-400" />
+//             <span className="font-medium">Adresse:</span>
+//             <span>{fiche.adresse_client || 'Non renseigné'}</span>
+//           </div>
+
+//           <div className="flex items-center gap-2">
+//             <Mailbox size={18} className="text-gray-400" />
+//             <span className="font-medium">Code postal:</span>
+//             <span>{fiche.code_postal || 'Non renseigné'}</span>
+//           </div>
+
+//           <div className="flex items-center gap-2">
+//             <Hash size={18} className="text-gray-400" />
+//             <span className="font-medium">Pdl:</span>
+//             <span>{fiche.pdl || 'Non renseigné'}</span>
+//           </div>
+
+//           <div className="flex items-center gap-2">
+//             <Hash size={18} className="text-gray-400" />
+//             <span className="font-medium">Pce:</span>
+//             <span>{fiche.pce || 'Non renseigné'}</span>
+//           </div>
+
+//           <div className="flex items-center gap-2">
+//             <Redo size={18} className="text-gray-400" />
+//             <span className="font-medium">Assignée à:</span>
+//             <span>{fiche.assignedToName || 'Non assignée'}</span>
+//           </div>
+
+//           <div className="flex items-center gap-2">
+//             <Clock size={16} className="text-gray-400" />
+//             <span className="font-medium">Date création:</span>
+//             <span>{new Date(fiche.date_creation).toLocaleDateString('fr-FR')}</span>
+//           </div>
+
+//           {fiche.commentaire && (
+//             <div className="bg-gray-50 p-3 rounded-md italic text-gray-600">
+//               "{fiche.commentaire}"
+//             </div>
+//           )}
+
+//           {fiche.tag && (
+//             <div className="inline-block bg-purple-100 text-purple-800 px-2 py-1 rounded uppercase tracking-wide font-semibold text-xs">
+//               {fiche.tag}
+//             </div>
+//           )}
+//         </div>
 //       </div>
 //     </div>
-//   </div>
-// );
+//   );
 // };
 // export default DetailModal;
 
@@ -246,6 +260,7 @@ export default function DetailModal({ isOpen, onClose, fiche }: DetailModalProps
 //   Building2,
 //   File,
 //   BookmarkCheck,
+//   Hash,
 // } from "lucide-react";
 
 // interface DetailModalProps {
@@ -332,11 +347,19 @@ export default function DetailModal({ isOpen, onClose, fiche }: DetailModalProps
 //               <Mailbox size={16} className="text-gray-400" />
 //               <span>Code postal: {fiche.code_postal || "Non renseigné"}</span>
 //             </div>
+//             <div className="flex items-center gap-2">
+//               <Hash size={16} className="text-gray-400" />
+//               <span>pdl: {fiche.pdl || "Non renseigné"}</span>
+//             </div>
+//             <div className="flex items-center gap-2">
+//               <Hash size={16} className="text-gray-400" />
+//               <span>pce: {fiche.pce || "Non renseigné"}</span>
+//             </div>
 //           </div>
 //         </div>
 
 //         {/* Date en bas */}
-//         <div className="flex justify-end"> 
+//         <div className="flex justify-end">
 //         <p className="text-xs flex text-gray-500 mt-8 items-center gap-1">
 //           <Clock size={14} />
 //           Créée le :{" "}
@@ -388,6 +411,7 @@ export default function DetailModal({ isOpen, onClose, fiche }: DetailModalProps
 //     Building2,
 //     File,
 //     BookmarkCheck,
+//     Hash,
 // } from "lucide-react";
 
 // interface DetailModalProps {
@@ -474,6 +498,14 @@ export default function DetailModal({ isOpen, onClose, fiche }: DetailModalProps
 //                             <li className="flex items-center gap-2">
 //                                 <Mailbox size={16} className="text-gray-400" />
 //                                 Code postal : {fiche.code_postal || "Non renseigné"}
+//                             </li>
+//                             <li className="flex items-center gap-2">
+//                                 <Hash size={16} className="text-gray-400" />
+//                                 Pdl : {fiche.pdl || "Non renseigné"}
+//                             </li>
+//                             <li className="flex items-center gap-2">
+//                                 <Mailbox size={16} className="text-gray-400" />
+//                                 Pce : {fiche.pce || "Non renseigné"}
 //                             </li>
 //                         </ul>
 //                     </div>

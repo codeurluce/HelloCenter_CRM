@@ -306,6 +306,25 @@ exports.importFiles = async (req, res) => {
     // Normalisation des textes
     const normalizeText = (str) => (str == null ? null : String(str).normalize("NFC").trim());
 
+    // Validation stricte des numéros PDL et PCE
+    for (const [index, f] of files.entries()) {
+      const pdlClean = f.pdl != null ? String(f.pdl).replace(/\s/g, '') : null;
+      const pceClean = f.pce != null ? String(f.pce).replace(/\s/g, '') : null;
+
+      if (pdlClean && !/^\d{1,14}$/.test(pdlClean)) {
+        return res.status(400).json({
+          error: `Format invalide dans la colonne PDL à la ligne ${index + 1}. Doit contenir 1 à 14 chiffres sans espaces.`
+        });
+      }
+
+      if (pceClean && !/^\d{1,14}$/.test(pceClean)) {
+        return res.status(400).json({
+          error: `Format invalide dans la colonne PCE à la ligne ${index + 1}. Doit contenir 1 à 14 chiffres sans espaces.`
+        });
+      }
+    }
+
+
     // Préparer les valeurs pour l'insertion
     const insertValues = files.map(f => [
       normalizeText(f.nom_client),
@@ -317,6 +336,9 @@ exports.importFiles = async (req, res) => {
       normalizeText(f.univers),
       normalizeText(f.numero_fixe),
       normalizeText(f.ville_client),
+      normalizeText(f.pdl != null ? String(f.pdl).replace(/\s/g, '') : null),
+      normalizeText(f.pce != null ? String(f.pce).replace(/\s/g, '') : null),
+
       f.statut || 'nouvelle',
       new Date(),
       adminId
@@ -325,13 +347,13 @@ exports.importFiles = async (req, res) => {
     // Générer la requête multi-insertion
     const queryText = `
       INSERT INTO files
-        (nom_client, prenom_client, adresse_client, code_postal, mail_client, numero_mobile, univers, numero_fixe, ville_client, statut, date_import, imported_by)
+        (nom_client, prenom_client, adresse_client, code_postal, mail_client, numero_mobile, univers, numero_fixe, ville_client, pdl, pce, statut, date_import, imported_by)
       VALUES
         ${insertValues.map((_, i) =>
       `(
-            $${i * 12 + 1}, $${i * 12 + 2}, $${i * 12 + 3}, $${i * 12 + 4}, $${i * 12 + 5},
-            $${i * 12 + 6}, $${i * 12 + 7}, $${i * 12 + 8}, $${i * 12 + 9}, $${i * 12 + 10},
-            $${i * 12 + 11}, $${i * 12 + 12}
+            $${i * 14 + 1}, $${i * 14 + 2}, $${i * 14 + 3}, $${i * 14 + 4}, $${i * 14 + 5},
+            $${i * 14 + 6}, $${i * 14 + 7}, $${i * 14 + 8}, $${i * 14 + 9}, $${i * 14 + 10},
+            $${i * 14 + 11}, $${i * 14 + 12}, $${i * 14 + 13}, $${i * 14 + 14}
           )`
     ).join(', ')}
       RETURNING id
@@ -339,7 +361,7 @@ exports.importFiles = async (req, res) => {
 
     const flatValues = insertValues.flat();
 
-    // 🔄 Début transaction
+    // Début transaction
     await db.query('BEGIN');
 
     // Insertion des fichiers
@@ -361,7 +383,7 @@ exports.importFiles = async (req, res) => {
       );
     }
 
-    // ✅ Commit transaction
+    // Commit transaction
     await db.query('COMMIT');
 
     return res.json({
@@ -369,9 +391,8 @@ exports.importFiles = async (req, res) => {
       addedFiches: result.rows.map(r => r.id)
     });
 
-
   } catch (error) {
-    // 🔄 Rollback si erreur
+    // Rollback en cas d'erreur
     await db.query('ROLLBACK');
     console.error('Erreur import:', error);
 
@@ -380,17 +401,16 @@ exports.importFiles = async (req, res) => {
         error: "⚠️ Univers invalide. Vérifie que la colonne 'univers' contient une valeur autorisée."
       });
     }
-    //   if (error.code === "23505") {
-    //   return res.status(400).json({ 
-    //     error: "Ce client existe déjà (conflit de doublon)." });
+    // if (error.code === "23505") {
+    //   return res.status(400).json({ error: "Ce client existe déjà (conflit de doublon)." });
     // }
     // if (error.code === "23502") {
     //   return res.status(400).json({ error: "Champs obligatoires manquants." });
     // }
-    // if (error.code === "22P02") {
-    //   return res.status(400).json({ error: "Format invalide pour certaines données." });
-    // }
-    res.status(500).json({ error: 'Erreur serveur lors de l’import des fichiers' });
+    if (error.code === "22P02") {
+      return res.status(400).json({ error: "Format invalide pour certaines données, vérifier les colonnes PDL et PCE." });
+    }
+    return res.status(500).json({ error: 'Erreur serveur lors de l’import des fichiers' });
   }
 };
 

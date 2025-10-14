@@ -28,6 +28,8 @@ export interface Fiche {
   assigned_by_name?: string;
   date_assignation?: string;
   date_import: string;
+  pdl: string;
+  pce: string;
 }
 
 export interface ClotureData {
