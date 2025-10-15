@@ -494,23 +494,26 @@ exports.exportSessions = async (req, res) => {
   u.id AS user_id,
   u.lastname,
   u.firstname,
-  COALESCE(ls.statut_actuel, 
-           CASE WHEN u.is_connected = false THEN 'Hors ligne' ELSE 'En ligne' END
-  ) AS statut_actuel,
+  COALESCE(ls.statut_actuel, 'Hors ligne') AS statut_actuel,
   COALESCE(ls.depuis_sec, 0) AS depuis_sec,
   COALESCE(ct.presence_totale_sec, 0) AS presence_totale_sec,
   COALESCE(cj.cumul_statuts, '{}'::json) AS cumul_statuts,
   co.first_connection,
   co.last_disconnection,
-  ct.session_date
+  COALESCE(ct.session_date, cj.session_date, co.session_date, ls.session_date) AS session_date
 FROM users u
 LEFT JOIN cumul_total ct ON ct.user_id = u.id
 LEFT JOIN cumul_json cj ON cj.user_id = u.id AND cj.session_date = ct.session_date
 LEFT JOIN last_status ls ON ls.user_id = u.id AND ls.session_date = ct.session_date
 LEFT JOIN connections co ON co.user_id = u.id AND co.session_date = ct.session_date
-WHERE ct.session_date BETWEEN $1 AND $2
+WHERE (
+  (ct.session_date BETWEEN $1 AND $2)
+  OR (cj.session_date BETWEEN $1 AND $2)
+  OR (ls.session_date BETWEEN $1 AND $2)
+  OR (co.session_date BETWEEN $1 AND $2)
+)
 ${userFilter ? "AND u.id = ANY($3)" : ""}
-ORDER BY u.lastname, u.firstname, ct.session_date;
+ORDER BY u.lastname, u.firstname, session_date;
     `;
 
     const params = [startDate, endDate];
@@ -519,7 +522,7 @@ ORDER BY u.lastname, u.firstname, ct.session_date;
     const { rows } = await db.query(query, params);
 
     res.json(rows);
-
+    
   } catch (err) {
     console.error("Erreur exportSessions:", err);
     res.status(500).json({ error: "Erreur export sessions" });

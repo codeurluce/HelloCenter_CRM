@@ -129,8 +129,8 @@ const statusOptions = [
             case 'presenceTotale':
               exportRow['Présence totale'] = formatSeconds(row.presence_totale_sec);
               break;
-            case 'tempsDisponible':
-              exportRow['Temps disponible'] = formatSeconds(row.cumul_statuts?.Disponible || 0);
+            case 'disponible':
+              exportRow['Temps de travail'] = formatSeconds(row.cumul_statuts?.['Disponible'] || 0);
               break;
              case 'pause_cafe_1':
               exportRow['Pausette 1'] = formatSeconds(row.cumul_statuts?.['Pausette 1'] || 0);
