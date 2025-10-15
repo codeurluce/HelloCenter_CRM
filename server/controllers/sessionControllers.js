@@ -108,44 +108,104 @@ exports.closeCurrentSession = async (req, res) => {
 exports.forcePauseByAdmin = async (req, res) => {
   try {
     const userId = Number(req.params.id);
-    const requester = req.user; // info du token : id + role
+    const requester = req.user; // contient { id, role }
 
-    if (!userId) return res.status(400).json({ error: "userId manquant" });
-
-    // Vérifier que c'est un admin
-    if (requester.role !== "Admin") {
-      return res.status(403).json({ error: "Vous n'avez pas la permission de mettre un agent en pause." });
+    if (!userId) {
+      return res.status(400).json({ error: "userId manquant." });
     }
 
-    // On ferme la session actuelle de l'agent
+    // Vérifier que l'utilisateur est un admin
+    if (requester.role !== "Admin") {
+      return res
+        .status(403)
+        .json({ error: "Vous n'avez pas la permission de mettre un agent en pause." });
+    }
+
+    // Vérifier que l'agent est connecté (table users)
+    const { rows: userRows } = await db.query(
+      `SELECT is_connected, session_closed
+       FROM users
+       WHERE id = $1`,
+      [userId]
+    );
+
+    if (userRows.length === 0) {
+      return res.status(404).json({ error: "Agent introuvable." });
+    }
+
+    const { is_connected, session_closed } = userRows[0];
+
+    if (!is_connected || session_closed) {
+      return res.status(400).json({
+        error: "Impossible de forcer la pause : l'agent n'est pas connecté ou sa session est fermée.",
+      });
+    }
+
+    // ✅ Vérifier que l'agent a une session active dans session_agents
+    const { rows: sessionRows } = await db.query(
+      `SELECT id, status, start_time
+       FROM session_agents
+       WHERE user_id = $1
+         AND end_time IS NULL
+       ORDER BY start_time DESC
+       LIMIT 1`,
+      [userId]
+    );
+
+    if (sessionRows.length === 0) {
+      return res.status(400).json({
+        error: "Aucune session active trouvée pour cet agent.",
+      });
+    }
+
+    const currentSession = sessionRows[0];
+
+    // Vérifier que le statut est "Disponible"
+    if (currentSession.status !== "Disponible") {
+      return res.status(400).json({
+        error: `Pause non forcée : l'agent est actuellement en "${currentSession.status}".`,
+      });
+    }
+
     const now = new Date();
+
+    // Fermer la session actuelle (Disponible)
     await db.query(
       `UPDATE session_agents
        SET end_time = $1,
            duration = EXTRACT(EPOCH FROM ($1 - start_time))
-       WHERE user_id = $2
-         AND end_time IS NULL`,
-      [now, userId]
+       WHERE id = $2`,
+      [now, currentSession.id]
     );
 
-    // Créer une nouvelle session "pause_dejeuner"
+    // Créer une nouvelle session "Déjeuner" forcée
     await db.query(
       `INSERT INTO session_agents (user_id, status, start_time, pause_type)
-      VALUES ($1, $2, $3, $4)`,
-      [userId, 'Déjeuner', now, "forcée par l'admin"]
+       VALUES ($1, $2, $3, $4)`,
+      [userId, "Déjeuner", now, "Forcée par l'admin"]
     );
 
-    // Émettre un événement Socket.IO pour notifier l'agent
+    // Émettre les événements Socket.IO
     const io = getIo();
     io.emit("agent_status_changed", { userId, newStatus: "Déjeuner" });
-    io.to(`agent_${userId}`).emit("force_pause_by_admin", { reason: "Pause forcée par l’admin" });
+    io.to(`agent_${userId}`).emit("force_pause_by_admin", {
+      reason: "Pause forcée par l’administrateur",
+      pause_type: "Déjeuner",
+      forced: true,
+    });
 
-    res.json({ success: true, message: "L'agent est maintenant en pause déjeuner." });
+    res.json({
+      success: true,
+      message: "L'agent est maintenant en pause déjeuner (forcée).",
+    });
   } catch (err) {
     console.error("Erreur forcePauseByAdmin:", err);
-    res.status(500).json({ error: "Erreur serveur lors de la mise en pause de l'agent." });
+    res.status(500).json({
+      error: "Erreur serveur lors de la mise en pause de l'agent.",
+    });
   }
 };
+
 
 
 // GET /api/sessions/agents/live

@@ -285,7 +285,7 @@ const disconnectAgentbyAdmin = async (req, res) => {
   try {
     // Vérifier si c'est soi-même ou un admin
     if (requester.id !== userId && requester.role !== "Admin") {
-      return res.status(403).json({ error: "Vous n'avez pas la permission de déconnecter cet agent." });
+      return res.status(403).json({ error: "Vous n'avez pas la permission de déconnecter un agent." });
     }
     // Empecher un admin de se deconnecter lui mm via cet endpoint
     if (requester.id.toString() === userId) {
