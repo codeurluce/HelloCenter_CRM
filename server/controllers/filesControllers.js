@@ -338,7 +338,6 @@ exports.importFiles = async (req, res) => {
       normalizeText(f.ville_client),
       normalizeText(f.pdl != null ? String(f.pdl).replace(/\s/g, '') : null),
       normalizeText(f.pce != null ? String(f.pce).replace(/\s/g, '') : null),
-
       f.statut || 'nouvelle',
       new Date(),
       adminId

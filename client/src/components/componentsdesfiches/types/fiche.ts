@@ -16,12 +16,14 @@ export interface Fiche {
   agent_id: number;
   date_creation: string;
   date_modification: string;
-  date_import?: string;
+  date_import: string;
   tag?: string;
   assignedTo?: string;
   assignedToName?: string;
-   rendez_vous_date?: string;
+  rendez_vous_date?: string;
   rendez_vous_commentaire?: string;
+  pdl?: string;
+  pce?: string;
 }
 
 export interface ClotureData {

@@ -206,8 +206,6 @@ exports.forcePauseByAdmin = async (req, res) => {
   }
 };
 
-
-
 // GET /api/sessions/agents/live
 exports.getLiveSessionAgents = async (req, res) => {
   try {
