@@ -258,7 +258,7 @@ const disconnectAgentForce = async (req, res) => {
 
     // Historique de déconnexion forcée
     await db.query(
-      "INSERT INTO agent_connections_history (user_id, event_type, event_time) VALUES ($1, 'deconnexion_forcee', NOW())",
+      "INSERT INTO agent_connections_history (user_id, event_type, event_time) VALUES ($1, 'auto_disconnect', NOW())",
       [userId]
     );
 

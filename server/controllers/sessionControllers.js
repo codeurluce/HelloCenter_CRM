@@ -355,7 +355,7 @@ exports.getDailyConnectionTimes = async (req, res) => {
       SELECT 
         user_id,
         MIN(event_time) FILTER (WHERE event_type = 'connect') AS first_connection,
-        MAX(event_time) FILTER (WHERE event_type = 'disconnect') AS last_disconnection
+        MAX(event_time) FILTER (WHERE event_type IN ('disconnect', 'disconnectByAdmin', 'auto_disconnect')) AS last_disconnection
       FROM agent_connections_history
       WHERE DATE(event_time) = CURRENT_DATE
       GROUP BY user_id

@@ -151,7 +151,7 @@ export const AgentStatusProvider = ({ children }) => {
 
     const resetTimer = () => {
       clearTimeout(inactivityTimer);
-      inactivityTimer = setTimeout(triggerForcedLogout, 600_000); // 10 min
+      inactivityTimer = setTimeout(triggerForcedLogout, 600_000); // (10 min * 60_000 ms )
     };
 
     const events = [
@@ -295,7 +295,7 @@ export const AgentStatusProvider = ({ children }) => {
   const logoutAgent = async () => {
     manualLogoutRef.current = true;
     if (userRef.current?.id) {
-      await axiosInstance.post("/agent/disconnect-force", { userId: userRef.current.id });
+      await axiosInstance.post("/agent/disconnect", { userId: userRef.current.id });
     }
     if (socket.connected) socket.disconnect();
     localStorage.clear();

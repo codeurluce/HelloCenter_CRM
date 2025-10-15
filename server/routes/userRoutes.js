@@ -30,7 +30,7 @@ router.post("/register", createUser); // 📌 Création d’un utilisateur avec 
 router.post("/login", loginUser); // 📌 Connexion utilisateur // Méthode : POST /api/users/login
 router.post('/agent/connect', connectAgent); // 📌 Connexion d’un agent (mise à jour état connecté) // Méthode : POST /api/users/agent/connect
 router.post('/agent/disconnect', disconnectAgent); // 📌 Déconnexion d’un agent (mise à jour état déconnecté) // Méthode : POST /api/users/agent/disconnect
-router.post('/agent/disconnect-force', disconnectAgentForce); // 📌 Déconnexion forcée d’un agent (admin ou automatisée) // Méthode : POST /api/users/agent/disconnect-force
+router.post('/agent/disconnect-force', disconnectAgentForce); // 📌 Déconnexion forcée d’un agent (automatisée, en cas de perte de connexion ) // Méthode : POST /api/users/agent/disconnect-force
 router.post('/agent/:id/disconnectByAdmin', verifyToken, disconnectAgentbyAdmin); // 📌 Déconnexion d’un agent par un administrateur (mise à jour état déconnecté) // Méthode : POST /api/users/agent/:id/disconnectByAdmin
 router.post("/change-password-first-login", verifyToken, changePasswordFirstLogin); // 📌 Changement du mot de passe au premier login (authentification requise) // Méthode : POST /api/users/change-password-first-login
 

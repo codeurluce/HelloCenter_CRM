@@ -8,7 +8,7 @@ async function checkInactiveAgents() {
     const now = new Date();
     const threshold = new Date(now - INACTIVITY_THRESHOLD_MS);
 
-    // 🔹 Seulement : Disponible → Aucun statut (après 60s)
+    // 🔹 Agents "Disponible" inactifs depuis plus de 60s
     const activeAvailable = await db.query(`
       SELECT id, user_id 
       FROM session_agents 
@@ -18,38 +18,30 @@ async function checkInactiveAgents() {
     `, [threshold]);
 
     for (const row of activeAvailable.rows) {
-        const { id, user_id: userId } = row;
-      console.log(`[AUTO-ABSENCE] Agent ${row.user_id} → Aucun statut`);
-      
-      // Clôturer "Disponible"
+      const { id, user_id: userId } = row;
+      console.log(`[AUTO-ABSENCE] Agent ${userId} → Hors ligne (inactivité)`);
+
+      // 1️. Clôturer la session "Disponible"
       await db.query(`
         UPDATE session_agents 
         SET end_time = NOW(), 
             duration = EXTRACT(EPOCH FROM (NOW() - start_time))::INT
         WHERE id = $1
-      `, [row.id]);
+      `, [id]); 
 
-      // 1 Ouvrir "Aucun statut" → durée indéfinie
-      await db.query(`
-        INSERT INTO session_agents (user_id, status, start_time, last_ping)
-        VALUES ($1, 'Aucun statut', NOW(), NOW())
-      `, [row.user_id]);
-
-      // 2. Marquer comme déconnecté → crucial pour /validate
+      // 2️. Mettre à jour l'utilisateur comme "hors ligne"
       await db.query(`
         UPDATE users 
         SET is_connected = FALSE, session_closed = TRUE 
         WHERE id = $1
       `, [userId]);
 
-      // 3. Historique (optionnel)
-      await db.query(
-        "INSERT INTO agent_connections_history (user_id, event_type) VALUES ($1, 'auto_disconnect')",
-        [userId]
-      );
+      // 3️. Historiser l’événement d’auto-déconnexion
+      await db.query(`
+        INSERT INTO agent_connections_history (user_id, event_type, event_time)
+        VALUES ($1, 'auto_disconnect', NOW())
+      `, [userId]);
     }
-    // 🔸 PAS DE DÉCONNEXION AUTOMATIQUE ici
-    // La session "Aucun statut" reste ouverte jusqu'au retour de l'agent
 
   } catch (err) {
     console.error('Inactivity checker error:', err);

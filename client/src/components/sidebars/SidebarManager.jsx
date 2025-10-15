@@ -8,10 +8,9 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { ShoppingCart, Folder, Clock } from 'react-feather';
-import { Users } from 'lucide-react';
 import Swal from "sweetalert2";
 import { colorThemes } from '../../shared/colorThemes';
-import { ThemeContext, useTheme } from '../../shared/ThemeContext';
+import { useTheme } from '../../shared/ThemeContext';
 
 const SidebarAdmin = ({ activeItem, setActiveItem, onLogout }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
