@@ -37,6 +37,23 @@ const VentesInfoPanel = ({ agentId }) => {
 
 
   useEffect(() => {
+  const ficheEnCours = localStorage.getItem("ficheEnCoursVente");
+  const storedFormType = localStorage.getItem("formType");
+  const storedFormData = localStorage.getItem("formData");
+
+  if (ficheEnCours && storedFormType && storedFormData) {
+    setFormType(storedFormType); // energie ou offremobile
+    setFormData(JSON.parse(storedFormData));
+    setShowForm(true);
+
+    // Nettoyer localStorage pour ne pas rouvrir à chaque refresh
+    localStorage.removeItem("ficheEnCoursVente");
+    localStorage.removeItem("formType");
+    localStorage.removeItem("formData");
+  }
+}, []);
+
+  useEffect(() => {
     const storedAgent = localStorage.getItem("user");
     if (storedAgent) {
       const parsedAgent = JSON.parse(storedAgent);

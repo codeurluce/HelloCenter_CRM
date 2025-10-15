@@ -52,16 +52,16 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
     const [showExportModal, setShowExportModal] = useState(false);
     const [historiqueModal, setHistoriqueModal] = useState({ isOpen: false, ficheId: null as number | null, });
     const [modalOpen, setModalOpen] = useState(false);
-  
+
     const openDetailModal = (fiche: Fiche) => {
-    setSelectedFiche(fiche);
-    setModalOpen(true);
-  };
+        setSelectedFiche(fiche);
+        setModalOpen(true);
+    };
 
     const closeModal = () => {
-    setModalOpen(false);
-    setSelectedFiche(null);
-  };
+        setModalOpen(false);
+        setSelectedFiche(null);
+    };
 
     // Onglets univers
     const tabs = [
@@ -77,8 +77,8 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
 
     // Fetch fiches
     const fetchFiches = async () => {
+        setLoading(true);
         try {
-            setLoading(true);
             const response = await axiosInstance.get('/files/all_files');
             setFiches(response.data);
         } catch (error: any) {
@@ -87,6 +87,7 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
             setLoading(false);
         }
     };
+
     useEffect(() => { fetchFiches(); console.log(fiches) }, []);
 
     const handleAssignSubmit = async (agentId: number) => {
@@ -243,171 +244,179 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
                 </nav>
 
                 {/* Fiches */}
-                {!loading && (
-                    <div className="bg-white shadow-md rounded-b-xl border border-gray-200 p-6">
-                        {/* Filters */}
-                        <div className="flex flex-wrap gap-3 mb-6">
-                            {(['nouvelles', 'assignees', 'en_cours', 'rendez_vous', 'cloturees', 'toutes'] as AdminFilterType[]).map(f => (
-                                <button
-                                    key={f}
-                                    onClick={() => setTabFilters(prev => ({ ...prev, [activeTab]: f }))}
-                                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200
+                <div className="bg-white shadow-md rounded-b-xl border border-gray-200 p-6">
+                    {/* Filters */}
+                    <div className="flex flex-wrap gap-3 mb-6">
+                        {(['nouvelles', 'assignees', 'en_cours', 'rendez_vous', 'cloturees', 'toutes'] as AdminFilterType[]).map(f => (
+                            <button
+                                key={f}
+                                onClick={() => setTabFilters(prev => ({ ...prev, [activeTab]: f }))}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200
                     ${activeFilter === f ? 'bg-blue-600 text-white shadow-md' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'}`}
-                                >
-                                    {f} <span className="px-2 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-600">{counters[f]}</span>
-                                </button>
-                            ))}
-                            <button onClick={fetchFiches} className="flex ml-6 items-center gap-2 py-1 px-3 rounded-md border border-blue-500 text-blue-600 hover:bg-blue-100 transition">
-                                <RefreshCw size={16} /> Rafraîchir
+                            >
+                                {f} <span className="px-2 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-600">{counters[f]}</span>
                             </button>
-                        </div>
+                        ))}
+                        <button
+                            onClick={() => fetchFiches()}
+                            className="flex ml-6 items-center gap-2 py-1 px-3 rounded-md border border-blue-500 text-blue-600 hover:bg-blue-100 transition">
+                            <RefreshCw size={16} /> Rafraîchir
+                        </button>
+                    </div>
 
-                        {/* Batch select */}
-                        <div className="flex items-center gap-3 mb-4">
-                            <label>Nombre de fiches :</label>
-                            <select value={batchSize} onChange={handleBatchSizeChange} className="px-2 py-1 border rounded">
-                                <option value="">-- Choisir --</option>
-                                {[5, 10, 20, 30, 50, 100, 200].map(n => <option key={n} value={n}>{n}</option>)}
-                            </select>
+                    {/* Batch select */}
+                    <div className="flex items-center gap-3 mb-4">
+                        <label>Nombre de fiches :</label>
+                        <select value={batchSize} onChange={handleBatchSizeChange} className="px-2 py-1 border rounded">
+                            <option value="">-- Choisir --</option>
+                            {[5, 10, 20, 30, 50, 100, 200].map(n => <option key={n} value={n}>{n}</option>)}
+                        </select>
 
-                            {selectedFiches.length > 0 && (
-                                <button onClick={() => setAssignModal({ isOpen: true, ficheId: null, currentAgentId: null })}
-                                    className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium shadow-sm">
-                                    <UserPlus size={18} /> Assigner {selectedFiches.length} fiches
-                                </button>
-                            )}
-                        </div>
+                        {selectedFiches.length > 0 && (
+                            <button onClick={() => setAssignModal({ isOpen: true, ficheId: null, currentAgentId: null })}
+                                className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium shadow-sm">
+                                <UserPlus size={18} /> Assigner {selectedFiches.length} fiches
+                            </button>
+                        )}
+                    </div>
 
-                        {/* Table */}
-                        <div className="overflow-x-auto">
-                            {filteredFiches.length === 0 ? (
-                                <div className="text-center py-12">Aucune fiche trouvée</div>
-                            ) : (
-                                <div className=" border border-gray-300 rounded-t-lg overflow-hidden">
-                                    <table className="w-full border-collapse" >
-                                        <thead className="bg-blue-50">
-                                            <tr>
-                                                <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700 whitespace-nowrap" >N° fiche</th>
-                                                <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700" >Client</th>
-                                                <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700 whitespace-nowrap">Numéro mobile</th>
-                                                {/* <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Mail client</th> */}
-                                                {/* <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Adresse</th> */}
-                                                <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Statut</th>
-                                                <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Assignée à</th>
-                                                <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700 whitespace-nowrap">Date import</th>
-                                                <th className="px-6 py-3 text-center text-sm font-semibold text-blue-700">Actions</th>
+                    {/* Table */}
+                    <div className="overflow-x-auto">
+                        {loading ? (
+                            <div className="text-center py-12">
+                                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                                <p className="text-gray-600">Chargement des fiches...</p>
+                            </div>
+                        ) : filteredFiches.length === 0 ? (
+                            <div className="text-center py-12 text-gray-500">
+                                Aucune fiche trouvée
+                            </div>
+                        ) : (
+                            <div className="border border-gray-300 rounded-t-lg overflow-hidden">
+                                <table className="w-full border-collapse">
+                                    <thead className="bg-blue-50">
+                                        <tr>
+                                            <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700 whitespace-nowrap" >N° fiche</th>
+                                            <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700" >Client</th>
+                                            <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700 whitespace-nowrap">Numéro mobile</th>
+                                            {/* <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Mail client</th> */}
+                                            {/* <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Adresse</th> */}
+                                            <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Statut</th>
+                                            <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Assignée à</th>
+                                            <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700 whitespace-nowrap">Date import</th>
+                                            <th className="px-6 py-3 text-center text-sm font-semibold text-blue-700">Actions</th>
+                                            {activeFilter === 'nouvelles' && (
+                                                <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
+                                                    <input
+                                                        type="checkbox"
+                                                        onChange={(e) => {
+                                                            if (e.target.checked) setSelectedFiches(filteredFiches.map(f => f.id));
+                                                            else setSelectedFiches([]);
+                                                        }}
+                                                        checked={selectedFiches.length === filteredFiches.length && filteredFiches.length > 0}
+                                                    />
+                                                </th>
+                                            )}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {filteredFiches.map(fiche => (
+                                            <tr key={fiche.id} className={`border-t border-gray-200 transition-colors ${selectedFiches.includes(fiche.id) ? 'bg-blue-50' : 'hover:bg-blue-50'}`} >
+                                                <td className="px-6 py-3 text-gray-800">{fiche.id}</td>
+                                                <td className="px-6 py-3 text-gray-800 whitespace-nowrap">{fiche.nom_client} {fiche.prenom_client}</td>
+                                                <td className="px-6 py-3 text-gray-800 whitespace-nowrap">{fiche.numero_mobile}</td>
+                                                {/* <td className="px-6 py-3 text-gray-800 whitespace-nowrap">{fiche.mail_client}</td> */}
+                                                {/* <td className="px-6 py-3 text-gray-800 whitespace-nowrap">{fiche.ville_client}</td> */}
+                                                {/* <td className="px-6 py-3 text-gray-800">{fiche.univers}</td> */}
+                                                <td className="px-6 py-3 text-gray-800">{getStatusBadge(fiche.statut, fiche.assigned_to)}</td>
+                                                <td className="px-6 py-3 text-gray-800 whitespace-nowrap">{fiche.assigned_to_name || 'Non Assignée'}</td>
+                                                <td className="px-6 py-3 text-gray-800">{new Date(fiche.date_import).toLocaleDateString('fr-FR')}</td>
+                                                <td className="px-6 py-3 text-gray-800">
+                                                    {activeFilter === 'nouvelles' && (
+                                                        <div className="flex justify-end gap-2 items-center">
+                                                            <div className="relative group">
+                                                                <button
+                                                                    onClick={() => handleAssignFiche(fiche.id, fiche.assigned_to)}
+                                                                    title=""
+                                                                    className=" px-3 py-1.5 rounded-lg border border-green-100 text-blue-600 hover:bg-blue-600 hover:text-white
+                                                                                transition-transform transform focus:outline-none focus:ring-2 focus:ring-offset-1 hover:scale-105">
+                                                                    <FileUp className="w-4 h-4" />
+                                                                </button>
+                                                                <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-blue-600 text-white text-xs whitespace-nowrap">
+                                                                    Assigner
+                                                                </span>
+                                                            </div>
+
+                                                            <div className="relative group">
+                                                                <button
+                                                                    onClick={() => openDetailModal(fiche)}
+                                                                    title="Consulter"
+                                                                    className="px-3 py-1.5 rounded-lg border border-green-100 text-green-600 hover:bg-green-600 hover:text-white 
+                                                                                                  transition-transform transform focus:outline-none focus:ring-2 focus:ring-offset-1 hover:scale-105"
+                                                                >
+                                                                    <Eye className="w-4 h-4" />
+                                                                </button>
+                                                                <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-green-600 text-white text-xs whitespace-nowrap">
+                                                                    Détails
+                                                                </span>
+                                                            </div>
+                                                        </div>
+
+                                                    )}
+
+                                                    {/* Si besoin, tu peux aussi mettre d’autres actions visibles partout */}
+                                                    {activeFilter !== 'nouvelles' && (
+                                                        <div className="flex justify-end gap-2 items-center">
+                                                            <div className="relative group">
+                                                                <button
+                                                                    onClick={() => setHistoriqueModal({ isOpen: true, ficheId: fiche.id })}
+                                                                    title=""
+                                                                    className=" px-3 py-1.5 rounded-lg border border-green-100 text-blue-600 hover:bg-blue-600 hover:text-white
+                                                                                transition-transform transform focus:outline-none focus:ring-2 focus:ring-offset-1 hover:scale-105">
+                                                                    <FileText className="w-4 h-4" />
+                                                                </button>
+                                                                <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-blue-600 text-white text-xs whitespace-nowrap">
+                                                                    Voir l'historique
+                                                                </span>
+                                                            </div>
+
+                                                            <div className="relative group">
+                                                                <button
+                                                                    onClick={() => openDetailModal(fiche)}
+                                                                    title="Consulter"
+                                                                    className="px-3 py-1.5 rounded-lg border border-green-100 text-green-600 hover:bg-green-600 hover:text-white 
+                                                                                                  transition-transform transform focus:outline-none focus:ring-2 focus:ring-offset-1 hover:scale-105"
+                                                                >
+                                                                    <Eye className="w-4 h-4" />
+                                                                </button>
+                                                                <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-green-600 text-white text-xs whitespace-nowrap">
+                                                                    Détails
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </td>
                                                 {activeFilter === 'nouvelles' && (
-                                                    <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
+                                                    <td className="px-6 py-3 text-gray-800">
                                                         <input
                                                             type="checkbox"
+                                                            checked={selectedFiches.includes(fiche.id)}
                                                             onChange={(e) => {
-                                                                if (e.target.checked) setSelectedFiches(filteredFiches.map(f => f.id));
-                                                                else setSelectedFiches([]);
+                                                                if (e.target.checked) setSelectedFiches(prev => [...prev, fiche.id]);
+                                                                else setSelectedFiches(prev => prev.filter(id => id !== fiche.id));
                                                             }}
-                                                            checked={selectedFiches.length === filteredFiches.length && filteredFiches.length > 0}
                                                         />
-                                                    </th>
+                                                    </td>
                                                 )}
                                             </tr>
-                                        </thead>
-                                        <tbody>
-                                            {filteredFiches.map(fiche => (
-                                                <tr key={fiche.id} className={`border-t border-gray-200 transition-colors ${selectedFiches.includes(fiche.id) ? 'bg-blue-50' : 'hover:bg-blue-50'}`} >
-                                                    <td className="px-6 py-3 text-gray-800">{fiche.id}</td>
-                                                    <td className="px-6 py-3 text-gray-800 whitespace-nowrap">{fiche.nom_client} {fiche.prenom_client}</td>
-                                                    <td className="px-6 py-3 text-gray-800 whitespace-nowrap">{fiche.numero_mobile}</td>
-                                                    {/* <td className="px-6 py-3 text-gray-800 whitespace-nowrap">{fiche.mail_client}</td> */}
-                                                    {/* <td className="px-6 py-3 text-gray-800 whitespace-nowrap">{fiche.ville_client}</td> */}
-                                                    {/* <td className="px-6 py-3 text-gray-800">{fiche.univers}</td> */}
-                                                    <td className="px-6 py-3 text-gray-800">{getStatusBadge(fiche.statut, fiche.assigned_to)}</td>
-                                                    <td className="px-6 py-3 text-gray-800 whitespace-nowrap">{fiche.assigned_to_name || 'Non Assignée'}</td>
-                                                    <td className="px-6 py-3 text-gray-800">{new Date(fiche.date_import).toLocaleDateString('fr-FR')}</td>
-                                                    <td className="px-6 py-3 text-gray-800">
-                                                        {activeFilter === 'nouvelles' && (
-                                                            <div className="flex justify-end gap-2 items-center">
-                                                                <div className="relative group">
-                                                                    <button
-                                                                        onClick={() => handleAssignFiche(fiche.id, fiche.assigned_to)}
-                                                                        title=""
-                                                                        className=" px-3 py-1.5 rounded-lg border border-green-100 text-blue-600 hover:bg-blue-600 hover:text-white
-                                                                                transition-transform transform focus:outline-none focus:ring-2 focus:ring-offset-1 hover:scale-105">
-                                                                        <FileUp className="w-4 h-4" />
-                                                                    </button>
-                                                                    <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-blue-600 text-white text-xs whitespace-nowrap">
-                                                                        Assigner
-                                                                    </span>
-                                                                </div>
-
-                                                                <div className="relative group">
-                                                                    <button
-                                                                        onClick={() => openDetailModal(fiche)}
-                                                                        title="Consulter"
-                                                                        className="px-3 py-1.5 rounded-lg border border-green-100 text-green-600 hover:bg-green-600 hover:text-white 
-                                                                                                  transition-transform transform focus:outline-none focus:ring-2 focus:ring-offset-1 hover:scale-105"
-                                                                    >
-                                                                        <Eye className="w-4 h-4" />
-                                                                    </button>
-                                                                    <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-green-600 text-white text-xs whitespace-nowrap">
-                                                                        Détails
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-
-                                                        )}
-
-                                                        {/* Si besoin, tu peux aussi mettre d’autres actions visibles partout */}
-                                                        {activeFilter !== 'nouvelles' && (
-                                                            <div className="flex justify-end gap-2 items-center">
-                                                                <div className="relative group">
-                                                                    <button
-                                                                        onClick={() => setHistoriqueModal({ isOpen: true, ficheId: fiche.id })}
-                                                                        title=""
-                                                                        className=" px-3 py-1.5 rounded-lg border border-green-100 text-blue-600 hover:bg-blue-600 hover:text-white
-                                                                                transition-transform transform focus:outline-none focus:ring-2 focus:ring-offset-1 hover:scale-105">
-                                                                        <FileText className="w-4 h-4" />
-                                                                    </button>
-                                                                    <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-blue-600 text-white text-xs whitespace-nowrap">
-                                                                        Voir l'historique
-                                                                    </span>
-                                                                </div>
-
-                                                                <div className="relative group">
-                                                                    <button
-                                                                        onClick={() => openDetailModal(fiche)}
-                                                                        title="Consulter"
-                                                                        className="px-3 py-1.5 rounded-lg border border-green-100 text-green-600 hover:bg-green-600 hover:text-white 
-                                                                                                  transition-transform transform focus:outline-none focus:ring-2 focus:ring-offset-1 hover:scale-105"
-                                                                    >
-                                                                        <Eye className="w-4 h-4" />
-                                                                    </button>
-                                                                    <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-green-600 text-white text-xs whitespace-nowrap">
-                                                                        Détails
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-                                                        )}
-                                                    </td>
-                                                    {activeFilter === 'nouvelles' && (
-                                                        <td className="px-6 py-3 text-gray-800">
-                                                            <input
-                                                                type="checkbox"
-                                                                checked={selectedFiches.includes(fiche.id)}
-                                                                onChange={(e) => {
-                                                                    if (e.target.checked) setSelectedFiches(prev => [...prev, fiche.id]);
-                                                                    else setSelectedFiches(prev => prev.filter(id => id !== fiche.id));
-                                                                }}
-                                                            />
-                                                        </td>
-                                                    )}
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            )}
-                        </div>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
                     </div>
-                )}
+                </div>
+
 
                 {/* Modals */}
                 <ImportModal
@@ -439,12 +448,12 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
                 />
 
                 {selectedFiche && (
-        <DetailModal 
-          isOpen={modalOpen} 
-          onClose={closeModal} 
-          fiche={selectedFiche} 
-        />
-      )}
+                    <DetailModal
+                        isOpen={modalOpen}
+                        onClose={closeModal}
+                        fiche={selectedFiche}
+                    />
+                )}
             </div>
         </div>
     );
