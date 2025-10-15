@@ -116,7 +116,12 @@ export default function SessionsTable({ sessions, loading, refresh }) {
         <tbody>
           {loading ? (
             <tr>
-              <td colSpan="6" className="text-center py-6 text-gray-600 font-medium">Chargement...</td>
+              <td colSpan="6">
+                <div className="text-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                  <span className="text-blue-700 font-medium">Chargement des sessions...</span>
+                </div>
+              </td>
             </tr>
           ) : sessions.length === 0 ? (
             <tr>
@@ -160,7 +165,7 @@ export default function SessionsTable({ sessions, loading, refresh }) {
                 </td>
                 <td className="px-6 py-3 font-mono text-sm text-gray-700">{formatTime(s.presence_totale_sec)}</td>
                 <td className="px-6 py-3 text-center flex justify-center gap-3">
-                
+
                   {/* Bouton consulter */}
                   <div className="relative group">
                     <button
