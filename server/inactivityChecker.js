@@ -1,14 +1,15 @@
 // inactivityChecker.js
 const db = require('./db');
+const { getIo } = require('./socketInstance');
 
-const INACTIVITY_THRESHOLD_MS = 60_000; // 60s d'inactivité en "Disponible"
+const INACTIVITY_THRESHOLD_MS = 600_000; // 10 minutes d'inactivité en "Disponible"
 
 async function checkInactiveAgents() {
   try {
     const now = new Date();
     const threshold = new Date(now - INACTIVITY_THRESHOLD_MS);
 
-    // 🔹 Agents "Disponible" inactifs depuis plus de 60s
+    // 🔹 Agents "Disponible" inactifs depuis > 10 min
     const activeAvailable = await db.query(`
       SELECT id, user_id 
       FROM session_agents 
@@ -41,7 +42,19 @@ async function checkInactiveAgents() {
         INSERT INTO agent_connections_history (user_id, event_type, event_time)
         VALUES ($1, 'auto_disconnect', NOW())
       `, [userId]);
-    }
+   
+
+      // 4️. Émet une notification socket au front
+      try {
+        const io = getIo();
+        io.to(`agent_${userId}`).emit("session_closed_force", {
+          reason: "Déconnexion automatique pour inactivité (10 minutes)",
+        });
+        console.log(`[SOCKET] 🔔 session_closed_force envoyé à agent_${userId}`);
+      } catch (err) {
+        console.warn(`[WARN] Impossible d’émettre socket pour agent ${userId}:`, err.message);
+      }
+      }
 
   } catch (err) {
     console.error('Inactivity checker error:', err);
