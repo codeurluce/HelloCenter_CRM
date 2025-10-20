@@ -176,6 +176,14 @@ const loginUser = async (req, res) => {
 const connectAgent = async (req, res) => {
   const { userId } = req.body;
   try {
+    // 🔒 Fermer toute session orpheline
+    await db.query(`
+      UPDATE session_agents 
+      SET end_time = NOW(), 
+          duration = EXTRACT(EPOCH FROM (NOW() - start_time))::INT
+      WHERE user_id = $1 AND end_time IS NULL
+    `, [userId]);
+
     // Marquer agent connecté
     await db.query("UPDATE users SET is_connected = TRUE, session_closed = FALSE WHERE id = $1", [userId]);
 
@@ -316,7 +324,6 @@ const disconnectAgentbyAdmin = async (req, res) => {
     res.status(500).json({ error: "Erreur lors de la déconnexion de l’agent" });
   }
 };
-
 
 // Infos utilisateur connecté
 const getMe = async (req, res) => {

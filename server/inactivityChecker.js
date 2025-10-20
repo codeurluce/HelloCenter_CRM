@@ -51,6 +51,7 @@ async function checkInactiveAgents() {
           reason: "Déconnexion automatique pour inactivité (10 minutes)",
         });
         console.log(`[SOCKET] 🔔 session_closed_force envoyé à agent_${userId}`);
+        console.log(`[INACTIVITY CHECK ${new Date().toISOString()}] Found ${activeAvailable.rows.length} inactive agents`);
       } catch (err) {
         console.warn(`[WARN] Impossible d’émettre socket pour agent ${userId}:`, err.message);
       }

@@ -56,7 +56,7 @@ export const AgentStatusProvider = ({ children }) => {
     setUser(null);
     setCurrentStatus(null);
     // toast.warn("Vous avez été déconnecté. Veuillez vous reconnecter", { autoClose: 4000, onClose: () => navigate("/login"), });
-    setIsInactive(true);  
+    setIsInactive(true);
   };
 
   const startInactivityCheck = () => {
@@ -183,7 +183,7 @@ export const AgentStatusProvider = ({ children }) => {
       if (document.visibilityState === "visible") resetActivity();
     };
 
-    const events = ["mousedown","mousemove","keypress","scroll","touchstart","click","wheel","pointermove"];
+    const events = ["mousedown", "mousemove", "keypress", "scroll", "touchstart", "click", "wheel", "pointermove"];
     events.forEach((e) => window.addEventListener(e, resetActivity, { passive: true }));
     document.addEventListener("visibilitychange", handleVisibility);
 
@@ -204,14 +204,18 @@ export const AgentStatusProvider = ({ children }) => {
     let hbInterval = null;
 
     const sendHeartbeat = async () => {
-      try { await axiosInstance.post("/session_agents/heartbeat"); }
-      catch { console.warn("Heartbeat échoué"); }
+      try {
+        await axiosInstance.post("/session_agents/heartbeat");
+        console.log('💓 Heartbeat envoyé du frontend à', new Date().toLocaleString());
+      } catch {
+        console.warn("Heartbeat échoué");
+      }
     };
 
     const startHeartbeat = () => {
       if (hbInterval) return;
       sendHeartbeat();
-      hbInterval = setInterval(sendHeartbeat, 45_000);
+      hbInterval = setInterval(sendHeartbeat, 30_000);
     };
 
     const stopHeartbeat = () => {
@@ -338,7 +342,8 @@ export const AgentStatusProvider = ({ children }) => {
     setUser(userData);
     userRef.current = userData;
     resetActivity();
-    startInactivityCheck();
+    // startInactivityCheck();
+    lastActivityRef.current = Date.now();
     recentlyConnectedRef.current = true;
     setTimeout(() => { recentlyConnectedRef.current = false; }, 5000);
     localStorage.setItem("user", JSON.stringify(userData));
