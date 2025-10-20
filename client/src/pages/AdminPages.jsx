@@ -23,6 +23,7 @@ import MonthlySalesChart from '../components/cards/MonthlySalesChart.jsx';
 import MonthlySalesChartAdmin from '../components/cards/MonthlySalesChartAdmin.jsx';
 import MonthlyAgentSalesPieChart from '../components/cards/MonthlyAgentSalesPieChart.jsx';
 import AdminSettings from '../components/componentsdesongletsAdmins/AdminSettings.jsx';
+import Footer from '../components/dashbords/Footer.jsx';
 
 const AdminDashboard = () => {
   const { user, setUser } = useContext(AuthContext);
@@ -253,6 +254,7 @@ useEffect(() => {
             {activeItem === 'administration' && <AdministrationUsers />}
             {activeItem === 'settings' && <AdminSettings />}
           </main>
+          <Footer />
         </div>
       </div>
     </AgentStatusProvider>
