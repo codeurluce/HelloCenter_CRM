@@ -266,7 +266,7 @@ export default function AdminSettings({ user }) {
                             <option value="green">Vert</option>
                             <option value="gray">Sombre</option>
                         </select>
-                        <p className="text-xs mt-2 text-gray-500 dark:text-gray-400">Le changement est enregistré et appliqué au rechargement ou si votre sidebar lit la préférence depuis localStorage.</p>
+                        <p className="text-xs mt-2 text-gray-500 dark:text-gray-400">Le changement est enregistré et appliqué au rechargement.</p>
                     </div>
 
                     {/* <div>

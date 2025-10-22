@@ -14,8 +14,8 @@ import { useTheme } from '../../shared/ThemeContext';
 
 const SidebarAdmin = ({ activeItem, setActiveItem, onLogout }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
-      const { theme } = useTheme();
-      const sidebarClass = colorThemes[theme] || colorThemes.blue;
+  const { theme } = useTheme();
+  const sidebarClass = colorThemes[theme] || colorThemes.blue;
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard Admin', icon: LayoutDashboard },
@@ -48,20 +48,20 @@ const SidebarAdmin = ({ activeItem, setActiveItem, onLogout }) => {
     },
   ];
 
-      // 🔹 Charger l’item actif depuis localStorage au montage
-    useEffect(() => {
-        const savedItem = localStorage.getItem("activeSidebarItem");
-        if (savedItem) {
-            setActiveItem(savedItem);
-        }
-    }, [setActiveItem]);
+  // 🔹 Charger l’item actif depuis localStorage au montage
+  useEffect(() => {
+    const savedItem = localStorage.getItem("activeSidebarItem");
+    if (savedItem) {
+      setActiveItem(savedItem);
+    }
+  }, [setActiveItem]);
 
-    // 🔹 Sauvegarder à chaque changement
-    useEffect(() => {
-        if (activeItem) {
-            localStorage.setItem("activeSidebarItem", activeItem);
-        }
-    }, [activeItem]);
+  // 🔹 Sauvegarder à chaque changement
+  useEffect(() => {
+    if (activeItem) {
+      localStorage.setItem("activeSidebarItem", activeItem);
+    }
+  }, [activeItem]);
 
   const MenuItem = ({ item, isBottom = false }) => (
     <button
@@ -86,7 +86,14 @@ const SidebarAdmin = ({ activeItem, setActiveItem, onLogout }) => {
       <div className="p-6 border-b border-blue-400 border-opacity-30">
         <div className="flex items-center justify-between">
           {!isCollapsed && (
-            <h1 className="text-white text-xl font-bold" translate="no">Hello Center</h1>
+            //<h1 className="text-white text-xl font-bold" translate="no">Hello Center</h1>
+            <h1 className="flex justify-center py-4">
+              <img
+                src="/logo_helloCenter.png"
+                alt="Hello Center logo"
+                className="h-32 w-auto object-contain"
+              />
+            </h1>
           )}
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
