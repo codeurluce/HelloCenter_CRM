@@ -24,9 +24,9 @@ export default function Footer() {
             </span>
 
             {/* Signature développeur alignée à droite */}
-            <span className="absolute right-4 text-gray-500 text-[11px] font-normal flex items-center">
+            {/* <span className="absolute right-4 text-gray-500 text-[11px] font-normal flex items-center">
                 Fait avec <Heart size={12} className="inline text-red-500 mx-1 animate-pulse" /> par L86n
-            </span>
+            </span> */}
         </footer>
     );
 }
