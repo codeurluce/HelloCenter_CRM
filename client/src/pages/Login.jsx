@@ -72,14 +72,14 @@ const Login = ({ onLogin }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 space-y-8">
+<div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex items-center justify-center px-2 sm:px-4 py-6">
+<div className="bg-white rounded-2xl shadow-2xl w-full max-w-xs sm:max-w-md md:max-w-lg lg:max-w-xl p-6 sm:p-8 space-y-6 sm:space-y-8">
         <div className="text-center">
           <div className="mx-auto w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl flex items-center justify-center mb-4">
             <span className="text-white font-bold text-2xl">CRM</span>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900" translate="no">Hello Center</h2>
-          <p className="text-gray-600 mt-2">Veuillez vous connecter à votre compte</p>
+          <h2 className="text-2xl font-bold text-gray-900 text-xl sm:text-2xl font-bold" translate="no">Hello Center</h2>
+          <p className="text-gray-600 mt-2 text-sm sm:text-base mt-2">Veuillez vous connecter à votre compte</p>
         </div>
 
         {error && (
@@ -98,7 +98,7 @@ const Login = ({ onLogin }) => {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
                 placeholder="Entrez votre email"
                 required
               />
@@ -114,7 +114,7 @@ const Login = ({ onLogin }) => {
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                className="w-full pl-10 pr-12 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-12 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
                 placeholder="Entrez votre mot de passe"
                 required
               />
@@ -128,7 +128,7 @@ const Login = ({ onLogin }) => {
             </div>
           </div>
 
-          <div className="flex items-center justify-between text-sm">
+          <div className="flex flex-wrap items-center justify-between text-sm gap-2">
             <label className="flex items-center">
               <input type="checkbox" className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
               <span className="ml-2 text-gray-700">Se souvenir de moi</span>
@@ -139,7 +139,7 @@ const Login = ({ onLogin }) => {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-gradient-to-r from-blue-500 to-blue-700 text-white py-3 px-4 rounded-lg font-medium hover:from-blue-600 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-gradient-to-r from-blue-500 to-blue-700 text-white py-2 sm:py-3 px-4 rounded-lg font-medium text-sm sm:text-base hover:from-blue-600 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? (
               <div className="flex items-center justify-center">
