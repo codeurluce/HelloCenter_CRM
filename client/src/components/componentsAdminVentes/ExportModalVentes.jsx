@@ -63,6 +63,7 @@ const ExportModal = ({ isOpen, onClose, sales = [] }) => {
         { key: "free_agent_account", label: "Compte free agent" },
         { key: "etat_cmd", label: "Etat cmd" },
         { key: "ref_cmd", label: "Ref cmd" },
+        { key: "audite", label: "Auditer"}
     ];
 
     // ---- Agents disponibles (dédoublés depuis ventes) ----
@@ -274,6 +275,9 @@ const ExportModal = ({ isOpen, onClose, sales = [] }) => {
                         break;
                     case "ref_cmd":
                         row[col.label] = s.ref_cmd || "";
+                        break;
+                    case "audite":
+                        row[col.label] = s.audite || "non";
                         break;
                     default:
                         row[col.label] = "";
