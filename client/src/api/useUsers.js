@@ -1,3 +1,9 @@
+/**
+ * src/api/useUsers.js
+ * ---------------------------------------------------
+ * Gère la récupération, le filtrage et la pagination des utilisateurs (agents, admins, etc.)
+ * ---------------------------------------------------
+ */
 import { useEffect, useState, useMemo } from "react";
 import axiosInstance from "../api/axiosInstance";
 
@@ -25,12 +31,18 @@ export default function useUsers({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // 🔹 Normalise la casse d’un texte pour correspondre aux filtres backend
+  //     Exemple : "agent" → "Agent"
   const normalizeForServer = (val) => {
     if (!val) return undefined;
     const t = val.trim();
     return t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
   };
 
+  // 🔹 Fonction principale : récupération des utilisateurs
+  //  * Peut opérer en mode :
+  //  *  - clientSideOnly (filtrage après récupération)
+  //  *  - serverSide (filtrage appliqué dans la requête)
   const fetchUsers = async () => {
     try {
       setLoading(true);
@@ -70,11 +82,13 @@ export default function useUsers({
     }
   };
 
+  // 🔹 Chargement initial + rechargement à chaque changement de filtre
   useEffect(() => {
     fetchUsers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, limit, roleFilter, profilFilter, statusFilter, q]);
 
+  // 🔹 Filtrage client dynamique (utilise useMemo pour optimiser les performances)
   const filteredUsers = useMemo(() => {
     let result = Array.isArray(users) ? users.slice() : [];
 

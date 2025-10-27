@@ -1,7 +1,13 @@
-// api/saveSessionToDB.js
-
-//  API pour demarrer une session agent
-// Utilise l'API Fetch pour interagir avec le backend
+/**
+ *  src/api/saveSessionToDB.js
+ * ---------------------------------------------------
+ * API client pour la gestion des sessions agents.
+ *
+ * Contient :
+ *  - Démarrage des statuts (disponible, pausette, formation, réunion, ect ...) avec startSession
+ *  - Fermeture des statuts avec closeSession
+ * ---------------------------------------------------
+ */
 import axiosInstance from "./axiosInstance";
 
 export const startSession = async ({ status, pause_type = null, user_id }) => {
@@ -29,8 +35,6 @@ export const startSession = async ({ status, pause_type = null, user_id }) => {
   }
 };
 
-// API pour fermer la session agent
-// Utilise l'API Fetch pour interagir avec le backend
 export const closeSession = async ({ user_id }) => {
   const userId = user_id || JSON.parse(localStorage.getItem('user'))?.id;
   if (!userId) {

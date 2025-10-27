@@ -1,4 +1,17 @@
-// src/context/AgentStatusProvider.js
+/**
+ * src/api/AgentStatusProvider.js
+ * -------------------------------------------------------------
+ * Fournit un contexte React global pour gérer l’état et la session d’un agent :
+ * - Authentification & validation du token
+ * - Gestion du socket temps réel
+ * - Détection d’inactivité et déconnexion automatique (marge 10 min)
+ * - Heartbeat régulier (communication avec le backend chaque 30s)
+ * - Gestion des pauses forcées ou déconnexions administratives
+ *
+ * Utilisation :
+ *  const { user, status, loginAgent, logoutAgent } = useAgentStatus();
+ * -------------------------------------------------------------
+ */
 import React, {
   createContext,
   useState,
@@ -12,19 +25,20 @@ import socket from "../socket.js";
 import axiosInstance from "../api/axiosInstance.js";
 import { toast } from "react-toastify";
 
-// 🔹 Contexte Agent
+// 🔹 Création du contexte global Agent
 const AgentStatusContext = createContext();
 export const useAgentStatus = () => useContext(AgentStatusContext);
 
 export const AgentStatusProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [currentStatus, setCurrentStatus] = useState(null);
-  const [isInactive, setIsInactive] = useState(false);
-  const [pauseForcedByAdmin, setPauseForcedByAdmin] = useState(false);
+  // 🔹 Création des États globaux
+  const [user, setUser] = useState(null);                               // Données utilisateur connecté
+  const [currentStatus, setCurrentStatus] = useState(null);             // Statut actuel (Disponible, Pause, etc.)
+  const [isInactive, setIsInactive] = useState(false);                  // Détection inactivité locale
+  const [pauseForcedByAdmin, setPauseForcedByAdmin] = useState(false);  // Pause forcée reçue par socket
 
   const navigate = useNavigate();
 
-  // 🔹 Réfs pour gérer closures et flags
+  //🔹 Références persistantes (ne déclenchent pas de render)
   const userRef = useRef(user);
   const manualLogoutRef = useRef(false);
   const recentlyConnectedRef = useRef(false);
@@ -34,7 +48,7 @@ export const AgentStatusProvider = ({ children }) => {
   const inactivityToastShownRef = useRef(false);
 
   // ==========================
-  // 🔹 Gestion activité
+  // 🔹 GESTION ACTIVITÉ / INACTIVITÉ
   // ==========================
   const resetActivity = () => {
     lastActivityRef.current = Date.now();
@@ -75,7 +89,7 @@ export const AgentStatusProvider = ({ children }) => {
   };
 
   // ==========================
-  // 🔹 Rafraîchir statut backend
+  // 🔹 Rafraîchir le statut depuis le backend
   // ==========================
   const refreshStatusFromBackend = async () => {
     if (!userRef.current?.id) return;
@@ -88,18 +102,20 @@ export const AgentStatusProvider = ({ children }) => {
   };
 
   // ==========================
-  // 🔹 Gestion socket
+  // 🔹 Gestion SOCKET.IO
   // ==========================
   const handleForcedLogout = useCallback(
     async (reason) => {
       stopInactivityCheck();
       if (recentlyConnectedRef.current) return;
 
+      // Si l'agent s'est déconnecté volontairement → on ignore
       if (manualLogoutRef.current && reason === "Déconnexion volontaire") {
         manualLogoutRef.current = false;
         return;
       }
 
+      // Cas de déconnexion forcée / inactivité
       if (reason.includes("inactivité") || reason.includes("forcée")) {
         setIsInactive(true);
         return;
@@ -197,7 +213,7 @@ export const AgentStatusProvider = ({ children }) => {
   }, [user?.id, currentStatus]);
 
   // ==========================
-  // 🔹 Heartbeat HTTP (45s)
+  // 🔹 Heartbeat HTTP (30s)
   // ==========================
   useEffect(() => {
     if (!user?.id) return;

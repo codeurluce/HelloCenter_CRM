@@ -1,3 +1,14 @@
+/**
+ * src/api/salesApi.js
+ * ---------------------------------------------------
+ * l'API des ventes.
+ *
+ * Contient toutes les fonctions CRUD liées aux ventes :
+ *  - Récupérer, créer, mettre à jour, supprimer une vente
+ *  - Supporte différents types de ventes : énergie, offre mobile, etc.
+ *
+ * ---------------------------------------------------
+ */
 import axiosInstance from "./axiosInstance";
 
 // 🔹 Récupérer toutes les ventes

@@ -1,13 +1,26 @@
-// src/api/filesActions.js
-// Actions pour la gestion des fichiers dans le CRM
-
+/**
+ * src/api/filesActions.js
+ * ---------------------------------------------------
+ * Ensemble des fonctions de gestion des fiches clients (CRM).
+ * 
+ * Contient toutes les actions principales :
+ *  - Récupération des fiches
+ *  - Prise en charge
+ *  - Annulation
+ *  - Clôture
+ *  - Programmation de rendez-vous
+ * 
+ * Chaque action envoie une requête HTTP via `axiosInstance`
+ * et enregistre un historique avec `logHistorique`.
+ * ---------------------------------------------------
+ */
 import axiosInstance from './axiosInstance';
 import { logHistorique } from './historiqueFiles.ts';
-import dayjs from 'dayjs'; 
+import dayjs from 'dayjs';
 import { toast } from 'react-toastify';
 
 
-// 📦 Charger les fiches
+// =====🔹 Charger les fiches
 export const fetchFiches = async () => {
   try {
     const response = await axiosInstance.get('/files');
@@ -19,10 +32,10 @@ export const fetchFiches = async () => {
 };
 
 
-// ⚙️ Prise en charge fiche (mise à jour)
+// =====🔹 Prise en charge fiche (mise à jour)
 export const handleTraitement = async (ficheId, user, setFiches) => {
-console.log('👤 Utilisateur courant :', user);
-console.log('🆔 user.id =', user?.id);
+  console.log('👤 Utilisateur courant :', user);
+  console.log('🆔 user.id =', user?.id);
   if (!user) {
     console.error("Utilisateur non connecté.");
     return;
@@ -58,7 +71,7 @@ console.log('🆔 user.id =', user?.id);
 };
 
 
-// 🔄 Annuler la fiche prise en charge
+// =====🔹 Annuler la fiche prise en charge
 export const onCancelFiche = async (ficheId, fetchFiches) => {
   const user = JSON.parse(localStorage.getItem('user'));
   if (!user) {
@@ -86,9 +99,9 @@ export const onCancelFiche = async (ficheId, fetchFiches) => {
   }
 };
 
-// ✅ Clôturer fiche
+// =====🔹 Clôturer fiche
 export const handleCloture = async (ficheId, data, user, fetchFiches) => {
-   if (!user) {
+  if (!user) {
     console.error('Utilisateur non connecté.');
     return;
   }
@@ -117,7 +130,7 @@ export const handleCloture = async (ficheId, data, user, fetchFiches) => {
   }
 };
 
-// 📅 Programmer RDV + sauvegarde dans la bd
+// =====🔹 Programmer RDV + sauvegarde dans la bd
 export const handleProgramRdv = async (ficheId, rdvDate, commentaire, fetchFiches) => {
   const user = JSON.parse(localStorage.getItem('user'));
   if (!user) {
@@ -142,7 +155,7 @@ export const handleProgramRdv = async (ficheId, rdvDate, commentaire, fetchFiche
       action: 'PROGRAMMATION_RDV',
       actorId: user.id,
       actorName: `${user.firstname} ${user.lastname}`,
-      commentaire: `RDV programmé : ${fullCommentaire}` ,
+      commentaire: `RDV programmé : ${fullCommentaire}`,
     });
 
     if (fetchFiches) fetchFiches(); // ✅ rafraîchir uniquement si la fonction est passée

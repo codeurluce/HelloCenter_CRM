@@ -1,3 +1,16 @@
+/**
+ * src/api/ProtectedRoute.jsx
+ * ---------------------------------------------------
+ * Composant de route protégée (React Router)
+ *
+ * Objectif :
+ * - Vérifier si l'utilisateur est authentifié avant d'accéder à une page
+ * - (Optionnel) Restreindre l'accès à certains rôles spécifiques
+ * 
+ * Si l'utilisateur n'est pas connecté ou ne possède pas le bon rôle,
+ * il est redirigé vers la page de connexion.
+ * ---------------------------------------------------
+ */
 import React, { useContext } from "react";
 import { Navigate } from "react-router-dom";
 import { AuthContext } from "../pages/AuthContext";

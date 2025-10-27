@@ -1,4 +1,14 @@
-// sessionsAgentsActions
+/**
+ * src/api/sessionsAgentsActions.ts
+ * ---------------------------------------------------
+ * Ensemble d’actions pour la gestion des sessions agents.
+ * Permet :
+ *  - de récupérer et filtrer les sessions,
+ *  - d’exporter les sessions en CSV/Excel,
+ *  - de consulter l’historique individuel d’un agent,
+ *  - et de modifier le statut en cours d’un agent.
+ * ---------------------------------------------------
+ */
 import axiosInstance from "./axiosInstance";
 
 export interface Session {

@@ -1,5 +1,13 @@
-// src/api/historiqueFiles.ts 
-// API pour l'historique des fichiers
+/**
+ * src/api/historiqueFiles.ts
+ * ---------------------------------------------------
+ * API responsable de la journalisation (historique)
+ * des actions effectuées sur les fiches du CRM.
+ * 
+ * Chaque action (prise en charge, annulation, clôture, RDV, etc.)
+ * crée une entrée dans la table `historique_files` du backend.
+ * ---------------------------------------------------
+ */
 import axiosInstance from "./axiosInstance";
 
 interface LogParams {

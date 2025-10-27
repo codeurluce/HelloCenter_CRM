@@ -1,4 +1,15 @@
-// src/api/axiosInstance.js
+/**
+ * src/api/axiosInstance.js
+ * ---------------------------------------------------
+ * Configuration centralisée d'Axios pour toute l'application.
+ * 
+ * Objectif :
+ * - Uniformiser les appels API (même baseURL, mêmes headers)
+ * - Gérer automatiquement le token JWT pour les requêtes protégées
+ * - Simplifier le code dans les autres fichiers (authAPI, ficheAPI, etc.)
+ * ---------------------------------------------------
+ */
+
 import axios from 'axios';
 
 const axiosInstance = axios.create({

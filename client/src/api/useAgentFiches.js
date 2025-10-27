@@ -1,4 +1,9 @@
-// src/api/useAgentFiches.js
+/**
+ * src/api/useAgentFiches.js
+ * ---------------------------------------------------
+ * Gère le chargement, la mise à jour et les actions sur les fiches clients d’un agent
+ * ---------------------------------------------------
+ */
 import { useState, useEffect } from 'react';
 import { fetchFiches, handleTraitement, onCancelFiche, handleCloture, handleProgramRdv } from '../api/filesActions.js';
 
