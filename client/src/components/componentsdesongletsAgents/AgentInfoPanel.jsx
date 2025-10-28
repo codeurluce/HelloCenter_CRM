@@ -1,15 +1,31 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import StatusSelector, { statuses, formatTime } from "../../shared/StatusSelector.jsx";
 
 export default function AgentInfoPanel({
   userId,
   etat,
-  setEtat,
   timers,
   currentSession,
   onStatusChange,
 }) {
-  const handleSelect = (newEtatFr, pause) => {
+  const [elapsed, setElapsed] = useState(0);
+
+  // 🔹 Interval pour mettre à jour elapsed chaque seconde
+  useEffect(() => {
+    if (!currentSession?.start_time) return;
+
+    // Calcul initial
+    const startTime = new Date(currentSession.start_time).getTime();
+    setElapsed(Math.floor((Date.now() - startTime) / 1000));
+
+    const interval = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - startTime) / 1000));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [currentSession?.start_time]);
+
+  const handleSelect = async (newEtatFr, pause) => {
     if (!userId) {
       console.error("User ID manquant");
       return;
@@ -18,11 +34,6 @@ export default function AgentInfoPanel({
   };
 
   const timersByKey = timers;
-
-const elapsed = currentSession?.start_time
-  ? Math.floor((Date.now() - new Date(currentSession.start_time).getTime()) / 1000)
-  : 0;
-
   const currentKey = currentSession
     ? statuses.find(s => s.statusFr === currentSession.status)?.key
     : null;
