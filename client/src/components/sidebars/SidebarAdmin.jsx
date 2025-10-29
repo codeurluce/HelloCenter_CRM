@@ -5,7 +5,9 @@ import {
   Settings,
   LogOut,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  UserSearch,
+  Calculator
 } from 'lucide-react';
 import { ShoppingCart, Folder, Clock } from 'react-feather';
 import { Users } from 'lucide-react';
@@ -25,7 +27,9 @@ const SidebarAdmin = ({ activeItem, setActiveItem, onLogout }) => {
     { id: 'sales', label: 'Ventes', icon: ShoppingCart },
     { id: 'activité', label: 'Activité', icon: CircleUser },
     { id: 'sessions', label: 'Sessions', icon: Clock },
-    { id: 'administration', label: 'Administration', icon: Users },
+    { id: 'rh', label: 'RH', icon: Users },
+    { id: 'comptable', label: 'Comptable', icon: Calculator },
+    { id: 'administration', label: 'Administration', icon: UserSearch },
   ];
 
   const bottomItems = [

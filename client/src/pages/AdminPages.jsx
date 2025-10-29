@@ -24,6 +24,7 @@ import MonthlySalesChartAdmin from '../components/cards/MonthlySalesChartAdmin.j
 import MonthlyAgentSalesPieChart from '../components/cards/MonthlyAgentSalesPieChart.jsx';
 import AdminSettings from '../components/componentsdesongletsAdmins/AdminSettings.jsx';
 import Footer from '../components/dashbords/Footer.jsx';
+import RHPanel from '../components/componentsdesongletsAdmins/RHPanel.tsx';
 
 const AdminDashboard = () => {
   const { user, setUser } = useContext(AuthContext);
@@ -251,6 +252,8 @@ useEffect(() => {
             {activeItem === 'sales' && <VentesInfoPanel setActiveItem={setActiveItem} />}
             {activeItem === 'files' && <AdminFichiersPanel />}
             {activeItem === 'sessions' && <AdminSessionsUsers />}
+            {activeItem === 'rh' && <RHPanel />}
+            {activeItem === 'comptable' && <p></p>} 
             {activeItem === 'administration' && <AdministrationUsers />}
             {activeItem === 'settings' && <AdminSettings />}
           </main>

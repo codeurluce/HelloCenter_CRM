@@ -67,6 +67,8 @@ const DashboardHeader = ({
     activité: 'Mon Activité',
     settings: 'Paramètres',
     sessions: 'Suivi des Agents',
+    rh: 'Ressources Humaines',
+    comptable: 'Comptabilité',
     administration: 'administration'
   };
   const displayTitle = pageTitles[activePage] || 'Page';
