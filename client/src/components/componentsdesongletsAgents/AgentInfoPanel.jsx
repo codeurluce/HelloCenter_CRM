@@ -1,43 +1,96 @@
 import React, { useEffect, useState } from "react";
+import dayjs from "dayjs";
+import { Download } from "lucide-react";
+import { exportData } from "../utils/exportUtils";
+import axiosInstance from "../../api/axiosInstance";
+import Swal from "sweetalert2";
 import StatusSelector, { statuses, formatTime } from "../../shared/StatusSelector.jsx";
 
-export default function AgentInfoPanel({
-  userId,
-  etat,
-  timers,
-  currentSession,
-  onStatusChange,
-}) {
+export default function AgentInfoPanel({ userId, etat, timers, currentSession, onStatusChange }) {
   const [elapsed, setElapsed] = useState(0);
+  const [isExporting, setIsExporting] = useState(false);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
-  // 🔹 Interval pour mettre à jour elapsed chaque seconde
+  // Actualisation timer elapsed depuis start_time en session
   useEffect(() => {
     if (!currentSession?.start_time) return;
-
-    // Calcul initial
     const startTime = new Date(currentSession.start_time).getTime();
     setElapsed(Math.floor((Date.now() - startTime) / 1000));
-
     const interval = setInterval(() => {
       setElapsed(Math.floor((Date.now() - startTime) / 1000));
     }, 1000);
-
     return () => clearInterval(interval);
   }, [currentSession?.start_time]);
 
-  const handleSelect = async (newEtatFr, pause) => {
-    if (!userId) {
-      console.error("User ID manquant");
-      return;
-    }
-    onStatusChange(newEtatFr, pause);
-  };
+const handleExport = async () => {
+  try {
+    const { data: rows } = await axiosInstance.post("/session_agents/export-sessions-agent", {
+      userId,
+      startDate,
+      endDate,
+    });
 
+    // Fonction format secondes → HH:mm:ss
+    const formatSeconds = (sec) => {
+      if (!sec || sec <= 0) return "00:00:00";
+      const h = Math.floor(sec / 3600);
+      const m = Math.floor((sec % 3600) / 60);
+      const s = Math.floor(sec % 60);
+      return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+    };
+
+    const dataToExport = rows.map((row) => {
+      const date = row.first_connection ? dayjs(row.first_connection).format("YYYY-MM-DD") : "-";
+      const heureConnexion = row.first_connection ? dayjs(row.first_connection).format("HH:mm:ss") : "-";
+      const heureDeconnexion = row.last_disconnection ? dayjs(row.last_disconnection).format("HH:mm:ss") : "-";
+
+      const cumul = row.cumul_statuts || {};
+
+      return {
+        "Date": date,
+        "Heure de connexion": heureConnexion,
+        "Heure de déconnexion": heureDeconnexion,
+        "Total des pauses": formatSeconds(
+          (cumul["Pausette 1"] || 0) +
+          (cumul["Déjeuner"] || 0) +
+          (cumul["Pausette 2"] || 0)
+        ),
+        "Total des indisponibilités": formatSeconds(
+          (cumul["Réunion"] || 0) +
+          (cumul["Brief"] || 0) +
+          (cumul["Formation"] || 0)
+        ),
+        "Temps de travail": formatSeconds(cumul["Disponible"] || 0),
+        "Pausette 1": formatSeconds(cumul["Pausette 1"] || 0),
+        "Pause Déjeuner": formatSeconds(cumul["Déjeuner"] || 0),
+        "Pausette 2": formatSeconds(cumul["Pausette 2"] || 0),
+        "Réunion": formatSeconds(cumul["Réunion"] || 0),
+        "Formation": formatSeconds(cumul["Formation"] || 0),
+        "Brief": formatSeconds(cumul["Brief"] || 0),
+        "Prénom": row.firstname || "",
+        "Nom": row.lastname || "",
+        "Agent": `${row.firstname || ""} ${row.lastname || ""}`.trim(),
+      };
+    });
+
+    // Utilise la même fonction utilitaire d’export que l’admin
+    exportData(dataToExport, `export_${rows[0]?.firstname || "agent"}`);
+  } catch (error) {
+    console.error("Erreur export:", error);
+    Swal.fire({
+      icon: "error",
+      title: "Erreur export",
+      text: error?.response?.data?.error || "Erreur lors de l’export des données.",
+      confirmButtonColor: "#dc2626",
+    });
+  }
+};
+
+
+  // Calculs totaux
   const timersByKey = timers;
-  const currentKey = currentSession
-    ? statuses.find(s => s.statusFr === currentSession.status)?.key
-    : null;
-
+  const currentKey = currentSession ? statuses.find(s => s.statusFr === currentSession.status)?.key : null;
   const pausesForTotal = ["pause_cafe_1", "pause_dejeuner", "pause_cafe_2"];
   const indisposForTotal = ["reunion", "pause_formation", "brief"];
   const dispoStatus = statuses.find(s => s.key === "disponible");
@@ -49,15 +102,50 @@ export default function AgentInfoPanel({
     sum + (timersByKey[key] || 0) + (currentKey === key ? elapsed : 0), 0);
   const totalPresence = totalDispo + totalPause + totalIndispo;
 
+  const handleSelect = (newEtatFr, pause) => {
+    if (!userId) {
+      console.error("User ID manquant");
+      return;
+    }
+    onStatusChange(newEtatFr, pause);
+  };
+
   return (
-    <div style={{
-      width: "100%",
-      minHeight: "90vh",
-      padding: 24,
-      background: "#f9fafb",
-      borderRadius: 12,
-      overflowY: "auto"
-    }}>
+    <>
+          {/* Export date range */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          <div className="flex flex-col">
+            <label className="text-xs text-gray-500 mb-1">Date de début</label>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="border border-gray-300 rounded-md px-2 py-1"
+            />
+          </div>
+          <div className="flex flex-col">
+            <label className="text-xs text-gray-500 mb-1">Date de fin</label>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="border border-gray-300 rounded-md px-2 py-1"
+            />
+          </div>
+        </div>
+
+        <button
+          onClick={handleExport}
+          disabled={isExporting}
+          className="mt-3 sm:mt-0 bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+        >
+          <Download className="h-4 w-4" />
+          {isExporting ? "Export en cours..." : "Exporter mes données"}
+        </button>
+      </div>
+      
+    <div style={{ width: "100%", padding: 24, background: "#f9fafb", borderRadius: 12, overflowY: "auto" }}>
       <h2 style={{ textAlign: "center", marginBottom: 12 }}>⏱ Vue globale de mon Pointage</h2>
 
       {!etat && (
@@ -132,11 +220,11 @@ export default function AgentInfoPanel({
       <div className="flex flex-wrap gap-3 justify-center w-full mx-auto">
         <StatusSelector currentStatus={etat} onSelect={handleSelect} mode="buttons" />
       </div>
-    </div>
+    </div></>
   );
 }
 
-// Styles explicites
+// Styles as in your code
 const boxStyle = (bg, color, flex = 1) => ({
   background: bg,
   borderRadius: 10,

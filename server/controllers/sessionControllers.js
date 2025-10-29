@@ -428,7 +428,7 @@ exports.getDailyConnectionTimes = async (req, res) => {
   }
 };
 
-// POST /export-sessions
+// POST /export-sessions par l'admin
 exports.exportSessions = async (req, res) => {
   try {
     const { userIds = [], startDate, endDate } = req.body || {};
@@ -522,10 +522,99 @@ ORDER BY u.lastname, u.firstname, session_date;
     const { rows } = await db.query(query, params);
 
     res.json(rows);
-    
+
   } catch (err) {
     console.error("Erreur exportSessions:", err);
     res.status(500).json({ error: "Erreur export sessions" });
+  }
+};
+
+// controllers/sessionAgentsController.js l'export pour un agent
+exports.exportSessionsAgent = async (req, res) => {
+  console.log("🔥 Requête reçue sur /export-sessions-agent");
+  console.log("Body:", req.body);
+  console.log("User:", req.user);
+  try {
+    const { startDate, endDate } = req.body;
+    const userId = req.user?.id || req.body.userId; // selon ton système d’auth
+
+    if (!userId) {
+      console.log("❌ User ID manquant");
+      return res.status(400).json({ error: "Utilisateur non identifié" });
+    }
+    if (!startDate || !endDate) {
+      console.log("❌ Dates manquantes");
+      return res.status(400).json({ error: "startDate et endDate sont obligatoires" });
+    }
+    console.log("✅ Paramètres OK:", { userId, startDate, endDate });
+    const query = `
+      WITH sessions AS (
+        SELECT 
+          sa.user_id,
+          sa.status,
+          DATE(sa.start_time) AS session_date,
+          sa.start_time,
+          COALESCE(sa.end_time, NOW()) AS end_time,
+          EXTRACT(EPOCH FROM (COALESCE(sa.end_time, NOW()) - sa.start_time))::INT AS duree_sec
+        FROM session_agents sa
+        WHERE DATE(sa.start_time) BETWEEN $1 AND $2
+          AND sa.user_id = $3
+      ),
+      cumuls AS (
+        SELECT user_id, session_date, status, SUM(duree_sec)::INT AS sec
+        FROM sessions
+        GROUP BY user_id, session_date, status
+      ),
+      cumul_total AS (
+        SELECT user_id, session_date, SUM(sec)::INT AS presence_totale_sec
+        FROM cumuls
+        GROUP BY user_id, session_date
+      ),
+      cumul_json AS (
+        SELECT user_id, session_date, json_object_agg(status, sec) AS cumul_statuts
+        FROM cumuls
+        GROUP BY user_id, session_date
+      ),
+      connections AS (
+        SELECT 
+          ach.user_id,
+          DATE(ach.event_time) AS session_date,
+          MIN(ach.event_time) FILTER (WHERE event_type = 'connect') AS first_connection,
+          MAX(ach.event_time) FILTER (WHERE event_type = 'disconnect') AS last_disconnection
+        FROM agent_connections_history ach
+        WHERE DATE(ach.event_time) BETWEEN $1 AND $2
+          AND ach.user_id = $3
+        GROUP BY ach.user_id, DATE(ach.event_time)
+      )
+      SELECT 
+        u.id AS user_id,
+        u.firstname,
+        u.lastname,
+        COALESCE(ct.presence_totale_sec, 0) AS presence_totale_sec,
+        COALESCE(cj.cumul_statuts, '{}'::json) AS cumul_statuts,
+        co.first_connection,
+        co.last_disconnection,
+        COALESCE(ct.session_date, cj.session_date, co.session_date) AS session_date
+      FROM users u
+      LEFT JOIN cumul_total ct ON ct.user_id = u.id
+      LEFT JOIN cumul_json cj ON cj.user_id = u.id AND cj.session_date = ct.session_date
+      LEFT JOIN connections co ON co.user_id = u.id AND co.session_date = ct.session_date
+      WHERE u.id = $3
+        AND (
+          (ct.session_date BETWEEN $1 AND $2)
+          OR (cj.session_date BETWEEN $1 AND $2)
+          OR (co.session_date BETWEEN $1 AND $2)
+        )
+      ORDER BY session_date;
+    `;
+
+    const params = [startDate, endDate, userId];
+    const { rows } = await db.query(query, params);
+    res.json(rows);
+
+  } catch (err) {
+    console.error("Erreur exportAgentSessions:", err);
+    res.status(500).json({ error: "Erreur export agent sessions" });
   }
 };
 
@@ -749,7 +838,7 @@ exports.heartbeat = async (req, res) => {
 
 
 // 🔹 Fonction utilitaire interne (non exportée directement comme route)
-const fetchLastAgentStatus = async (userId) => { 
+const fetchLastAgentStatus = async (userId) => {
   try {
     const result = await db.query(
       `SELECT status
@@ -807,31 +896,6 @@ exports.checkSessionActive = async (req, res) => {
   }
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 exports.getSessions = async (req, res) => {
   try {
     const result = await db.query(
@@ -854,167 +918,187 @@ exports.getSessions = async (req, res) => {
   }
 };
 
-exports.getUserDayTotal = async (req, res) => {
-  try {
-    const { userId } = req.params;
-    const startOfDay = dayjs().startOf("day").toISOString();
-    const endOfDay = dayjs().endOf("day").toISOString();
 
-    const result = await db.query(
-      `SELECT SUM(EXTRACT(EPOCH FROM (
-          COALESCE(end_time, NOW()) - start_time
-      ))) AS total_seconds
-       FROM session_agents
-       WHERE user_id = $1
-         AND start_time >= $2
-         AND start_time <= $3`,
-      [userId, startOfDay, endOfDay]
-    );
 
-    res.json({
-      user_id: userId,
-      total: result.rows[0].total_seconds ? parseInt(result.rows[0].total_seconds, 10) : 0
-    });
-  } catch (error) {
-    console.error("Erreur getUserDayTotal:", error);
-    res.status(500).json({ message: "Erreur serveur" });
-  }
-};
 
-exports.getActiveSession = async (req, res) => {
-  try {
-    const { userId } = req.params;
-    const result = await db.query(
-      `SELECT * FROM session_agents
-       WHERE user_id = $1 AND end_time IS NULL
-       ORDER BY start_time DESC
-       LIMIT 1`,
-      [userId]
-    );
 
-    if (result.rows.length === 0) {
-      return res.json({
-        user_id: id,
-        status: 'Inconnu',
-        start_time: null,
-        end_time: null
-      });
-    }
-    res.json({
-      user_id: result.rows[0].user_id,
-      status: result.rows[0].status,
-      start_time: result.rows[0].start_time,
-      end_time: result.rows[0].end_time
-    });
 
-  } catch (error) {
-    console.error("Erreur getActiveSession:", error);
-    res.status(500).json({ message: "Erreur serveur" });
-  }
-};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// exports.getUserDayTotal = async (req, res) => {
+//   try {
+//     const { userId } = req.params;
+//     const startOfDay = dayjs().startOf("day").toISOString();
+//     const endOfDay = dayjs().endOf("day").toISOString();
+
+//     const result = await db.query(
+//       `SELECT SUM(EXTRACT(EPOCH FROM (
+//           COALESCE(end_time, NOW()) - start_time
+//       ))) AS total_seconds
+//        FROM session_agents
+//        WHERE user_id = $1
+//          AND start_time >= $2
+//          AND start_time <= $3`,
+//       [userId, startOfDay, endOfDay]
+//     );
+
+//     res.json({
+//       user_id: userId,
+//       total: result.rows[0].total_seconds ? parseInt(result.rows[0].total_seconds, 10) : 0
+//     });
+//   } catch (error) {
+//     console.error("Erreur getUserDayTotal:", error);
+//     res.status(500).json({ message: "Erreur serveur" });
+//   }
+// };
+
+// exports.getActiveSession = async (req, res) => {
+//   try {
+//     const { userId } = req.params;
+//     const result = await db.query(
+//       `SELECT * FROM session_agents
+//        WHERE user_id = $1 AND end_time IS NULL
+//        ORDER BY start_time DESC
+//        LIMIT 1`,
+//       [userId]
+//     );
+
+//     if (result.rows.length === 0) {
+//       return res.json({
+//         user_id: id,
+//         status: 'Inconnu',
+//         start_time: null,
+//         end_time: null
+//       });
+//     }
+//     res.json({
+//       user_id: result.rows[0].user_id,
+//       status: result.rows[0].status,
+//       start_time: result.rows[0].start_time,
+//       end_time: result.rows[0].end_time
+//     });
+
+//   } catch (error) {
+//     console.error("Erreur getActiveSession:", error);
+//     res.status(500).json({ message: "Erreur serveur" });
+//   }
+// };
 
 // 📌 Récupérer l’historique des sessions d’un agent
 // 📌 Changer de statut (Disponible → Pause → Indispo etc.)
 // POST /api/sessions/change
-exports.changeStatus = async (req, res) => {
-  const { user_id, new_status } = req.body;
+// exports.changeStatus = async (req, res) => {
+//   const { user_id, new_status } = req.body;
 
-  try {
-    // 1. Fermer la session active si elle existe
-    const { rows: activeRows } = await db.query(
-      `SELECT * FROM session_agents WHERE user_id = $1 AND end_time IS NULL ORDER BY start_time DESC LIMIT 1`,
-      [user_id]
-    );
+//   try {
+//     // 1. Fermer la session active si elle existe
+//     const { rows: activeRows } = await db.query(
+//       `SELECT * FROM session_agents WHERE user_id = $1 AND end_time IS NULL ORDER BY start_time DESC LIMIT 1`,
+//       [user_id]
+//     );
 
-    if (activeRows.length > 0) {
-      await db.query(
-        `UPDATE session_agents SET end_time = NOW() WHERE id = $1`,
-        [activeRows[0].id]
-      );
-    }
+//     if (activeRows.length > 0) {
+//       await db.query(
+//         `UPDATE session_agents SET end_time = NOW() WHERE id = $1`,
+//         [activeRows[0].id]
+//       );
+//     }
 
-    // 2. Créer une nouvelle session avec le nouveau statut
-    const { rows: newSession } = await db.query(
-      `INSERT INTO session_agents (user_id, status, start_time) 
-       VALUES ($1, $2, NOW()) 
-       RETURNING *`,
-      [user_id, new_status]
-    );
+//     // 2. Créer une nouvelle session avec le nouveau statut
+//     const { rows: newSession } = await db.query(
+//       `INSERT INTO session_agents (user_id, status, start_time) 
+//        VALUES ($1, $2, NOW()) 
+//        RETURNING *`,
+//       [user_id, new_status]
+//     );
 
-    res.json(newSession[0]);
-  } catch (error) {
-    console.error("❌ Erreur changeStatus:", error);
-    res.status(500).json({ error: "Erreur serveur lors du changement de statut." });
-  }
-};
+//     res.json(newSession[0]);
+//   } catch (error) {
+//     console.error("❌ Erreur changeStatus:", error);
+//     res.status(500).json({ error: "Erreur serveur lors du changement de statut." });
+//   }
+// };
+// exports.getUserHistory = async (req, res) => {
+//   const { id } = req.params;
+//   const { period } = req.query; // ex: ?period=today | week | month | all
 
-exports.getUserHistory = async (req, res) => {
-  const { id } = req.params;
-  const { period } = req.query; // ex: ?period=today | week | month | all
+//   let query = `SELECT * FROM session_agents WHERE user_id = $1`;
+//   const params = [id];
 
-  let query = `SELECT * FROM session_agents WHERE user_id = $1`;
-  const params = [id];
+//   if (period === 'today') {
+//     query += ` AND DATE(start_time) = CURRENT_DATE`;
+//   } else if (period === 'week') {
+//     query += ` AND start_time >= date_trunc('week', CURRENT_DATE)`;
+//   } else if (period === 'month') {
+//     query += ` AND start_time >= date_trunc('month', CURRENT_DATE)`;
+//   }
 
-  if (period === 'today') {
-    query += ` AND DATE(start_time) = CURRENT_DATE`;
-  } else if (period === 'week') {
-    query += ` AND start_time >= date_trunc('week', CURRENT_DATE)`;
-  } else if (period === 'month') {
-    query += ` AND start_time >= date_trunc('month', CURRENT_DATE)`;
-  }
+//   query += ` ORDER BY start_time DESC`;
 
-  query += ` ORDER BY start_time DESC`;
+//   try {
+//     const { rows } = await db.query(query, params);
+//     res.json(rows);
+//   } catch (error) {
+//     console.error("Erreur getUserHistory:", error);
+//     res.status(500).json({ message: "Erreur serveur" });
+//   }
+// };
 
-  try {
-    const { rows } = await db.query(query, params);
-    res.json(rows);
-  } catch (error) {
-    console.error("Erreur getUserHistory:", error);
-    res.status(500).json({ message: "Erreur serveur" });
-  }
-};
+// exports.getUserTodayAggregates = async (req, res) => {
+//   const { id } = req.params;
+//   try {
+//     // 1. Cumul des temps par statut
+//     const q = `
+//       SELECT status AS status,
+//              SUM(EXTRACT(EPOCH FROM (COALESCE(end_time, NOW()) - start_time)))::bigint AS seconds
+//       FROM session_agents
+//       WHERE user_id = $1
+//         AND DATE(start_time) = CURRENT_DATE
+//       GROUP BY status
+//     `;
+//     const { rows } = await db.query(q, [id]);
 
-exports.getUserTodayAggregates = async (req, res) => {
-  const { id } = req.params;
-  try {
-    // 1. Cumul des temps par statut
-    const q = `
-      SELECT status AS status,
-             SUM(EXTRACT(EPOCH FROM (COALESCE(end_time, NOW()) - start_time)))::bigint AS seconds
-      FROM session_agents
-      WHERE user_id = $1
-        AND DATE(start_time) = CURRENT_DATE
-      GROUP BY status
-    `;
-    const { rows } = await db.query(q, [id]);
+//     const totals = {};
+//     for (const r of rows) totals[r.status] = Number(r.seconds) || 0;
 
-    const totals = {};
-    for (const r of rows) totals[r.status] = Number(r.seconds) || 0;
+//     const presence_total = Object.values(totals).reduce((a, b) => a + b, 0);
 
-    const presence_total = Object.values(totals).reduce((a, b) => a + b, 0);
+//     // 2. Statut en cours (dernière session sans end_time)
 
-    // 2. Statut en cours (dernière session sans end_time)
+//     const q2 = `
+//       SELECT status AS status, start_time
+//       FROM session_agents
+//       WHERE user_id = $1 
+//         AND DATE(start_time) = CURRENT_DATE
+//         AND end_time IS NULL
+//       ORDER BY start_time DESC
+//       LIMIT 1
+//     `;
+//     const { rows: activeRows } = await db.query(q2, [id]);
+//     const active = activeRows[0] || null;
 
-    const q2 = `
-      SELECT status AS status, start_time
-      FROM session_agents
-      WHERE user_id = $1 
-        AND DATE(start_time) = CURRENT_DATE
-        AND end_time IS NULL
-      ORDER BY start_time DESC
-      LIMIT 1
-    `;
-    const { rows: activeRows } = await db.query(q2, [id]);
-    const active = activeRows[0] || null;
-
-    return res.json({
-      totals,          // ex: { "Disponible": 1080, "Pause Café": 300 }
-      presence_total,  // somme
-      active,          // ex: { status: "Disponible", start_time: "2025-08-21T12:05:00Z" }
-      server_time: new Date().toISOString(),
-    });
-  } catch (e) {
-    console.error("getUserTodayAggregates error:", e);
-    res.status(500).json({ message: "Erreur serveur", error: e.message });
-  }
-};
+//     return res.json({
+//       totals,          // ex: { "Disponible": 1080, "Pause Café": 300 }
+//       presence_total,  // somme
+//       active,          // ex: { status: "Disponible", start_time: "2025-08-21T12:05:00Z" }
+//       server_time: new Date().toISOString(),
+//     });
+//   } catch (e) {
+//     console.error("getUserTodayAggregates error:", e);
+//     res.status(500).json({ message: "Erreur serveur", error: e.message });
+//   }
+// };
