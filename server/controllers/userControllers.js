@@ -56,22 +56,37 @@ const validateSession = async (req, res) => {
 // Création d’un utilisateur avec génération automatique d'email + mot de passe
 const createUser = async (req, res) => {
   const { lastname, firstname, role, profil } = req.body;
+  const client = await db.connect();
 
   try {
+    await client.query('BEGIN');
+
+    // Création de l'utilisateur
     const { user, plainPassword } = await createUserWithGeneratedEmail(
       lastname,
       firstname,
       role,
       profil
     );
+console.log("✅ User créé :", user);
+    // Insérer une ligne vide dans la table contrat liée à ce user
+    await client.query(
+      `INSERT INTO contrat (user_id) VALUES ($1)`,
+      [user.id]
+    );
+    await client.query('COMMIT');
+
     res.status(201).json({
       message: 'Utilisateur créé avec succès',
       email: user.email,
       tempPassword: plainPassword,
     });
   } catch (err) {
+    await client.query('ROLLBACK'); // ❌ Annuler en cas d’erreur
     console.error(err);
     res.status(500).json({ error: "Erreur lors de la création de l’utilisateur" });
+  } finally {
+    client.release(); // ✅ Libérer la connexion
   }
 };
 

@@ -18,6 +18,4 @@ pool.connect()
     process.exit(1); // stop le serveur si pas de connexion
   });
 
-module.exports = {
-  query: (text, params) => pool.query(text, params),
-};
+module.exports = pool;
