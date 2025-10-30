@@ -387,7 +387,7 @@ const getAllUsers = async (req, res) => {
   }
 };
 
-
+// recuperation des users, pour faire les assignations des fiches
 const getAllUsersBd = async (req, res) => {
   try {
     if (req.user.role !== 'Admin') {
@@ -413,6 +413,89 @@ const getAllUsersBd = async (req, res) => {
     res.status(500).json({ message: "Erreur serveur lors de la récupération des agents" });
   }
 };
+
+// recuperation des users et des contrats
+const getUsersContrat = async (req, res) => {
+  try {
+    // 🔒 Vérification des droits
+    if (req.user.role !== 'Admin') {
+      return res.status(403).json({ message: 'Accès refusé' });
+    }
+
+    // 🔹 Récupération des users + contrats associés
+    const result = await db.query(`
+      SELECT 
+        u.id,
+        u.lastname,
+        u.firstname,
+        u.email,
+        u.role,
+        u.profil,
+        u.is_active,
+        u.created_at,
+
+        c.id AS contrat_id,
+        c.type_contrat,
+        c.date_integration,
+        c.date_debut_contrat,
+        c.date_fin_contrat,
+        c.poste,
+        c.situation_matrimoniale,
+        c.numero_cni_ou_passeport,
+        c.adresse,
+        c.code_postal,
+        c.telephone,
+        c.age,
+        c.genre_sexe,
+        c.mail_perso,
+        c.matricule,
+        c.date_naissance
+      FROM users u
+      LEFT JOIN contrat c ON c.user_id = u.id
+      ORDER BY u.lastname ASC
+    `);
+
+    // 🔸 Transformation des résultats
+    const users = result.rows.map(u => ({
+      id: u.id,
+      lastname: u.lastname,
+      firstname: u.firstname,
+      email: u.email,
+      role: u.role,
+      profil: u.profil,
+      active: u.is_active === true || u.is_active === 1,
+      created_at: u.created_at,
+
+      // ✅ Partie contrat (null si pas encore créé)
+      contrat: u.contrat_id
+        ? {
+            id: u.contrat_id,
+            type_contrat: u.type_contrat,
+            date_integration: u.date_integration,
+            date_debut_contrat: u.date_debut_contrat,
+            date_fin_contrat: u.date_fin_contrat,
+            poste: u.poste,
+            situation_matrimoniale: u.situation_matrimoniale,
+            numero_cni_ou_passeport: u.numero_cni_ou_passeport,
+            adresse: u.adresse,
+            code_postal: u.code_postal,
+            telephone: u.telephone,
+            age: u.age,
+            genre_sexe: u.genre_sexe,
+            mail_perso: u.mail_perso,
+            matricule: u.matricule,
+            date_naissance: u.date_naissance,
+          }
+        : null,
+    }));
+
+    res.json(users);
+  } catch (error) {
+    console.error("Erreur lors de la récupération des utilisateurs:", error);
+    res.status(500).json({ message: "Erreur serveur lors de la récupération des utilisateurs" });
+  }
+};
+
 
 // Activer/Désactiver un user
 const toggleActiveUser = async (req, res) => {
@@ -542,4 +625,5 @@ module.exports = {
   disconnectAgentForce,
   validateSession,
   disconnectAgentbyAdmin,
+  getUsersContrat,
 };
