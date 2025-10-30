@@ -76,7 +76,6 @@ export default function AgentList() {
                 <table className="w-full border-collapse">
                     <thead className="bg-blue-50">
                         <tr>
-
                             <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Matricule</th>
                             <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Nom</th>
                             <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Prénom</th>
@@ -84,7 +83,6 @@ export default function AgentList() {
                             <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Mail perso</th>
                             <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Téléphone</th>
                             <th className="px-6 py-3 text-center text-sm font-semibold text-blue-700">Actions</th>
-
                         </tr>
                     </thead>
                     <tbody>
