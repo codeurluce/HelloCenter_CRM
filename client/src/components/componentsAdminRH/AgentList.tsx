@@ -4,6 +4,7 @@ import { RefreshCw, Eye, Pause, LogOut, Search, Pencil } from "lucide-react";
 import axiosInstance from "../../api/axiosInstance";
 import Swal from "sweetalert2";
 import { toast } from "react-toastify";
+import UsersContratDetailsModal from "./UsersContratDetailsModal.tsx";
 
 
 // Formatage hh:mm:ss
@@ -131,12 +132,12 @@ export default function AgentList() {
                     </tbody>
                 </table>
 
-                {/* {selectedAgent && (
-        <AgentDetailsModal
+        {selectedAgent && (
+        <UsersContratDetailsModal
           agent={selectedAgent}
           onClose={() => setSelectedAgent(null)}
         />
-      )} */}
+      )} 
             </div></>
     );
 }
