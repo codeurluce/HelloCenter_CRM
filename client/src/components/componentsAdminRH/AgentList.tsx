@@ -1,32 +1,24 @@
 // src/componentsRH/AgentList.tsx
 import React, { useEffect, useState } from "react";
-import { RefreshCw, Eye, Pause, LogOut, Search, Pencil } from "lucide-react";
+import { RefreshCw, Eye, Pencil } from "lucide-react";
 import axiosInstance from "../../api/axiosInstance";
-import Swal from "sweetalert2";
-import { toast } from "react-toastify";
-import UsersContratDetailsModal from "./UsersContratDetailsModal.tsx";
+import UsersContratDetailsModal, { Agent } from "./UsersContratDetailsModal.tsx";
+import UsersContratFormsModal from "./UsersContratFormsModal.tsx";
 
-
-// Formatage hh:mm:ss
-const formatTime = (seconds: number) => {
-    if (!seconds || seconds < 0) return "00:00:00";
-    const h = String(Math.floor(seconds / 3600)).padStart(2, "0");
-    const m = String(Math.floor((seconds % 3600) / 60)).padStart(2, "0");
-    const s = String(seconds % 60).padStart(2, "0");
-    return `${h}:${m}:${s}`;
-};
 
 export default function AgentList() {
     const [agents, setAgents] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [selectedAgent, setSelectedAgent] = useState<any | null>(null);
+    const [editAgent, setEditAgent] = useState<any | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
 
     // 🔹 Charger les agents (users + contrat)
     const fetchAgents = async () => {
         setLoading(true);
         try {
-            const res = await axiosInstance.get("/users/users-contrat");
+            const res = await axiosInstance.get("/rh/users-contrat");
+            console.log("🧩 Données reçues :", res.data);
             setAgents(res.data);
         } catch (err) {
             console.error("Erreur fetch agents:", err);
@@ -45,9 +37,14 @@ export default function AgentList() {
         return (
             (a.lastname || "").toLowerCase().includes(search) ||
             (a.firstname || "").toLowerCase().includes(search) ||
-            (a.mail_perso || "").toLowerCase().includes(search) ||
-            (a.email || "").toLowerCase().includes(search) ||
-            (a.telephone || "").includes(search)
+            (a.contrat?.mail_perso || "").toLowerCase().includes(search) ||
+            (a.contrat?.matricule || "").toLowerCase().includes(search) ||
+            (a.contrat?.poste || "").toLowerCase().includes(search) ||
+            (a.contrat?.type_contrat || "").toLowerCase().includes(search) ||
+            (a.contrat?.age || "").toString().includes(search) ||
+            (a.contrat?.genre_sexe || "").toLowerCase().includes(search) ||
+            (a.contrat?.situation_matrimoniale || "").toLowerCase().includes(search) ||
+            (a.contrat?.telephone || "").includes(search)
         );
     });
 
@@ -81,8 +78,9 @@ export default function AgentList() {
                             <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Nom</th>
                             <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Prénom</th>
                             <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Poste</th>
-                            <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Mail perso</th>
-                            <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Téléphone</th>
+                            <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Type de contrat</th>
+                            <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Date debut contrat</th>
+                            <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Date fin contrat</th>
                             <th className="px-6 py-3 text-center text-sm font-semibold text-blue-700">Actions</th>
                         </tr>
                     </thead>
@@ -103,15 +101,19 @@ export default function AgentList() {
                         ) : (
                             filteredAgents.map((a) => (
                                 <tr key={a.id} className="border-t border-gray-200 hover:bg-blue-50">
-                                    <td className="px-6 py-3 text-gray-800">{a.matricule || "-"}</td>
+                                    <td className="px-6 py-3 text-gray-800">{a.contrat?.matricule || "-"}</td>
                                     <td className="px-6 py-3 text-gray-800">{a.lastname || "-"}</td>
                                     <td className="px-6 py-3 text-gray-800">{a.firstname || "-"}</td>
-                                    <td className="px-6 py-3 text-gray-800">{a.poste || "-"}</td>
-                                    <td className="px-6 py-3 text-gray-800">{a.mail_perso || "-"}</td>
-                                    <td className="px-6 py-3 text-gray-800">{a.telephone || "-"}</td>
+                                    <td className="px-6 py-3 text-gray-800">{a.contrat?.poste || "-"}</td>
+                                    <td className="px-6 py-3 text-gray-800">{a.contrat?.type_contrat || "-"}</td>
+                                    <td className="px-6 py-3 text-gray-800">{a.contrat?.date_debut_contrat ? new Date(a.contrat.date_debut_contrat).toLocaleDateString("fr-FR") : "-"}</td>
+                                    <td className="px-6 py-3 text-gray-800">{a.contrat?.date_fin_contrat ? new Date(a.contrat.date_fin_contrat).toLocaleDateString("fr-FR") : "-"}</td>
                                     <td className="px-6 py-3 text-center flex justify-center gap-3">
                                         <button
-                                            onClick={() => setSelectedAgent(a)}
+                                            onClick={() => setSelectedAgent({
+                                                ...a,
+                                                ...a.contrat,
+                                            })}
                                             className="px-3 py-1.5 rounded-lg border border-blue-100 text-blue-600 hover:bg-blue-600 hover:text-white transition-transform transform hover:scale-105"
                                             title="Consulter"
                                         >
@@ -119,7 +121,7 @@ export default function AgentList() {
                                         </button>
 
                                         <button
-                                            // onClick={() => setSelectedAgent(a)}
+                                            onClick={() => setEditAgent(a)}
                                             className="px-3 py-1.5 rounded-lg border border-green-100 text-green-600 hover:bg-green-600 hover:text-white transition-transform transform hover:scale-105"
                                             title="Mettre à jour"
                                         >
@@ -132,12 +134,28 @@ export default function AgentList() {
                     </tbody>
                 </table>
 
-        {selectedAgent && (
-        <UsersContratDetailsModal
-          agent={selectedAgent}
-          onClose={() => setSelectedAgent(null)}
-        />
-      )} 
-            </div></>
+                {selectedAgent && (
+                    <UsersContratDetailsModal
+                        agent={selectedAgent}
+                        onClose={() => setSelectedAgent(null)}
+                        onEdit={(a) => {
+                            setEditAgent(a);        // ouvre le modal de modification
+                            setSelectedAgent(null);  // ferme le modal détails
+                        }}
+                    />
+                )}
+
+                {editAgent && (
+                    <UsersContratFormsModal
+                        agent={editAgent}
+                        onClose={() => setEditAgent(null)} // 🔹 vide errors automatiquement
+                        onUpdated={() => {
+                            fetchAgents(); // 🔹 rafraichir la liste après update
+                            setEditAgent(null);
+                        }}
+                    />
+                )}
+            </div>
+        </>
     );
 }

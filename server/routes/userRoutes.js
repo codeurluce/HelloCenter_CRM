@@ -17,7 +17,6 @@ const {
   disconnectAgentForce,
   validateSession,
   disconnectAgentbyAdmin,
-  getUsersContrat
 } = require("../controllers/userControllers");
 
 /**
@@ -46,7 +45,6 @@ router.post("/change-password-first-login", verifyToken, changePasswordFirstLogi
 
 router.get("/users", verifyToken, getAllUsers);// 📌 Récupérer tous les utilisateurs (authentification requise) // Méthode : GET /api/users/users
 router.get("/users-bd", verifyToken, getAllUsersBd); // 📌 Récupérer tous les utilisateurs depuis la base (authentification nécessaire) // Méthode : GET /api/users/users_bd
-router.get("/users-contrat", verifyToken, getUsersContrat); // 📌 Récupérer tous les utilisateurs et aussi leur contrat
 
 router.post("/:id/reset-password", verifyToken, resetPasswordByAdmin); // 📌 Réinitialiser le mot de passe d’un utilisateur par son ID (admin uniquement, auth requise) // Méthode : POST /api/users/:id/reset-password
 

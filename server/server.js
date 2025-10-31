@@ -20,6 +20,7 @@ const filesRoutes = require('./routes/filesRoutes');
 const historiquesfilesRoutes = require('./routes/historiquesfilesRoutes');
 const historiquesVentesRoutes = require('./routes/historiquesVentesRoutes');
 const userRoutes = require('./routes/userRoutes');
+const rhRoutes = require('./routes/rhRoutes')
 const initSockets = require('./socket');
 const { splitSessionsAtMidnight } = require('./controllers/sessionControllers');
 
@@ -38,6 +39,7 @@ app.use('/api/session_agents', sessionRoutes);
 app.use('/api/files', filesRoutes);
 app.use('/api/historiques', historiquesfilesRoutes);
 app.use('/api/historiques/ventes', historiquesVentesRoutes);
+app.use('/api/rh', rhRoutes);
 
 // Routes de santé
 app.get('/api/test-db', async (req, res) => {

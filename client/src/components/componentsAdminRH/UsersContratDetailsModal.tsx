@@ -1,34 +1,47 @@
-// src/componentsRH/AgentDetailsModal.tsx
-import React, { useEffect, useCallback, useState } from "react";
-import { X, User, Mail, Phone, MapPin, Calendar, CreditCard, VenusAndMars, BellRing, Gem, Smartphone, Calendar1, CalendarCheck, CalendarDays } from "lucide-react";
+// src/componentsAdminRH/UsersContratDetailsModal.tsx
+import React, { useEffect, useCallback } from "react";
+import { X, User, Mail, MapPin, Calendar, CreditCard, VenusAndMars, Gem, Smartphone, Calendar1, CalendarCheck, CalendarDays, CreditCardIcon } from "lucide-react";
 
-interface Agent {
+export interface Contrat {
   id: number;
-  nom: string;
-  prenom: string;
-  email: string;
-  telephone?: string;
-  matricule?: string;
-  poste?: string;
-  date_naissance?: string;
-  sexe?: string;
-  age?: number;
-  situation_matrimoniale?: string;
-  adresse?: string;
-  code_postal?: string;
-  num_cni?: string;
   type_contrat?: string;
+  date_integration?: string;
   date_debut_contrat?: string;
   date_fin_contrat?: string;
-  date_integration?: string;
+  poste?: string;
+  situation_matrimoniale?: string;
+  numero_cni_ou_passeport?: string;
+  adresse?: string;
+  code_postal?: string;
+  telephone?: string;
+  age?: number;
+  genre_sexe?: string;
+  mail_perso?: string;
+  matricule?: string;
+  date_naissance?: string;
+  type_piece?: string;
+  updated_by?: string;
+}
+
+export interface Agent {
+  id: number;
+  lastname: string;
+  firstname: string;
+  email: string;
+  role: string;
+  profil?: string;
+  active?: boolean;
+  created_at?: string;
+  contrat?: Contrat | null;
 }
 
 interface Props {
   agent: Agent | null;
   onClose: () => void;
+  onEdit: (agent: Agent) => void;
 }
 
-export default function UsersContratDetailsModal({ agent, onClose }: Props) {
+export default function UsersContratDetailsModal({ agent, onClose, onEdit }: Props) {
   const stopPropagation = useCallback((e: React.MouseEvent) => e.stopPropagation(), []);
 
   useEffect(() => {
@@ -40,6 +53,8 @@ export default function UsersContratDetailsModal({ agent, onClose }: Props) {
   }, [onClose]);
 
   if (!agent) return null;
+
+  const c = agent.contrat;
 
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return "-";
@@ -61,7 +76,7 @@ export default function UsersContratDetailsModal({ agent, onClose }: Props) {
           <div className="flex items-center gap-2">
             <User size={22} />
             <h3 className="text-lg font-bold">
-              Détails de l'agent : {agent.nom} {agent.prenom}
+              Détails Contrat de l'agent : {agent.lastname} {agent.firstname}
             </h3>
           </div>
           <button
@@ -76,37 +91,46 @@ export default function UsersContratDetailsModal({ agent, onClose }: Props) {
         {/* Contenu */}
         <div className="p-6 space-y-6 overflow-y-auto text-gray-800">
           <div className="grid grid-cols-2 gap-8">
-            {/* Colonne gauche : Infos personnelles */}
+            {/* Infos personnelles */}
             <div className="space-y-3">
               <h3 className="text-lg font-bold text-gray-900 border-b pb-1">Infos personnelles</h3>
-              <Detail label="Matricule" value={agent.matricule || "-"} icon={<CreditCard size={18} />} />
-              <Detail label="Nom" value={agent.nom} icon={<User size={18} />} />
-              <Detail label="Prénom" value={agent.prenom} icon={<User size={18} />} />
-              <Detail label="Email" value={agent.email} icon={<Mail size={18} />} />
-              <Detail label="Téléphone" value={agent.telephone || "-"} icon={<Smartphone size={18} />} />
-              <Detail label="Date de naissance" value={formatDate(agent.date_naissance)} icon={<Calendar size={18} />} />
-              <Detail label="Sexe" value={agent.sexe || "-"} icon={<VenusAndMars size={18} />} />
-              <Detail label="Age" value={agent.age?.toString() || "-"} icon={<User size={18} />} />
-              <Detail label="Situation matrimoniale" value={agent.situation_matrimoniale || "-"} icon={<Gem size={18} />} />
+              <Detail label="Matricule" value={c?.matricule || "-"} icon={<CreditCard size={18} />} />
+              <Detail label="Nom" value={agent.lastname} icon={<User size={18} />} />
+              <Detail label="Prénom" value={agent.firstname} icon={<User size={18} />} />
+              <Detail label="Email" value={c?.mail_perso || "-"} icon={<Mail size={18} />} />
+              <Detail label="Téléphone" value={c?.telephone || "-"} icon={<Smartphone size={18} />} />
+              <Detail label="Type de pièce" value={c?.type_piece || "-"} icon={<CreditCardIcon size={18} />} />
+              <Detail label="Num CNI / Passeport" value={c?.numero_cni_ou_passeport || "-"} icon={<CreditCard size={18} />} />
+              <Detail label="Date de naissance" value={c?.date_naissance ? formatDate(c.date_naissance) : "-"} icon={<Calendar size={18} />} />
+              <Detail label="Situation matrimoniale" value={c?.situation_matrimoniale || "-"} icon={<Gem size={18} />} />
             </div>
 
-            {/* Colonne droite : Infos contrat */}
+            {/* Infos contrat */}
             <div className="space-y-3">
               <h3 className="text-lg font-bold text-gray-900 border-b pb-1">Infos contrat</h3>
-              <Detail label="Poste" value={agent.poste || "-"} icon={<User size={18} />} />
-              <Detail label="Adresse" value={agent.adresse || "-"} icon={<MapPin size={18} />} />
-              <Detail label="Code postal" value={agent.code_postal || "-"} icon={<MapPin size={18} />} />
-              <Detail label="Num CNI / Passeport" value={agent.num_cni || "-"} icon={<CreditCard size={18} />} />
-              <Detail label="Type de contrat" value={agent.type_contrat || "-"} icon={<User size={18} />} />
-              <Detail label="Date début contrat" value={formatDate(agent.date_debut_contrat)} icon={<Calendar1 size={18} />} />
-              <Detail label="Date fin contrat" value={formatDate(agent.date_fin_contrat)} icon={<CalendarDays size={18} />} />
-              <Detail label="Date intégration" value={formatDate(agent.date_integration)} icon={<CalendarCheck size={18} />} />
+              <Detail label="Type de contrat" value={c?.type_contrat || "-"} icon={<User size={18} />} />
+              <Detail label="Poste" value={c?.poste || "-"} icon={<User size={18} />} />
+              <Detail label="Date début contrat" value={formatDate(c?.date_debut_contrat)} icon={<Calendar1 size={18} />} />
+              <Detail label="Date fin contrat" value={formatDate(c?.date_fin_contrat)} icon={<CalendarDays size={18} />} />
+              <Detail label="Date intégration" value={formatDate(c?.date_integration)} icon={<CalendarCheck size={18} />} />
+              <Detail label="Sexe" value={c?.genre_sexe || "-"} icon={<VenusAndMars size={18} />} />
+              <Detail label="Age" value={c?.age?.toString() || "-"} icon={<User size={18} />} />
+              <Detail label="Adresse" value={c?.adresse || "-"} icon={<MapPin size={18} />} />
+              <Detail label="Code postal" value={c?.code_postal || "-"} icon={<MapPin size={18} />} />
             </div>
           </div>
         </div>
 
         {/* Footer */}
         <div className="flex justify-end bg-gray-100 px-6 py-4">
+          {onEdit && (
+            <button
+              onClick={() => agent && onEdit(agent)}
+              className="bg-green-600 hover:bg-green-700 text-white font-medium px-5 py-2 rounded-lg shadow-sm transition-colors mr-4"
+            >
+              Mettre à jour
+            </button>
+          )}
           <button
             onClick={onClose}
             className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2 rounded-lg shadow-sm transition-colors"
