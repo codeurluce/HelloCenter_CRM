@@ -40,7 +40,7 @@ export default function AdministrationUsers() {
   const [selectedAgent, setSelectedAgent] = useState(null);
 
   // Hook pour récupérer les users
-  const { users, filteredUsers, total, loading, error, fetchUsers } = useUsers({
+  const { users, filteredUsers, total, loading, error, fetchUsers, toggleUserActive } = useUsers({
     page,
     limit,
     roleFilter,
@@ -79,20 +79,20 @@ export default function AdministrationUsers() {
         toast.success("✅ Agent modifié avec succès !");
       } else {
         // Création nouvel utilisateur
-         const res = await axiosInstance.post("/users/register", form);    
+        const res = await axiosInstance.post("/users/register", form);
 
-      // Afficher les identifiants (exemple avec Swal)
-      Swal.fire({
-        icon: "success",
-        title: "✅ Nouvel agent créé",
-        html: `
+        // Afficher les identifiants (exemple avec Swal)
+        Swal.fire({
+          icon: "success",
+          title: "✅ Nouvel agent créé",
+          html: `
           <p>Adresse email : <strong>${res.data.email}</strong></p>
           <p>Mot de passe temporaire : <strong>${res.data.tempPassword}</strong></p>
           <p>L’agent devra changer le mot de passe à sa première connexion.</p>
         `,
-        confirmButtonText: "OK",
-      });
- }
+          confirmButtonText: "OK",
+        });
+      }
       setShowModal(false);
       fetchUsers();
     } catch (err) {
@@ -102,42 +102,6 @@ export default function AdministrationUsers() {
       setSaving(false);
     }
   };
-
-  const toggleActive = async (user) => {
-    try {
-      const result = await Swal.fire({
-        title: `${user.is_active ? "Désactiver" : "Activer"} l'agent ?`,
-        text: `Êtes-vous sûr de vouloir ${user.is_active ? "désactiver" : "activer"} ${user.firstname} ${user.lastname} ?`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: user.is_active ? '#d33' : '#28a745', // rouge si désactiver, vert si activer
-        cancelButtonColor: '#6c757d', // neutre gris
-        confirmButtonText: user.is_active ? 'Désactiver' : 'Activer',
-        cancelButtonText: 'Annuler',
-        reverseButtons: true,
-      });
-
-      if (result.isConfirmed) {
-        const res = await axiosInstance.put(`/users/${user.id}/toggle-active`);
-        Swal.fire({
-          icon: 'success',
-          title: 'Succès',
-          text: res.data.message,
-          timer: 2000,
-          showConfirmButton: false
-        });
-        fetchUsers();
-      }
-    } catch (err) {
-      console.error(err.response?.data || err.message);
-      Swal.fire({
-        icon: 'error',
-        title: 'Erreur',
-        text: "Erreur lors de la mise à jour de l'état de l'utilisateur",
-      });
-    }
-  };
-
 
   const resetPassword = async (user) => {
     try {
@@ -185,7 +149,7 @@ export default function AdministrationUsers() {
     <div className="p-6 bg-gray-50 min-h-screen">
       {/* Titre de section */}
       <h2 className="text-2xl font-bold mb-4">Gestion des utilisateurs</h2>
-      
+
       {/* Barre de recherche/filtre + bouton créer */}
       <SearchFilterBar
         q={q}
@@ -215,7 +179,7 @@ export default function AdministrationUsers() {
         setPage={setPage}
         limit={limit}
         setLimit={setLimit}
-        toggleActive={toggleActive}
+        toggleActive={toggleUserActive}
         openEdit={(agent) => openEdit(agent)}
         resetPassword={resetPassword}
         onViewAgent={(agent) => setSelectedAgent(agent)}
@@ -231,7 +195,7 @@ export default function AdministrationUsers() {
             setSelectedAgent(null);
           }}
           onToggleStatus={(agent) => {
-            toggleActive(agent);
+            toggleUserActive(agent);
             setSelectedAgent(null);
           }}
         />

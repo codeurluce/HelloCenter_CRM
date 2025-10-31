@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import axiosInstance from "../api/axiosInstance";
+import Swal from "sweetalert2";
 
 /**
  * useUsers hook
@@ -121,5 +122,51 @@ export default function useUsers({
     return result;
   }, [users, roleFilter, profilFilter, statusFilter, q]);
 
-  return { users, filteredUsers, total, loading, error, fetchUsers, setUsers };
+
+  const toggleUserActive = async (user) => {
+    try {
+      const result = await Swal.fire({
+        title: `${user.is_active ? "Désactiver" : "Activer"} l'agent ?`,
+        text: `Êtes-vous sûr de vouloir ${user.is_active ? "désactiver" : "activer"} ${user.firstname} ${user.lastname} ?`,
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: user.is_active ? "#d33" : "#28a745",
+        cancelButtonColor: "#6c757d",
+        confirmButtonText: user.is_active ? "Désactiver" : "Activer",
+        cancelButtonText: "Annuler",
+        reverseButtons: true,
+      });
+
+      if (result.isConfirmed) {
+        const res = await axiosInstance.put(`/users/${user.id}/toggle-active`);
+        await Swal.fire({
+          icon: "success",
+          title: "Succès",
+          text: res.data.message || "Statut mis à jour avec succès",
+          timer: 2000,
+          showConfirmButton: false,
+        });
+
+        // Mise à jour locale sans refetch complet :
+        setUsers((prev) =>
+          prev.map((u) =>
+            u.id === user.id ? { ...u, is_active: !u.is_active, active: !u.active } : u
+          )
+        );
+
+        return res.data;
+      }
+    } catch (err) {
+      console.error(err.response?.data || err.message);
+      await Swal.fire({
+        icon: "error",
+        title: "Erreur",
+        text: err.response?.data?.message || "Erreur lors de la mise à jour du statut de l'utilisateur",
+      });
+      throw err;
+    }
+  };
+
+
+  return { users, filteredUsers, total, loading, error, fetchUsers, setUsers, toggleUserActive };
 }

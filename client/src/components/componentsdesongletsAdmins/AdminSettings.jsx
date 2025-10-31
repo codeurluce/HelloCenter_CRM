@@ -6,6 +6,8 @@ import { Users, Trash2, RefreshCcw } from 'react-feather';
 import { colorThemes } from '../../shared/colorThemes';
 import { useTheme } from "../../shared/ThemeContext";
 import { is } from "date-fns/locale";
+import { LockKeyhole, LockKeyholeOpen } from "lucide-react";
+import useUsers from "../../api/useUsers";
 
 // Composant de settings centralisés :
 // - suppression forcée d'agents
@@ -13,13 +15,19 @@ import { is } from "date-fns/locale";
 // - switch mode clair / sombre (persisté dans localStorage)
 
 export default function AdminSettings({ user }) {
-    const [agents, setAgents] = useState([]);
-    const [loadingAgents, setLoadingAgents] = useState(false);
     const [selectedTheme, setSelectedTheme] = useState(() => localStorage.getItem("sidebarTheme") || "blue");
     const { theme, setTheme, darkMode, setDarkMode } = useTheme();
     const [refreshFlag, setRefreshFlag] = useState(0);
     const [currentUser, setCurrentUser] = useState(null);
     const isAdmin = currentUser?.role === "Admin";
+    const { users: agents, loading, fetchUsers, toggleUserActive } = useUsers({
+        page: 1,
+        limit: 1000,
+        roleFilter: "",
+        profilFilter: "",
+        statusFilter: "",
+        q: ""
+    });
 
     useEffect(() => {
         const fetchCurrentUser = async () => {
@@ -41,12 +49,6 @@ export default function AdminSettings({ user }) {
     };
 
     useEffect(() => {
-        if (currentUser && currentUser.role === "Admin") {
-            fetchAgents();
-        }
-    }, [currentUser, refreshFlag]);
-
-    useEffect(() => {
         // Appliquer le mode sombre immédiatement
         if (darkMode) {
             document.documentElement.classList.add("dark");
@@ -62,81 +64,39 @@ export default function AdminSettings({ user }) {
         localStorage.setItem("sidebarTheme", selectedTheme);
     }, [selectedTheme]);
 
-    const fetchAgents = async () => {
-        setLoadingAgents(true);
-        try {
-            const res = await axiosInstance.get("/users");
-            setAgents(res.data || []);
-        } catch (err) {
-            console.error("Erreur chargement agents:", err.response?.data || err.message);
-            toast.error("Impossible de charger la liste des agents");
-        } finally {
-            setLoadingAgents(false);
-        }
-    };
-
-    const handleDelete = async (agentId, force = false) => {
+    const handleDelete = async (agentId) => {
         const agent = agents.find(a => a.id === agentId);
-        const text = force
-            ? "SUPPRESSION FORCÉE : toutes les données liées (sessions, fiches, ventes...) seront supprimées si présentes. Action irréversible."
-            : "Désactiver ou supprimer cet agent ?";
 
         const { isConfirmed } = await Swal.fire({
-            title: `Supprimer ${agent?.firstname && agent?.lastname ? `${agent.firstname} ${agent.lastname}` : agent?.email || 'cet agent'}`,            
-            text,
-            icon: force ? 'warning' : 'question',
+            title: `Supprimer ${agent?.firstname && agent?.lastname ? `${agent.firstname} ${agent.lastname}` : agent?.email || 'cet agent'}`,
+            text: "L'agent sera supprimé si aucune donnée liée n’existe, sinon il sera simplement désactivé.",
+            icon: "warning",
             showCancelButton: true,
-            confirmButtonText: force ? 'Supprimer définitivement' : 'Supprimer',
-            confirmButtonColor: '#dc2626',
-            cancelButtonText: 'Annuler',
+            confirmButtonText: "Supprimer",
+            cancelButtonText: "Annuler",
+            confirmButtonColor: "#dc2626",
         });
 
         if (!isConfirmed) return;
 
         try {
-            await axiosInstance.delete(`/agents/${agentId}?force=${force}`);
-            toast.success("Agent supprimé");
-            setAgents(prev => prev.filter(a => a.id !== agentId));
+            const res = await axiosInstance.delete(`/users/${agentId}/delete-users`);
+
+            // Vérifie le message de retour pour ajuster le type de toast
+            if (res.data.message?.toLowerCase().includes("désactivé")) {
+                toast.info(res.data.message, {
+                    style: { whiteSpace: "pre-line" },
+                });
+            } else if (res.data.message?.toLowerCase().includes("supprimé")) {
+                toast.success(res.data.message);
+            } else {
+                toast.success(res.data.message || "Suppression effectuée");
+            }
+
+            fetchUsers();
         } catch (err) {
             console.error("Erreur suppression agent:", err.response?.data || err.message);
-            toast.error(err.response?.data?.message || "Erreur lors de la suppression");
-        }
-    };
-
-    const handleDisconnect = async (agentId) => {
-            const agent = agents.find(a => a.id === Number(agentId)); // conversion en number
-        // Afficher une confirmation
-        const result = await Swal.fire({
-            title: `Déconnecter ${agent?.firstname} ${agent?.lastname} `,
-            text: "Êtes-vous sûr de vouloir déconnecter cet agent ?",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonText: "Oui, déconnecter",
-            cancelButtonText: "Annuler",
-            confirmButtonColor: "#dc2626",
-            reverseButtons: true,
-        });
-
-        if (!result.isConfirmed) return; // Si l'utilisateur annule, on sort
-
-        // Sinon, on effectue la déconnexion
-        try {
-            await axiosInstance.post(`/agent/${agentId}/disconnectByAdmin`);
-            toast.success("Agent déconnecté avec succès");
-        } catch (err) {
-            console.error("Erreur déconnexion agent :", err.response?.data || err.message);
-            toast.error(err.response?.data?.error || "Impossible de déconnecter l'agent");
-        }
-    };
-
-    const handleToggleActive = async (agentId, newActive) => {
-        try {
-            await axiosInstance.patch(`/agents/${agentId}`, { active: newActive });
-            toast.success("Statut mis à jour");
-            setAgents(prev => prev.map(a => a.id === agentId ? { ...a, active: newActive } : a));
-        } catch (err) {
-            console.error(err);
-            toast.error("Impossible de mettre à jour le statut");
+            toast.error(err.response?.data?.error || "Erreur lors de la suppression");
         }
     };
 
@@ -301,6 +261,9 @@ export default function AdminSettings({ user }) {
                     <section className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
                         <div className="flex items-center justify-between mb-4">
                             <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Gestion des agents</h2>
+                            <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900 p-2 rounded-lg shadow-inner">
+                                ⚠️ Attention : la suppression d'un compte doit être réservée aux administrateurs avec privilèges élevés.
+                            </div>
                             <div className="flex items-center gap-3">
                                 <button
                                     onClick={() => setRefreshFlag(f => f + 1)}
@@ -310,7 +273,7 @@ export default function AdminSettings({ user }) {
                                     <RefreshCcw size={16} />
                                 </button>
                                 <button
-                                    onClick={() => fetchAgents()}
+                                    onClick={() => fetchUsers()}
                                     className="text-sm underline text-blue-600 dark:text-blue-400"
                                 >
                                     Reload
@@ -318,17 +281,17 @@ export default function AdminSettings({ user }) {
                             </div>
                         </div>
 
-                        {loadingAgents ? (
+                        {loading ? (
                             <p>Chargement...</p>
                         ) : (
-                            <div className="overflow-x-auto">
+                            <div className="overflow-x-auto pt-6">
                                 <table className="w-full text-left">
                                     <thead>
                                         <tr className="text-sm text-gray-500 dark:text-gray-400">
                                             <th className="pb-3">ID</th>
                                             <th className="pb-3">Nom / Email</th>
                                             <th className="pb-3">Rôle</th>
-                                            <th className="pb-3">Actif</th>
+                                            <th className="pb-3">Etat compte</th>
                                             <th className="pb-3">Actions</th>
                                         </tr>
                                     </thead>
@@ -340,7 +303,7 @@ export default function AdminSettings({ user }) {
                                                 <td className="py-3 text-sm text-gray-700 dark:text-gray-200">{agent.role || '-'}</td>
                                                 <td className="py-3 text-sm text-gray-700 dark:text-gray-200">
                                                     <button
-                                                        onClick={() => handleToggleActive(agent.id, !agent.active)}
+                                                        onClick={() => toggleUserActive(agent)}
                                                         className={`px-2 py-1 rounded text-xs ${agent.active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}
                                                     >
                                                         {agent.active ? 'Actif' : 'Inactif'}
@@ -348,24 +311,42 @@ export default function AdminSettings({ user }) {
                                                 </td>
                                                 <td className="py-3 text-sm">
                                                     <div className="flex items-center gap-2">
-                                                        {/* <button
-                                                            onClick={() => handleDelete(agent.id, false)}
-                                                            className="px-3 py-1 rounded bg-yellow-100 text-yellow-800 text-sm"
-                                                        >
-                                                            Supprimer
-                                                        </button> */}
-                                                        <button
-                                                            onClick={() => handleDelete(agent.id, true)}
-                                                            className="px-3 py-1 rounded bg-red-600 text-white text-sm flex items-center gap-2"
-                                                        >
-                                                            <Trash2 size={14} /> Forcer
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleDisconnect(agent.id)}
-                                                            className="px-3 py-1 rounded bg-blue-600 text-white text-sm"
-                                                        >
-                                                            Déconnexion
-                                                        </button>
+                                                        <div className="relative group">
+                                                            <button
+                                                                onClick={() => toggleUserActive(agent)}
+                                                                aria-pressed={agent.active}
+                                                                title=""
+                                                                className={`px-3 py-1.5 rounded-lg border transition-transform transform focus:outline-none focus:ring-2 focus:ring-offset-1 ${agent.active
+                                                                    ? "text-yellow-600 border-yellow-100 hover:bg-yellow-600 hover:text-white hover:scale-105"
+                                                                    : "text-gray-600 border-gray-100 hover:bg-gray-600 hover:text-white hover:scale-105"
+                                                                    }`}
+                                                            >
+                                                                {agent.active ? (
+                                                                    <LockKeyholeOpen className="w-4 h-4" />
+                                                                ) : (
+                                                                    <LockKeyhole className="w-4 h-4" />
+                                                                )}
+                                                            </button>
+
+                                                            <span
+                                                                className={`pointer-events-none absolute -top-9 right-0 hidden group-hover:block text-xs whitespace-nowrap px-2 py-1 rounded shadow-lg ${agent.active ? "bg-yellow-600 text-white" : "bg-gray-600 text-white"
+                                                                    }`}
+                                                            >
+                                                                {agent.active ? "Verrouiller le compte" : "Déverrouiller le compte"}
+                                                            </span>
+                                                        </div>
+                                                        <div className="relative group">
+                                                            <button
+                                                                onClick={() => handleDelete(agent.id, false)}
+                                                                title=""
+                                                                className="px-3 py-1.5 rounded-lg border border-red-100 text-red-600 hover:bg-red-600 hover:text-white transition-transform transform focus:outline-none focus:ring-2 focus:ring-offset-1 hover:scale-105"
+                                                            >
+                                                                <Trash2 className="w-4 h-4" />
+                                                            </button>
+                                                            <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-red-600 text-white text-xs whitespace-nowrap">
+                                                                Supprimer le compte
+                                                            </span>
+                                                        </div>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -376,9 +357,6 @@ export default function AdminSettings({ user }) {
                             </div>
                         )}
                     </section>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">
-                        ⚠️ Attention : la suppression forcée doit être réservée aux administrateurs avec privilèges élevés.
-                    </div>
                 </>
             )}
         </div>

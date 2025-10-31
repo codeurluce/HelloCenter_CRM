@@ -68,7 +68,7 @@ const createUser = async (req, res) => {
       role,
       profil
     );
-console.log("✅ User créé :", user);
+    console.log("✅ User créé :", user);
     // Insérer une ligne vide dans la table contrat liée à ce user
     await client.query(
       `INSERT INTO contrat (user_id) VALUES ($1)`,
@@ -87,6 +87,51 @@ console.log("✅ User créé :", user);
     res.status(500).json({ error: "Erreur lors de la création de l’utilisateur" });
   } finally {
     client.release(); // ✅ Libérer la connexion
+  }
+};
+
+// Suppression d'un utilisateur qui n'a jamais été connnecté
+const deleteUserByAdmin = async (req, res) => {
+  const userId = req.params.id;
+  const requester = req.user; // info du token : id + role
+
+  if (!userId) return res.status(400).json({ error: "userId manquant" });
+  if (requester.id === userId) return res.status(400).json({ error: "Vous ne pouvez pas vous supprimer vous-même." });
+  if (requester.role !== "Admin") return res.status(403).json({ error: "Vous n'avez pas la permission de supprimer cet utilisateur." });
+
+  try {
+    // Vérifier si l'utilisateur existe
+    const { rows } = await db.query("SELECT * FROM users WHERE id = $1", [userId]);
+    if (rows.length === 0) return res.status(404).json({ error: "Utilisateur non trouvé" });
+
+    // Vérifier les dépendances
+    const [ventesRes] = await Promise.all([
+      db.query("SELECT COUNT(*) FROM sales WHERE agent_id = $1", [userId]),
+      // db.query("SELECT COUNT(*) FROM files WHERE agent_id = $1", [userId]),
+    ]);
+
+    const hasVentes = Number(ventesRes.rows[0].count) > 0;
+    // const hasFiches = Number(fichesRes.rows[0].count) > 0;
+
+    if (hasVentes) {
+      // Soft delete
+      await db.query("UPDATE users SET is_active = FALSE WHERE id = $1", [userId]);
+      return res.json({ success: true, message: "Cet agent a des ventes liées. Impossible de supprimer. \nLe compte a été désactivé." });
+    }
+
+    //     if (hasFiches) {
+    //   // Moins critique, mais tu peux garder soft delete par sécurité
+    //   await db.query("UPDATE users SET is_active = FALSE WHERE id = $1", [userId]);
+    //   return res.json({ success: true, message: "L’agent a des fiches liées. Compte désactivé." });
+    // }
+
+    // Suppression physique
+    await db.query("DELETE FROM users WHERE id = $1", [userId]);
+    return res.json({ success: true, message: "Utilisateur supprimé définitivement" });
+
+  } catch (err) {
+    console.error("Erreur deleteUserByAdmin:", err);
+    res.status(500).json({ error: "Erreur lors de la suppression" });
   }
 };
 
@@ -525,8 +570,11 @@ const resetPasswordByAdmin = async (req, res) => {
   }
 };
 
+// Suppression d'un agent 
+
 module.exports = {
   createUser,
+  deleteUserByAdmin,
   // createAgent,
   loginUser,
   verifyToken,

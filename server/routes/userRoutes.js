@@ -3,6 +3,7 @@ const express = require("express");
 const router = express.Router();
 const {
   createUser,
+  deleteUserByAdmin,
   loginUser,
   verifyToken,
   getMe,
@@ -27,6 +28,7 @@ router.get("/me", verifyToken, getMe); // 📌 Récupérer les informations du p
 router.get('/validate', verifyToken, validateSession); // 📌 Validation de session (authentification requise) // Méthode : GET /api/users/validate
 
 router.post("/register", createUser); // 📌 Création d’un utilisateur avec mot de passe temporaire généré // Méthode : POST /api/users/register
+router.delete("/:id/delete-users", verifyToken, deleteUserByAdmin);
 router.post("/login", loginUser); // 📌 Connexion utilisateur // Méthode : POST /api/users/login
 router.post('/agent/connect', connectAgent); // 📌 Connexion d’un agent (mise à jour état connecté) // Méthode : POST /api/users/agent/connect
 router.post('/agent/disconnect', disconnectAgent); // 📌 Déconnexion d’un agent (mise à jour état déconnecté) // Méthode : POST /api/users/agent/disconnect
