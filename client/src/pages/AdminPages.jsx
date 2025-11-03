@@ -25,6 +25,7 @@ import MonthlyAgentSalesPieChart from '../components/cards/MonthlyAgentSalesPieC
 import AdminSettings from '../components/componentsdesongletsAdmins/AdminSettings.jsx';
 import Footer from '../components/dashbords/Footer.jsx';
 import RHPanel from '../components/componentsdesongletsAdmins/RHPanel.tsx';
+import NotificationsFinContrat from '../components/componentsAdminRH/NotificationsFinContrat.jsx';
 
 const AdminDashboard = () => {
   const { user, setUser } = useContext(AuthContext);

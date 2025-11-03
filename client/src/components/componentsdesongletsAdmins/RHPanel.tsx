@@ -1,12 +1,13 @@
 // src/componentsRH/RHPanel.tsx
 import React, { useState } from "react";
 import AgentList from "../componentsAdminRH/AgentList.tsx";
+import NotificationsFinContrat from "../componentsAdminRH/NotificationsFinContrat.jsx";
 
 // 👇 Placeholders enfants pour l'instant
 // const AgentList = () => <div className="p-4 text-gray-600">AgentList : contenu à développer</div>;
 const BulletinSalaire = () => <div className="p-4 text-gray-600">BulletinSalaire : contenu à développer</div>;
 const CongesAbsences = () => <div className="p-4 text-gray-600">CongesAbsences : contenu à développer</div>;
-const NotificationsFinContrat = () => <div className="p-4 text-gray-600">NotificationsFinContrat : contenu à développer</div>;
+// const NotificationsFinContrat = () => <div className="p-4 text-gray-600">NotificationsFinContrat : contenu à développer</div>;
 
 const RHPanel: React.FC = () => {
   const tabs = [
