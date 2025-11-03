@@ -25,7 +25,7 @@ import MonthlyAgentSalesPieChart from '../components/cards/MonthlyAgentSalesPieC
 import AdminSettings from '../components/componentsdesongletsAdmins/AdminSettings.jsx';
 import Footer from '../components/dashbords/Footer.jsx';
 import RHPanel from '../components/componentsdesongletsAdmins/RHPanel.tsx';
-import NotificationsFinContrat from '../components/componentsAdminRH/NotificationsFinContrat.jsx';
+import { NotificationsProvider } from '../components/componentsAdminRH/NotificationsContext.jsx';
 
 const AdminDashboard = () => {
   const { user, setUser } = useContext(AuthContext);
@@ -199,6 +199,7 @@ useEffect(() => {
 
   return (
     <AgentStatusProvider>
+      <NotificationsProvider>
       <div className="flex h-screen">
         <SidebarAdmin activeItem={activeItem} setActiveItem={setActiveItem} onLogout={handleLogout} />
         <div className="flex-1 flex flex-col overflow-hidden">
@@ -261,6 +262,7 @@ useEffect(() => {
           <Footer />
         </div>
       </div>
+      </NotificationsProvider>
     </AgentStatusProvider>
   );
 };

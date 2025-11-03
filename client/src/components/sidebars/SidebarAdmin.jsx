@@ -14,12 +14,14 @@ import { Users } from 'lucide-react';
 import Swal from "sweetalert2";
 import { colorThemes } from '../../shared/colorThemes';
 import { useTheme } from '../../shared/ThemeContext';
+import { useNotifications } from '../componentsAdminRH/NotificationsContext';
 
 
 const SidebarAdmin = ({ activeItem, setActiveItem, onLogout }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { theme } = useTheme();
   const sidebarClass = colorThemes[theme] || colorThemes.blue;
+  const { unreadCount } = useNotifications();
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard Admin', icon: LayoutDashboard },
