@@ -12,6 +12,7 @@ const express = require('express');
 const cors = require('cors');
 const http = require('http');
 const cron = require('node-cron');
+const { checkContrats } = require("./controllers/rhControllers");
 
 require ('./inactivityChecker')
 const sessionRoutes = require('./routes/sessionRoutes');
@@ -63,6 +64,10 @@ setIo(io);
 cron.schedule('0 0 * * *', async () => {
   console.log("⏰ Minuit → Split des sessions en cours...");
   await splitSessionsAtMidnight();
+});
+
+cron.schedule("* * * * *", () => {
+  checkContrats();
 });
 
 // Lancer le serveur

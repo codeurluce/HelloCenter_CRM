@@ -6,12 +6,14 @@ const NotificationsContext = createContext();
 
 export const NotificationsProvider = ({ children }) => {
   const [finContratNotifs, setFinContratNotifs] = useState([]); // notifications fin contrat
+  const [loading, setLoading] = useState(true);
 
   // 🔹 Charger automatiquement les notifications à l’ouverture
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        const res = await axiosInstance.get("/notifications/fin-contrat");
+        const res = await axiosInstance.get("/rh/notifications/fin-contrat");
+        console.log("Res API:", res.data);
         setFinContratNotifs(res.data || []);
       } catch (err) {
         console.error("Erreur chargement notifications fin contrat:", err);
@@ -42,31 +44,43 @@ export const NotificationsProvider = ({ children }) => {
             lu: true,
           },
         ]);
+      } finally {
+        setLoading(false); // ✅ on indique que le chargement est fini
       }
     };
 
     fetchNotifications();
   }, []);
 
-  // 🔹 Marquer une notif comme lue (local + backend)
+  // 🔹 Marquer une notif comme lue
   const markAsRead = async (id) => {
-    setFinContratNotifs((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, lu: true } : n))
-    );
-
     try {
-      await axiosInstance.patch(`/notifications/${id}/lu`);
+      const res = await axiosInstance.patch(`/rh/notifications/${id}/lu`);
+      if (res.data.success && res.data.notification) {
+        setFinContratNotifs((prev) =>
+          prev.map((n) => (n.id === id ? res.data.notification : n))
+        );
+      } else {
+        // fallback local
+        setFinContratNotifs((prev) =>
+          prev.map((n) => (n.id === id ? { ...n, lu: true } : n))
+        );
+      }
     } catch (err) {
       console.error("Erreur lors du marquage de notification:", err);
+      // fallback local
+      setFinContratNotifs((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, lu: true } : n))
+      );
     }
   };
 
-  // 🔹 Compteur global
   const unreadCount = finContratNotifs.filter((n) => !n.lu).length;
+
 
   return (
     <NotificationsContext.Provider
-      value={{ finContratNotifs, setFinContratNotifs, markAsRead, unreadCount }}
+      value={{ finContratNotifs, setFinContratNotifs, markAsRead, unreadCount, loading }}
     >
       {children}
     </NotificationsContext.Provider>

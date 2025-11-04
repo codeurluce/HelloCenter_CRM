@@ -1,5 +1,6 @@
 // controllers/rhControllers.js
 const db = require('../db');
+const dayjs = require("dayjs");
 
 
 // recuperation des users et des contrats pour l'afficher dans AgentList.tsx
@@ -237,7 +238,143 @@ const updateAgentContract = async (req, res) => {
     }
 };
 
+const getNotificationsFinContrat = async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        const result = await db.query(`
+      SELECT n.id, n.lu, n.created_at,
+             c.type_contrat, c.date_fin_contrat,
+             u.firstname, u.lastname
+      FROM notifications n
+      JOIN contrat c ON c.id = n.contrat_id
+      JOIN users u ON u.id = c.user_id
+      WHERE n.user_id = $1
+      ORDER BY n.created_at DESC
+    `, [userId]);
+
+        const today = dayjs().startOf("day");
+        const notifications = result.rows.map((row) => {
+            const dateFin = dayjs(row.date_fin_contrat).startOf("day");
+            const joursRestants = dateFin.diff(today, "day");
+
+            // On ne notifie que si le contrat est dans 7 jours ou moins, ou déjà expiré
+            if (joursRestants > 7) return null;
+
+            let message = "";
+            if (joursRestants > 1) {
+                message = `Contrat de ${row.firstname} ${row.lastname} expire dans ${joursRestants} jours`;
+            } else if (joursRestants === 1) {
+                message = `Contrat de ${row.firstname} ${row.lastname} expire demain !`;
+            } else if (joursRestants === 0) {
+                message = `Contrat de ${row.firstname} ${row.lastname} prend fin aujourd'hui !`;
+            }
+            return {
+                id: row.id,
+                nom: `${row.firstname} ${row.lastname}`,
+                type_contrat: row.type_contrat,
+                date_fin: row.date_fin_contrat,
+                jours_restant: joursRestants,
+                message,
+                lu: row.lu,
+            };
+        }).filter(Boolean);
+
+        res.json(notifications);
+    } catch (err) {
+        console.error("Erreur chargement notifications fin contrat:", err);
+        res.status(500).json({ error: "Erreur serveur" });
+    }
+};
+
+// Marquer une notification comme lue
+const markNotificationAsRead = async (req, res) => {
+    try {
+        const userId = req.user.id; // récupéré depuis token/session
+        const notifId = parseInt(req.params.id, 10);
+
+        const result = await db.query(
+            `UPDATE notifications
+       SET lu = TRUE
+       WHERE id = $1 AND user_id = $2
+       RETURNING *`,
+            [notifId, userId]
+        );
+
+        if (result.rowCount === 0) {
+            return res.status(404).json({ error: "Notification introuvable" });
+        }
+
+        res.json({ success: true, message: "Notification marquée comme lue" });
+    } catch (err) {
+        console.error("Erreur mise à jour notification :", err);
+        res.status(500).json({ error: "Erreur serveur" });
+    }
+};
+
+async function checkContrats() {
+    try {
+        const today = dayjs().startOf("day");
+
+        // Tous les contrats
+        const contrats = await db.query(`
+      SELECT id, user_id, date_fin_contrat, type_contrat
+      FROM contrat
+      WHERE date_fin_contrat IS NOT NULL
+    `);
+
+        // Tous les RH/Admin
+        const rhs = await db.query(`
+      SELECT id
+      FROM users
+      WHERE role IN ('Admin')
+    `);
+        // WHERE role IN ('Admin', 'RH') si demain on separe RH et Admin
+
+        for (const contrat of contrats.rows) {
+            const { id: contratId, date_fin_contrat, type_contrat } = contrat;
+            const dateFin = dayjs(date_fin_contrat).startOf("day");
+            const joursRestants = dateFin.diff(today, "day");
+
+            if (joursRestants > 7) continue;
+
+            let message = "";
+            if (joursRestants > 1) {
+                message = `Contrat ${type_contrat} expire bientôt (${joursRestants} jours restants).`;
+            } else if (joursRestants === 1) {
+                message = `Contrat ${type_contrat} expire demain !`;
+            } else if (joursRestants === 0) {
+                message = `Contrat ${type_contrat} prend fin aujourd'hui !`;
+            } else {
+                continue; // contrat déjà expiré
+            }
+
+            for (const rh of rhs.rows) {
+                const existing = await db.query(
+                    `SELECT id FROM notifications
+           WHERE contrat_id = $1 AND user_id = $2 AND message = $3`,
+                    [contratId, rh.id, message]
+                );
+
+                if (existing.rows.length === 0) {
+                    await db.query(
+                        `INSERT INTO notifications (contrat_id, user_id, type, message, lu, created_at)
+            VALUES ($1, $2, 'fin_contrat', $3, false, NOW())`,
+                        [contratId, rh.id, message]
+                    );
+                    console.log(`✅ Notification créée pour RH ${rh.id} (contrat ${contratId})`);
+                }
+            }
+        }
+    } catch (err) {
+        console.error("Erreur lors de la vérification des contrats :", err);
+    }
+}
+
 module.exports = {
     getUsersContrat,
     updateAgentContract,
+    getNotificationsFinContrat,
+    markNotificationAsRead,
+    checkContrats,
 };
