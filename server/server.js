@@ -1,6 +1,7 @@
-if (process.env.NODE_ENV !== 'production') {
-  require('dotenv').config();
-}
+// if (process.env.NODE_ENV !== 'production') {
+//   require('dotenv').config();
+// }
+require('dotenv').config(); 
 
 console.log("🔑 Loaded ENV variables:");
 console.log("DATABASE_URL:", process.env.DATABASE_URL);
