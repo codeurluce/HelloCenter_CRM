@@ -37,6 +37,7 @@ app.use(cors({
     // - Depuis le dev local (localhost:3000)
     // - Et aussi les requêtes sans origin (ex: Postman, curl, ou Nginx en prod)
     const allowedOrigins = [
+      'https://crm.hellocenter.org',   // domaine de production
       'http://159.65.121.14',
       'http://localhost:3000',
       'http://127.0.0.1:3000'
