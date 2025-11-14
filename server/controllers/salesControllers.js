@@ -361,7 +361,7 @@ exports.createSale = async (req, res) => {
       action: 'CREATION',
       actorId: agentId,
       actorName,
-      commentaire: 'Vente créée'
+      commentaire: 'a créée cette vente.'
     });
 
     res.status(201).json(result.rows[0]);
@@ -392,7 +392,7 @@ exports.deleteSale = async (req, res) => {
       actorName: await getActorName(req),
       oldValue: oldSale, // 🔹 ici on garde l'état avant suppression
       newValue: null,    // 🔹 après suppression, plus rien
-      commentaire: `Vente supprimée: client ${oldSale.client_name} ${oldSale.client_firstname}`
+      commentaire: `a supprimé la vente: client ${oldSale.client_name} ${oldSale.client_firstname}`
     });
 
     console.log('Log enregistré pour suppression de la vente', saleId);
@@ -525,7 +525,7 @@ exports.updateSale = async (req, res) => {
         action: 'MODIFICATION',
         actorId: req.user.id,
         actorName: await getActorName(req),
-        commentaire: modifiedFields.join(', '),
+        commentaire: `a modifié la vente, Champs modifiés : ${modifiedFields.join(', ')}`,
       });
     }
     res.status(200).json(newSale);
@@ -748,9 +748,9 @@ exports.updateSaleStatus = async (req, res) => {
 
     const modifiedFields = [];
     if (oldMappedStatus !== newMappedStatus) {
-      modifiedFields.push(`Le statut est passé de : "${oldMappedStatus}" → "${newMappedStatus}"`);
+      modifiedFields.push(`a modifié le staut : ("${oldMappedStatus}" → "${newMappedStatus}")`);
       if (status === 'cancelled') {
-        modifiedFields.push(`Raison de l'annulation : "${oldSale.cancelled_reason || ''}" → "${motif}"`);
+        modifiedFields.push(`Commentaire de l'annulation : "${oldSale.cancelled_reason || ''}" → "${motif}"`);
       }
     }
 
@@ -820,7 +820,7 @@ exports.auditeSale = async (req, res) => {
         actorId,
         actorName: await getActorName(req),
         changedColumns: modifiedFields,
-        commentaire: `Vente ${audite ? 'auditée' : 'désauditée'}`
+        commentaire: `a audité cette vente, commentaire audite : "${audite_commentaire || ''}"`,
       });
     }
 

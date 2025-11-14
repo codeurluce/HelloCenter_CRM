@@ -5,7 +5,7 @@ import {
   ClipboardPlus,
   ClipboardX,
   ClipboardPen,
-  Headphones
+  Headphones,
 } from "lucide-react";
 import dayjs from "dayjs";
 import axiosInstance from "../../api/axiosInstance";
@@ -49,7 +49,7 @@ if (!isOpen) return null;
     return <ClipboardPen className="text-purple-500" size={18} />;
   case "SUPPRESSION":
     return <ClipboardX className="text-red-500" size={18} />;
-  case "AUDIT":
+  case "AUDITION":
     return <Headphones className="text-green-500" size={18} />;
   default:
     return <Clock className="text-gray-400" size={18} />;
@@ -81,7 +81,7 @@ if (!isOpen) return null;
                 {/* Texte */}
                 <div className="flex-1">
                   <p className="text-sm text-gray-700">
-                    <span className="font-semibold">{h.actor_name}</span> [ {h.action} ] {h.commentaire}
+                    <span className="font-semibold">[ {h.action} ] </span> {h.actor_name}  {h.commentaire}
                   </p>
                   <p className="text-xs text-gray-400">
                     {dayjs(h.created_at).format("DD/MM/YYYY HH:mm:ss")}
