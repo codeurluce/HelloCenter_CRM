@@ -39,6 +39,12 @@ const FiltreSalesList = ({
   const [showExport, setShowExport] = useState(false);
   const [selectedSaleId, setSelectedSaleId] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [customStartDate, setCustomStartDate] = useState("");
+  const [customEndDate, setCustomEndDate] = useState("");
+  const [tempStartDate, setTempStartDate] = useState("");
+  const [tempEndDate, setTempEndDate] = useState("");
+  const [customLoading, setCustomLoading] = useState(false);
+
 
   const openModal = (id) => {
     setSelectedSaleId(id);
@@ -70,6 +76,7 @@ const FiltreSalesList = ({
           saleTime <= lastDayOfWeek.getTime()
         );
       }
+
       case "month": {
         const firstDayOfMonth = new Date(
           now.getFullYear(),
@@ -83,6 +90,15 @@ const FiltreSalesList = ({
         ).setHours(23, 59, 59, 999);
         return saleTime >= firstDayOfMonth && saleTime <= lastDayOfMonth;
       }
+
+      case "personalize":
+        if (!customStartDate || !customEndDate) return true;
+
+        const start = new Date(customStartDate).setHours(0, 0, 0, 0);
+        const end = new Date(customEndDate).setHours(23, 59, 59, 999);
+
+        return saleTime >= start && saleTime <= end;
+
       case "all":
       default:
         return true;
@@ -166,7 +182,43 @@ const FiltreSalesList = ({
             <option value="today">Aujourd'hui</option>
             <option value="week">Cette semaine</option>
             <option value="month">Ce mois</option>
+            <option value="personalize">personnalisé</option>
           </select>
+          {dateFilter === "personalize" && (
+            <div className="flex items-center gap-2">
+              <input
+                type="date"
+                value={tempStartDate}
+                onChange={(e) => setTempStartDate(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg"
+              />
+
+              <span>au</span>
+
+              <input
+                type="date"
+                value={tempEndDate}
+                onChange={(e) => setTempEndDate(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg"
+              />
+              <button
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg"
+                onClick={() => {
+                  if (!tempStartDate || !tempEndDate) return; // sécurité
+                  setCustomLoading(true); // active le spinner
+
+                  // simuler un petit délai (ex: 500ms) pour UX
+                  setTimeout(() => {
+                    setCustomStartDate(tempStartDate);
+                    setCustomEndDate(tempEndDate);
+                    setCustomLoading(false); // désactive le spinner
+                  }, 500);
+                }}
+              >
+                Filtrer
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Bouton Nouvelle Vente */}
@@ -201,14 +253,14 @@ const FiltreSalesList = ({
 
         {/* Tableau */}
         <div className="overflow-x-auto">
-          {loading ? (
+          {(loading || customLoading) ? (
             <div className="text-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600 mx-auto mb-4"></div>
               <p>Chargement des ventes...</p>
             </div>
           ) : filteredSales.length === 0 ? (
             <div className="text-center py-12 text-gray-500">
-              Aucune vente trouvée
+              Aucune vente trouvée pour cette periode
             </div>
           ) : (
             <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm bg-white">
