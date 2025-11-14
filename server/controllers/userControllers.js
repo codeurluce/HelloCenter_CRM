@@ -372,10 +372,18 @@ const disconnectAgentbyAdmin = async (req, res) => {
     // Marquer l’agent comme déconnecté
     await db.query("UPDATE users SET is_connected = FALSE WHERE id = $1", [userId]);
 
+    // Récupérer le nom complet de l'admin depuis la table users
+    const adminResult = await db.query(
+      'SELECT firstname, lastname FROM users WHERE id = $1',
+      [requester.id]
+    );
+    const admin = adminResult.rows[0];
+    const adminName = `${admin.firstname} ${admin.lastname}`;
+
     // Ajouter un événement dans l’historique des connexions
     await db.query(
-      "INSERT INTO agent_connections_history (user_id, event_type) VALUES ($1, 'disconnectByAdmin')",
-      [userId]
+      "INSERT INTO agent_connections_history (user_id, event_type, admin_id, admin_name) VALUES ($1, 'disconnectByAdmin', $2, $3)",
+      [userId, requester.id, adminName]
     );
 
     res.json({ success: true, message: "Déconnexion réussie" });

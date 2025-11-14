@@ -17,6 +17,7 @@ import { closeSession, startSession } from '../api/saveSessionToDB.js';
 import WeeklySalesChart from '../components/cards/WeeklySalesChart.jsx';
 import WeeklySalesChartAdmin from '../components/cards/WeeklySalesChartAdmin.jsx';
 import StatGroup from '../components/cards/StatGroup.js';
+import AdminSettings from '../components/componentsdesongletsAdmins/AdminSettings.jsx';
 
 
 const ManagerDashboard = () => {
@@ -157,7 +158,7 @@ const ManagerDashboard = () => {
             {activeItem === 'files' && <AdminFichiersPanel />}
             {activeItem === 'sessions' && <AdminSessionsUsers />}
             {/* {activeItem === 'administration' && <AdministrationUsers />} */}
-            {activeItem === 'settings' && <p> doit contenir les paramètres de l'administrateur</p>}
+            {activeItem === 'settings' && <AdminSettings />}
           </main>
         </div>
       </div>
