@@ -774,11 +774,11 @@ exports.updateSaleStatus = async (req, res) => {
 // Mettre a jour le champ audite d'une vente.
 exports.auditeSale = async (req, res) => {
   const { id } = req.params;
-  const { audite } = req.body;
-  const actorId = req.user.id;
+  const { audite, audite_commentaire } = req.body;
+  const actorId = parseInt(req.user.id, 10);
+  const actorName = await getActorName(req);
 
   try {
-
     const oldSaleRes = await db.query('SELECT * FROM sales WHERE id=$1', [id]);
     if (oldSaleRes.rows.length === 0) {
       return res.status(404).json({ message: "Vente introuvable" });
@@ -787,14 +787,14 @@ exports.auditeSale = async (req, res) => {
 
     const { rows } = await db.query(
       `UPDATE sales 
-       SET audite = $1, 
-           date_audite = CASE 
-                           WHEN $1 = true THEN NOW()
-                           ELSE NULL
-                         END
-       WHERE id = $2 
+       SET audite = $1,
+           date_audite = CASE WHEN $1 = true THEN NOW() ELSE NULL END,
+           audite_commentaire = $2,
+           audite_by_id = CASE WHEN $1 = true THEN $3::integer ELSE NULL END,
+           audite_by_name = CASE WHEN $1 = true THEN $4 ELSE NULL END
+       WHERE id = $5
        RETURNING *`,
-      [audite, id]
+      [audite, audite_commentaire, actorId, actorName, id]
     );
 
     const newSale = rows[0];
@@ -803,8 +803,15 @@ exports.auditeSale = async (req, res) => {
     const modifiedFields = {};
     if (oldSale.audite !== newSale.audite) {
       modifiedFields['audite'] = [oldSale.audite, newSale.audite];
-      modifiedFields['date_audite'] = [oldSale.date_audite, newSale.date_audite];
-    }
+      modifiedFields['date_audite'] = [oldSale.date_audite, newSale.date_audite];}
+    
+    if (oldSale.audite_commentaire !== newSale.audite_commentaire) modifiedFields['audite_commentaire'] = [oldSale.audite_commentaire, newSale.audite_commentaire];
+    
+    if (oldSale.audite_by_id !== newSale.audite_by_id) 
+      modifiedFields['audite_by_id'] = [oldSale.audite_by_id, newSale.audite_by_id];
+    
+    if (oldSale.audite_by_name !== newSale.audite_by_name) 
+      modifiedFields['audite_by_name'] = [oldSale.audite_by_name, newSale.audite_by_name];
 
     if (Object.keys(modifiedFields).length) {
       await logSaleHistory({

@@ -535,27 +535,38 @@ const FiltreSalesList = ({
                                 <button
                                   className="px-3 py-1.5 rounded-lg border border-gray-100 text-black-600 hover:bg-gray-900 hover:text-white transition-transform hover:scale-105"
                                   title=""
-                                  onClick={() => {
-                                    Swal.fire({
+                                  onClick={async () => {
+                                    const { value: audite_commentaire } = await Swal.fire({
                                       title: "Auditer cette vente",
-                                      text:
-                                        "Voulez-vous marquer cette vente comme auditée ?",
+                                      input: "textarea",
+                                      inputPlaceholder: "Saisissez un commentaire...",
+                                      text: "Voulez-vous marquer cette vente comme auditée ?",
                                       icon: "warning",
                                       showCancelButton: true,
                                       confirmButtonColor: "#22c55e",
                                       cancelButtonColor: "#9ca3af",
                                       confirmButtonText: "Oui, auditer",
                                       cancelButtonText: "Fermer",
-                                    }).then((result) => {
-                                      if (result.isConfirmed) {
-                                        onAuditeSale(sale.id, "true");
+                                      inputValidator: (value) => {
+                                        if (!value) return "Vous devez saisir un commentaire !";
+                                      },
+                                    });
+                                    if (audite_commentaire) {
+                                      try {
+                                        await onAuditeSale(sale.id, true, audite_commentaire); // envoyer le commentaire au backend
                                         Swal.fire(
                                           "Auditée !",
                                           "La vente a été marquée comme auditée.",
                                           "success"
                                         );
+                                      } catch (err) {
+                                        Swal.fire(
+                                          "Erreur",
+                                          "Impossible de marquer la vente comme auditée.",
+                                          "error"
+                                        );
                                       }
-                                    });
+                                    }
                                   }}
                                 >
                                   <Headphones className="w-4 h-4" />

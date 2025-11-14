@@ -250,10 +250,11 @@ const VentesInfoPanel = ({ agentId }) => {
   };
 
   // Marquer une vente comme auditée
-  const handleAuditeSale = async (saleId, auditeValue = true) => {
+  const handleAuditeSale = async (saleId, auditeValue = true, auditeCommentaire = "") => {
     try {
       const response = await axiosInstance.put(`/sales/${saleId}/audit`, {
         audite: auditeValue,
+        audite_commentaire: auditeCommentaire,
       });
 
       // Met à jour le state local avec la réponse backend
