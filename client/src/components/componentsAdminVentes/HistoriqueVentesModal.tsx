@@ -44,7 +44,7 @@ if (!isOpen) return null;
     switch (action) {
   case "CREATION":
     return <ClipboardPlus className="text-blue-500" size={18} />;
-  case "MODIFICATION":
+  case "MODIFICATION_VENTE":
   case "MODIFICATION_STATUT":
     return <ClipboardPen className="text-purple-500" size={18} />;
   case "SUPPRESSION":

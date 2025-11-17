@@ -522,7 +522,7 @@ exports.updateSale = async (req, res) => {
     if (modifiedFields.length) {
       await logSaleHistory({
         saleId,
-        action: 'MODIFICATION',
+        action: 'MODIFICATION_VENTE',
         actorId: req.user.id,
         actorName: await getActorName(req),
         commentaire: `a modifié la vente, Champs modifiés : ${modifiedFields.join(', ')}`,
@@ -673,7 +673,7 @@ exports.updateSaleMobile = async (req, res) => {
     if (modifiedFields.length) {
       await logSaleHistory({
         saleId,
-        action: 'MODIFICATION',
+        action: 'MODIFICATION_VENTE',
         actorId: req.user.id,
         actorName: await getActorName(req),
         commentaire: modifiedFields.join(', '),
