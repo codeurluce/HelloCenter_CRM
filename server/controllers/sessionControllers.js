@@ -919,186 +919,122 @@ exports.getSessions = async (req, res) => {
 };
 
 
+exports.getAllHistorySessions = async (req, res) => {
+  const userId = req.params.id;
+  const { from, to, type } = req.query; // filtre optionnel : date et type (connexion, deconnexion, status_change, etc.)
 
+  try {
+    // === Préparer filtres ===
+    let sessionQuery = `SELECT * FROM session_agents WHERE user_id = $1`;
+    let connQuery = `SELECT * FROM agent_connections_history WHERE user_id = $1`;
+    const paramsSessions = [userId];
+    const paramsConns = [userId];
 
+    // === Filtrer par date ===
+    if (from) {
+      paramsSessions.push(from + " 00:00:00");
+      paramsConns.push(from + " 00:00:00");
+      sessionQuery += ` AND start_time >= $${paramsSessions.length}`;
+      connQuery += ` AND event_time >= $${paramsConns.length}`;
+    } else {
+      // Par défaut aujourd'hui
+      sessionQuery += ` AND start_time >= CURRENT_DATE`;
+      connQuery += ` AND event_time >= CURRENT_DATE`;
+    }
 
+    if (to) {
+      paramsSessions.push(to + " 23:59:59");
+      paramsConns.push(to + " 23:59:59");
+      sessionQuery += ` AND start_time <= $${paramsSessions.length}`;
+      connQuery += ` AND event_time <= $${paramsConns.length}`;
+    }
 
+    // === Récupérer les sessions ===
+    sessionQuery += ` ORDER BY start_time ASC`;
+    const sessionsResult = await db.query(sessionQuery, paramsSessions);
+    const sessions = sessionsResult.rows;
 
+    // === Récupérer les connexions ===
+    connQuery += ` ORDER BY event_time ASC`;
+    const connsResult = await db.query(connQuery, paramsConns);
+    const conns = connsResult.rows;
 
+    let history = [];
+    let lastStatus = null;
 
+    // === Transformer les sessions en événements lisibles ===
+    sessions.forEach((s) => {
+      let narrative = "";
+      const isForcedPause = s.pause_type && s.pause_type.toLowerCase().includes("forcée par");
 
+      // --- Cas 1 : pause forcée (toujours afficher même si statut identique)
+      if (isForcedPause) {
+        narrative = `L'agent a été forcé à passer en "${s.status}" (${s.pause_type}).`;
+      }
 
+      // --- Cas 2 : première entrée (aucun statut précédent)
+      else if (!lastStatus) {
+        narrative = `L'agent est passé en "${s.status}".`;
+        if (s.pause_type) narrative += ` (pause : ${s.pause_type})`;
+      }
 
+      // --- Cas 3 : changement réel de statut
+      else if (lastStatus !== s.status) {
+        narrative = `L'agent est passé de "${lastStatus}" à "${s.status}".`;
+        if (s.pause_type) narrative += ` (pause : ${s.pause_type})`;
+      }
 
+      // --- Cas 4 : statut identique → on ignore l’entrée
+      else {
+        lastStatus = s.status; // on met à jour mais on n’ajoute rien
+        return;
+      }
 
+      // ---- On ajoute dans l’historique uniquement les cas valides
+      if (!type || type === "status_change") {
+        history.push({
+          timestamp: s.start_time,
+          type: "status_change",
+          status_before: lastStatus,
+          status_after: s.status,
+          pause_type: s.pause_type,
+          admin_id: null,
+          admin_name: null,
+          narrative
+        });
+      }
 
+      lastStatus = s.status;
+    });
 
+    // === Transformer les connexions en événements ===
+    conns.forEach((c) => {
+      let event = null;
+      switch (c.event_type) {
+        case "connect":
+          event = { timestamp: c.event_time, type: "connexion", narrative: "L'agent s'est connecté.", admin_id: null, admin_name: null };
+          break;
+        case "disconnect":
+          event = { timestamp: c.event_time, type: "deconnexion", narrative: "L'agent s'est déconnecté.", admin_id: null, admin_name: null };
+          break;
+        case "disconnectByAdmin":
+          event = { timestamp: c.event_time, type: "deconnexion_forcee", narrative: `L'agent a été déconnecté par ${c.admin_name}.`, admin_id: c.admin_id, admin_name: c.admin_name };
+          break;
+        case "auto_disconnect":
+          event = { timestamp: c.event_time, type: "deconnexion_systeme", narrative: "L'agent a été déconnecté automatiquement pour inactivité.", admin_id: null, admin_name: null };
+          break;
+      }
+      if (event && (!type || event.type === type)) history.push(event);
+    });
 
+    // === Tri descendant par date ===
+    history.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
+    res.json(history);
 
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+};
 
-
-
-// exports.getUserDayTotal = async (req, res) => {
-//   try {
-//     const { userId } = req.params;
-//     const startOfDay = dayjs().startOf("day").toISOString();
-//     const endOfDay = dayjs().endOf("day").toISOString();
-
-//     const result = await db.query(
-//       `SELECT SUM(EXTRACT(EPOCH FROM (
-//           COALESCE(end_time, NOW()) - start_time
-//       ))) AS total_seconds
-//        FROM session_agents
-//        WHERE user_id = $1
-//          AND start_time >= $2
-//          AND start_time <= $3`,
-//       [userId, startOfDay, endOfDay]
-//     );
-
-//     res.json({
-//       user_id: userId,
-//       total: result.rows[0].total_seconds ? parseInt(result.rows[0].total_seconds, 10) : 0
-//     });
-//   } catch (error) {
-//     console.error("Erreur getUserDayTotal:", error);
-//     res.status(500).json({ message: "Erreur serveur" });
-//   }
-// };
-
-// exports.getActiveSession = async (req, res) => {
-//   try {
-//     const { userId } = req.params;
-//     const result = await db.query(
-//       `SELECT * FROM session_agents
-//        WHERE user_id = $1 AND end_time IS NULL
-//        ORDER BY start_time DESC
-//        LIMIT 1`,
-//       [userId]
-//     );
-
-//     if (result.rows.length === 0) {
-//       return res.json({
-//         user_id: id,
-//         status: 'Inconnu',
-//         start_time: null,
-//         end_time: null
-//       });
-//     }
-//     res.json({
-//       user_id: result.rows[0].user_id,
-//       status: result.rows[0].status,
-//       start_time: result.rows[0].start_time,
-//       end_time: result.rows[0].end_time
-//     });
-
-//   } catch (error) {
-//     console.error("Erreur getActiveSession:", error);
-//     res.status(500).json({ message: "Erreur serveur" });
-//   }
-// };
-
-// 📌 Récupérer l’historique des sessions d’un agent
-// 📌 Changer de statut (Disponible → Pause → Indispo etc.)
-// POST /api/sessions/change
-// exports.changeStatus = async (req, res) => {
-//   const { user_id, new_status } = req.body;
-
-//   try {
-//     // 1. Fermer la session active si elle existe
-//     const { rows: activeRows } = await db.query(
-//       `SELECT * FROM session_agents WHERE user_id = $1 AND end_time IS NULL ORDER BY start_time DESC LIMIT 1`,
-//       [user_id]
-//     );
-
-//     if (activeRows.length > 0) {
-//       await db.query(
-//         `UPDATE session_agents SET end_time = NOW() WHERE id = $1`,
-//         [activeRows[0].id]
-//       );
-//     }
-
-//     // 2. Créer une nouvelle session avec le nouveau statut
-//     const { rows: newSession } = await db.query(
-//       `INSERT INTO session_agents (user_id, status, start_time) 
-//        VALUES ($1, $2, NOW()) 
-//        RETURNING *`,
-//       [user_id, new_status]
-//     );
-
-//     res.json(newSession[0]);
-//   } catch (error) {
-//     console.error("❌ Erreur changeStatus:", error);
-//     res.status(500).json({ error: "Erreur serveur lors du changement de statut." });
-//   }
-// };
-// exports.getUserHistory = async (req, res) => {
-//   const { id } = req.params;
-//   const { period } = req.query; // ex: ?period=today | week | month | all
-
-//   let query = `SELECT * FROM session_agents WHERE user_id = $1`;
-//   const params = [id];
-
-//   if (period === 'today') {
-//     query += ` AND DATE(start_time) = CURRENT_DATE`;
-//   } else if (period === 'week') {
-//     query += ` AND start_time >= date_trunc('week', CURRENT_DATE)`;
-//   } else if (period === 'month') {
-//     query += ` AND start_time >= date_trunc('month', CURRENT_DATE)`;
-//   }
-
-//   query += ` ORDER BY start_time DESC`;
-
-//   try {
-//     const { rows } = await db.query(query, params);
-//     res.json(rows);
-//   } catch (error) {
-//     console.error("Erreur getUserHistory:", error);
-//     res.status(500).json({ message: "Erreur serveur" });
-//   }
-// };
-
-// exports.getUserTodayAggregates = async (req, res) => {
-//   const { id } = req.params;
-//   try {
-//     // 1. Cumul des temps par statut
-//     const q = `
-//       SELECT status AS status,
-//              SUM(EXTRACT(EPOCH FROM (COALESCE(end_time, NOW()) - start_time)))::bigint AS seconds
-//       FROM session_agents
-//       WHERE user_id = $1
-//         AND DATE(start_time) = CURRENT_DATE
-//       GROUP BY status
-//     `;
-//     const { rows } = await db.query(q, [id]);
-
-//     const totals = {};
-//     for (const r of rows) totals[r.status] = Number(r.seconds) || 0;
-
-//     const presence_total = Object.values(totals).reduce((a, b) => a + b, 0);
-
-//     // 2. Statut en cours (dernière session sans end_time)
-
-//     const q2 = `
-//       SELECT status AS status, start_time
-//       FROM session_agents
-//       WHERE user_id = $1 
-//         AND DATE(start_time) = CURRENT_DATE
-//         AND end_time IS NULL
-//       ORDER BY start_time DESC
-//       LIMIT 1
-//     `;
-//     const { rows: activeRows } = await db.query(q2, [id]);
-//     const active = activeRows[0] || null;
-
-//     return res.json({
-//       totals,          // ex: { "Disponible": 1080, "Pause Café": 300 }
-//       presence_total,  // somme
-//       active,          // ex: { status: "Disponible", start_time: "2025-08-21T12:05:00Z" }
-//       server_time: new Date().toISOString(),
-//     });
-//   } catch (e) {
-//     console.error("getUserTodayAggregates error:", e);
-//     res.status(500).json({ message: "Erreur serveur", error: e.message });
-//   }
-// };

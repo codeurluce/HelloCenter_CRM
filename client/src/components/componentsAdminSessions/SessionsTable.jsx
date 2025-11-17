@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { RefreshCw, Eye, LogOut, Pause, } from "lucide-react";
+import { RefreshCw, Eye, LogOut, Pause, FileText, } from "lucide-react";
 import SessionAgentDetailsModal from "./SessionAgentDetailsModal";
+import SessionAgentHistoryModal from "./SessionAgentHistoryModal.tsx";
 import axiosInstance from "../../api/axiosInstance";
 import Swal from "sweetalert2";
 import { toast } from "react-toastify"
@@ -84,6 +85,10 @@ const handleDisconnect = async (agentId, firstname, lastname) => {
 export default function SessionsTable({ sessions, loading, refresh }) {
   const [tick, setTick] = useState(0);
   const [selectedAgent, setSelectedAgent] = useState(null);
+
+  const [historyAgent, setHistoryAgent] = useState(null);
+  const [historyData, setHistoryData] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => setTick(t => t + 1), 1000);
@@ -181,6 +186,21 @@ export default function SessionsTable({ sessions, loading, refresh }) {
                     </span>
                   </div>
 
+                  {/* Bouton Voir Historiqe */}
+                  <div className="relative group">
+                    <button
+                      onClick={() => setHistoryAgent(s)}
+                      title=""
+                      className="px-3 py-1.5 rounded-lg border border-green-100 text-green-600 hover:bg-green-600 hover:text-white 
+                                                        transition-transform transform focus:outline-none focus:ring-2 focus:ring-offset-1 hover:scale-105"
+                    >
+                      <FileText className="w-4 h-4" />
+                    </button>
+                    <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-green-600 text-white text-xs whitespace-nowrap">
+                      Voir l'historique
+                    </span>
+                  </div>
+
                   {/* Bouton Forcer la pause */}
                   <div className="relative group">
                     <button
@@ -209,17 +229,26 @@ export default function SessionsTable({ sessions, loading, refresh }) {
                       Deconnexion
                     </span>
                   </div>
-                  {selectedAgent && (
-                    <SessionAgentDetailsModal
-                      agent={selectedAgent}
-                      onClose={() => setSelectedAgent(null)}
-                    />)}
                 </td>
               </tr>
             ))
           )}
         </tbody>
       </table>
+      {selectedAgent && (
+        <SessionAgentDetailsModal
+          agent={selectedAgent}
+          onClose={() => setSelectedAgent(null)}
+        />
+      )}
+
+      {historyAgent && (
+        <SessionAgentHistoryModal
+          agent={historyAgent}
+          isOpen={!!historyAgent}   // true si on a sélectionné un agent
+          onClose={() => setHistoryAgent(null)}
+        />
+      )}
     </div>
   );
 }

@@ -15,7 +15,7 @@ router.get('/user/live', sessionControllers.getLiveSessionAgents); // 📌 Récu
 router.get('/user/live/:userId', sessionControllers.getSessionAgent); // 📌 Récupère la session active d’un agent spécifique par userId // Méthode : GET /api/sessions/user/live/:userId
 router.get('/user/agent_connection_details', sessionControllers.getDailyConnectionTimes); // 📌 Récupère le détail des connexions journalières des agents // Méthode : GET /api/sessions/user/agent_connection_details
 router.get('/user/:id/status-today', sessionControllers.getUserStatusToday); // 📌 Récupère le statut et présence totale d’un utilisateur pour la journée en cours // Méthode : GET /api/sessions/user/:id/status-today
-
+router.get('/user/:id/all-history', sessionControllers.getAllHistorySessions)
 
 // Route POST : création de données
 
