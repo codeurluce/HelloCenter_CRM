@@ -7,12 +7,16 @@ import {
   Plus,
   Upload,
   Headphones,
-  FileText
+  FileText,
+  FileTextIcon,
+  Search,
+  LucideFileText
 } from "lucide-react";
 import { BadgeCheck, X as BadgeX } from "lucide-react";
 import Swal from "sweetalert2";
 import ExportModal from "../componentsAdminVentes/ExportModalVentes";
 import HistoriqueVentesModal from "../componentsAdminVentes/HistoriqueVentesModal.tsx"
+import SalesAuditInfoModal from "./SalesAuditInfoModal.jsx";
 
 const FiltreSalesList = ({
   sales,
@@ -44,6 +48,7 @@ const FiltreSalesList = ({
   const [tempStartDate, setTempStartDate] = useState("");
   const [tempEndDate, setTempEndDate] = useState("");
   const [customLoading, setCustomLoading] = useState(false);
+  const [auditModalSale, setAuditModalSale] = useState(null);
 
 
   const openModal = (id) => {
@@ -393,7 +398,8 @@ const FiltreSalesList = ({
                       {/* Actions */}
                       <td className="py-3 px-4">
                         <div className="flex justify-center gap-2 items-center">
-                          {/* Voir */}
+
+                          {/* Bouton Voir Details Ventes */}
                           <div className="relative group">
                             <button
                               title=""
@@ -418,6 +424,22 @@ const FiltreSalesList = ({
                               Détails Vente
                             </span>
                           </div>
+
+                          {/* Bouton Voir Details Audit */}
+                          {(!isAdminOrManager) && (
+                            <div className="relative group">
+                              <button
+                                title=""
+                                type="button"
+                                onClick={() => { setAuditModalSale(sale) }}
+                                className="px-3 py-1.5 rounded-lg border border-green-100 text-green-600 hover:bg-green-600 hover:text-white transition-transform hover:scale-105"
+                              >
+                                <FileTextIcon className="w-4 h-4" />
+                              </button>
+                              <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-green-600 text-white text-xs whitespace-nowrap">
+                                Détails audit
+                              </span>
+                            </div>)}
 
                           {/* Modifier / Supprimer seulement si vente en attente */}
                           {(isAdminOrManager) && (
@@ -529,52 +551,63 @@ const FiltreSalesList = ({
                                   Annuler la vente
                                 </span>
                               </div>
+                              <>
 
-
-                              <div className="relative group">
-                                <button
-                                  className="px-3 py-1.5 rounded-lg border border-gray-100 text-black-600 hover:bg-gray-900 hover:text-white transition-transform hover:scale-105"
-                                  title=""
-                                  onClick={async () => {
-                                    const { value: audite_commentaire } = await Swal.fire({
-                                      title: "Auditer cette vente",
-                                      input: "textarea",
-                                      inputPlaceholder: "Saisissez un commentaire...",
-                                      text: "Voulez-vous marquer cette vente comme auditée ?",
-                                      icon: "warning",
-                                      showCancelButton: true,
-                                      confirmButtonColor: "#22c55e",
-                                      cancelButtonColor: "#9ca3af",
-                                      confirmButtonText: "Oui, auditer",
-                                      cancelButtonText: "Fermer",
-                                      inputValidator: (value) => {
-                                        if (!value) return "Vous devez saisir un commentaire !";
-                                      },
-                                    });
-                                    if (audite_commentaire) {
-                                      try {
-                                        await onAuditeSale(sale.id, true, audite_commentaire); // envoyer le commentaire au backend
-                                        Swal.fire(
-                                          "Auditée !",
-                                          "La vente a été marquée comme auditée.",
-                                          "success"
-                                        );
-                                      } catch (err) {
-                                        Swal.fire(
-                                          "Erreur",
-                                          "Impossible de marquer la vente comme auditée.",
-                                          "error"
-                                        );
-                                      }
-                                    }
-                                  }}
-                                >
-                                  <Headphones className="w-4 h-4" />
-                                </button>
-                                <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-gray-900 text-white text-xs whitespace-nowrap">
-                                  Auditer
-                                </span>
-                              </div>
+                                {/* ADMIN – vente PAS auditée → bouton Auditer */}
+                                {!sale.audite && (
+                                  <div className="relative group">
+                                    <button
+                                      className="px-3 py-1.5 rounded-lg border border-gray-100 text-black-600 hover:bg-gray-900 hover:text-white transition-transform hover:scale-105"
+                                      title=""
+                                      onClick={async () => {
+                                        const { value: audite_commentaire } = await Swal.fire({
+                                          title: "Auditer cette vente",
+                                          input: "textarea",
+                                          inputPlaceholder: "Saisissez un commentaire...",
+                                          text: "Voulez-vous marquer cette vente comme auditée ?",
+                                          icon: "warning",
+                                          showCancelButton: true,
+                                          confirmButtonColor: "#22c55e",
+                                          cancelButtonColor: "#9ca3af",
+                                          confirmButtonText: "Oui, auditer",
+                                          cancelButtonText: "Fermer",
+                                          inputValidator: (value) => {
+                                            if (!value) return "Vous devez saisir un commentaire !";
+                                          },
+                                        });
+                                        if (audite_commentaire) {
+                                          try {
+                                            await onAuditeSale(sale.id, true, audite_commentaire); // envoyer le commentaire au backend
+                                            Swal.fire(
+                                              "Auditée !",
+                                              "La vente a été marquée comme auditée.",
+                                              "success"
+                                            );
+                                          } catch (err) {
+                                            Swal.fire(
+                                              "Erreur",
+                                              "Impossible de marquer la vente comme auditée.",
+                                              "error"
+                                            );
+                                          }
+                                        }
+                                      }}
+                                    >
+                                      <Headphones className="w-4 h-4" />
+                                    </button>
+                                    <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-gray-900 text-white text-xs whitespace-nowrap">
+                                      Auditer
+                                    </span>
+                                  </div>)}
+                                {/* ADMIN – vente DÉJA auditée → bouton Voir détails audit */}
+                                {sale.audite && (
+                                  <button
+                                    onClick={() => setAuditModalSale(sale)}
+                                    className="px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-900 hover:text-white transition"
+                                  >
+                                    <LucideFileText className="w-4 h-4" />
+                                  </button>
+                                )}</>
 
                               <div className="relative group">
                                 <button
@@ -612,6 +645,13 @@ const FiltreSalesList = ({
           isOpen={showExport}
           sales={filteredSales}
           onClose={() => setShowExport(false)}
+        />
+      )}
+
+      {auditModalSale && (
+        <SalesAuditInfoModal
+          sale={auditModalSale}
+          onClose={() => setAuditModalSale(null)}
         />
       )}
     </div>
