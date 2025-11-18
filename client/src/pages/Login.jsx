@@ -34,17 +34,10 @@ const Login = ({ onLogin }) => {
       // localStorage.setItem('mustChangePassword', mustChangePassword);
       // localStorage.setItem('user', JSON.stringify(user));
       setUser(user);
-  loginAgent(user, mustChangePassword);
+    
+    loginAgent(user, mustChangePassword);
       // ⚡ Notifie le backend que l'agent est connecté
-      if (user) {
-        try {
-          await axiosInstance.post('/agent/connect', { userId: user.id });
-
-        } catch (err) {
-          console.error("Impossible de notifier la connexion de l'agent", err.response?.data || err.message);
-        }
-      }
-
+      
       if (onLogin) onLogin(token, user, mustChangePassword);
 
       if (mustChangePassword) {
