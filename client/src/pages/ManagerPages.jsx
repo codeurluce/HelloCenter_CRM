@@ -18,6 +18,7 @@ import WeeklySalesChart from '../components/cards/WeeklySalesChart.jsx';
 import WeeklySalesChartAdmin from '../components/cards/WeeklySalesChartAdmin.jsx';
 import StatGroup from '../components/cards/StatGroup.js';
 import AdminSettings from '../components/componentsdesongletsAdmins/AdminSettings.jsx';
+import Footer from '../components/dashbords/Footer.jsx';
 
 
 const ManagerDashboard = () => {
@@ -160,6 +161,7 @@ const ManagerDashboard = () => {
             {/* {activeItem === 'administration' && <AdministrationUsers />} */}
             {activeItem === 'settings' && <AdminSettings />}
           </main>
+           <Footer />
         </div>
       </div>
     </AgentStatusProvider>
