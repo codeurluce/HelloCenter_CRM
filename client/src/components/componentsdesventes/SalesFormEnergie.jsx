@@ -1,7 +1,7 @@
 import React from 'react';
 import { X, Send } from 'lucide-react';
 
-const partenaires = ['Partenaire A', 'Partenaire B', 'Partenaire C'];
+const partenaires = ['Artesia', 'Partenaire A', 'Partenaire B', 'Partenaire C'];
 
 // Formulaire Vente Énergie
 const SalesFormEnergie = ({ formData, setFormData, onSubmit, onClose }) => {
