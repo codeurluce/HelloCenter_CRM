@@ -69,7 +69,7 @@ const SalesFormEnergie = ({ formData, setFormData, onSubmit, onClose }) => {
         </div>
 
 
-<div>
+        <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">civilite *</label>
           <select
             name="civilite"
@@ -288,6 +288,23 @@ const SalesFormEnergie = ({ formData, setFormData, onSubmit, onClose }) => {
             <option value="MES">MES</option>
           </select>
         </div>
+
+        {formData.created_at !== undefined && (
+          <div className="">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Date de création
+            </label>
+            <input
+              type="datetime-local"
+              name="created_at"
+              value={formData.created_at}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, created_at: e.target.value }))
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+            />
+          </div>
+        )}
 
         <div className="md:col-span-2">
           <label className="block text-sm font-medium text-gray-700 mb-2">Ajouter fichier</label>

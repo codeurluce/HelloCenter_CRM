@@ -440,7 +440,7 @@ exports.updateSale = async (req, res) => {
       puissanceCompteur: puissance_compteur,
       partenaire,
       etatContrat: etat_contrat,
-      status = 'pending',
+      created_at,
       fichier
     } = req.body;
 
@@ -452,8 +452,8 @@ exports.updateSale = async (req, res) => {
          adresse_client = $8,         code_postal_client = $9,         ref_client = $10,
          ref_contrat = $11,         energie = $12,         pdl = $13,
          pce = $14,         nature_offre = $15,         puissance_compteur = $16,
-         partenaire = $17,         etat_contrat = $18,         status = $19,
-         fichier = $20,         updated_at = NOW()
+         partenaire = $17,         etat_contrat = $18,   
+          created_at = $19,     fichier = $20,    updated_at = NOW()
        WHERE id = $21
        RETURNING *`,
       [
@@ -475,7 +475,7 @@ exports.updateSale = async (req, res) => {
         puissance_compteur,
         partenaire,
         etat_contrat,
-        status,
+        created_at,
         fichier,
         saleId
       ]
@@ -488,7 +488,7 @@ exports.updateSale = async (req, res) => {
     const fieldsToCheck = [
       'civilite', 'nomClient', 'prenomClient', 'emailClient', 'numMobile', 'numFixe',
       'villeClient', 'adresseClient', 'codePostal', 'refClient', 'refContrat',
-      'energie', 'pdl', 'pce', 'natureOffre', 'puissanceCompteur', 'partenaire', 'etatContrat', 'status', 'fichier'
+      'energie', 'pdl', 'pce', 'natureOffre', 'puissanceCompteur', 'partenaire', 'etatContrat', 'created_at', 'fichier'
     ];
 
     const keyMap = {
@@ -504,19 +504,34 @@ exports.updateSale = async (req, res) => {
       refContrat: 'ref_contrat',
       natureOffre: 'nature_offre',
       puissanceCompteur: 'puissance_compteur',
-      etatContrat: 'etat_contrat'
+      etatContrat: 'etat_contrat',
+      created_at: 'created_at'
     };
 
     // Calculer les champs modifiés
-    const modifiedFields = fieldsToCheck
-      .map(f => {
-        const dbKey = keyMap[f] || f;
-        if (oldSale[dbKey] != req.body[f]) {
-          return `${f}: "${oldSale[dbKey]}" → "${req.body[f]}"`;
-        }
-        return null;
-      })
-      .filter(Boolean);
+const modifiedFields = fieldsToCheck
+  .map(f => {
+    const dbKey = keyMap[f] || f;
+
+    if (f === 'created_at') {
+      const oldDate = oldSale.created_at
+        ? new Date(oldSale.created_at).toISOString().replace('T', ' ').slice(0, 19)
+        : null;
+      const newDate = req.body.created_at
+        ? new Date(req.body.created_at).toISOString().replace('T', ' ').slice(0, 19)
+        : null;
+      if (oldDate !== newDate) {
+        return `Date création: "${oldDate}" → "${newDate}"`;
+      }
+      return null;
+    }
+
+    if (oldSale[dbKey] != req.body[f]) {
+      return `${f}: "${oldSale[dbKey]}" → "${req.body[f]}"`;
+    }
+    return null;
+  })
+  .filter(Boolean);
 
     // Log dans sales_history si champs modifiés
     if (modifiedFields.length) {
@@ -571,7 +586,7 @@ exports.updateSaleMobile = async (req, res) => {
       free_agent_account,
       etat_cmd,
       ref_cmd,
-      status = "pending",
+      created_at,
     } = req.body;
 
     const finalPrixOffre = prixOffre === "Autre" ? prixOffreAutre : prixOffre;
@@ -600,7 +615,7 @@ exports.updateSaleMobile = async (req, res) => {
         free_agent_account = $20,
         etat_cmd = $21,
         ref_cmd = $22,
-        status = $23,
+        created_at = $23,
         updated_at = NOW()
       WHERE id = $24
       RETURNING *`,
@@ -627,7 +642,7 @@ exports.updateSaleMobile = async (req, res) => {
         free_agent_account,
         etat_cmd,
         ref_cmd,
-        status,
+        created_at,
         saleId,
       ]
     );
@@ -637,7 +652,7 @@ exports.updateSaleMobile = async (req, res) => {
       'civilite', 'nomClient', 'prenomClient', 'emailClient', 'numMobile', 'numFixe',
       'villeClient', 'adresseClient', 'codePostal', 'engagement', 'typeTechnologie',
       'prixOffre', 'ancienOperateur', 'pto', 'optionSmartphone', 'autresOptions',
-      'rio', 'iban', 'provenanceFichier', 'free_agent_account', 'etat_cmd', 'ref_cmd', 'status'
+      'rio', 'iban', 'provenanceFichier', 'free_agent_account', 'etat_cmd', 'ref_cmd', 'created_at'
     ];
 
     const keyMap = {
@@ -655,6 +670,7 @@ exports.updateSaleMobile = async (req, res) => {
       optionSmartphone: 'option_smartphone',
       autresOptions: 'autres_options',
       provenanceFichier: 'provenance_fichier',
+      created_at: 'created_at'
     };
 
     // 3️⃣ Calculer les champs modifiés

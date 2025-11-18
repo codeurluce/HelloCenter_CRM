@@ -37,21 +37,21 @@ const VentesInfoPanel = ({ agentId }) => {
 
 
   useEffect(() => {
-  const ficheEnCours = localStorage.getItem("ficheEnCoursVente");
-  const storedFormType = localStorage.getItem("formType");
-  const storedFormData = localStorage.getItem("formData");
+    const ficheEnCours = localStorage.getItem("ficheEnCoursVente");
+    const storedFormType = localStorage.getItem("formType");
+    const storedFormData = localStorage.getItem("formData");
 
-  if (ficheEnCours && storedFormType && storedFormData) {
-    setFormType(storedFormType); // energie ou offremobile
-    setFormData(JSON.parse(storedFormData));
-    setShowForm(true);
+    if (ficheEnCours && storedFormType && storedFormData) {
+      setFormType(storedFormType); // energie ou offremobile
+      setFormData(JSON.parse(storedFormData));
+      setShowForm(true);
 
-    // Nettoyer localStorage pour ne pas rouvrir à chaque refresh
-    localStorage.removeItem("ficheEnCoursVente");
-    localStorage.removeItem("formType");
-    localStorage.removeItem("formData");
-  }
-}, []);
+      // Nettoyer localStorage pour ne pas rouvrir à chaque refresh
+      localStorage.removeItem("ficheEnCoursVente");
+      localStorage.removeItem("formType");
+      localStorage.removeItem("formData");
+    }
+  }, []);
 
   useEffect(() => {
     const storedAgent = localStorage.getItem("user");
@@ -135,6 +135,9 @@ const VentesInfoPanel = ({ agentId }) => {
       rio: sale.rio || "",
       etat_cmd: sale.etat_cmd || "",
       ref_cmd: sale.ref_cmd || "",
+
+      created_at: sale.created_at ? sale.created_at.slice(0, 16) : "",
+      
     };
     setSaleToEdit(sale);
     setFormType(sale.product_type?.toLowerCase() === "energie" ? "energie" : "offreMobile");

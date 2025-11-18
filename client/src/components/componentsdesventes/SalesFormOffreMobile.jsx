@@ -189,7 +189,7 @@ const SalesFormOffreMobile = ({ formData, setFormData, onSubmit, onClose }) => {
           <label className="block text-sm font-medium text-gray-700 mb-2">Engagement *</label>
           <select
             name="engagement"
-            value={formData.engagement === undefined ? '': (formData.engagement ? 'Oui' : 'Non') }
+            value={formData.engagement === undefined ? '' : (formData.engagement ? 'Oui' : 'Non')}
             onChange={handleChange}
             required
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -331,6 +331,24 @@ const SalesFormOffreMobile = ({ formData, setFormData, onSubmit, onClose }) => {
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
+
+        {/* afficher la date uniquement pour la modification */}
+        {formData.created_at !== undefined && (
+          <div className="">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Date de création
+            </label>
+            <input
+              type="datetime-local"
+              name="created_at"
+              value={formData.created_at}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, created_at: e.target.value }))
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+            />
+          </div>
+        )}
 
         {/* Provenance fichier */}
         <div>
