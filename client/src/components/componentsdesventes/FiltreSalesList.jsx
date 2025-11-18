@@ -441,7 +441,7 @@ const FiltreSalesList = ({
 
                             <div className="relative group">
                               <button
-                                title="Supprimer"
+                                title=""
                                 type="button"
                                 onClick={() => onDeleteSale(sale.id)}
                                 className="px-3 py-1.5 rounded-lg border border-yellow-100 text-yellow-600 hover:bg-yellow-600 hover:text-white transition-transform hover:scale-105"

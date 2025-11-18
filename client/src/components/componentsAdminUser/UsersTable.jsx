@@ -117,7 +117,7 @@ export default function UsersTable({
                     <div className="relative group">
                       <button
                         onClick={() => onViewAgent && onViewAgent(u)}
-                        title="Consulter"
+                        title=""
                         className="px-3 py-1.5 rounded-lg border border-blue-100 text-blue-600 hover:bg-blue-600 hover:text-white 
                                       transition-transform transform focus:outline-none focus:ring-2 focus:ring-offset-1 hover:scale-105"
                       >
@@ -131,7 +131,7 @@ export default function UsersTable({
                     <div className="relative group">
                       <button
                         onClick={() => openEdit(u)}
-                        title="Modifier"
+                        title=""
                         className="px-3 py-1.5 rounded-lg border border-green-100 text-green-600 hover:bg-green-600 hover:text-white
                                       transition-transform transform focus:outline-none focus:ring-2 focus:ring-offset-1 hover:scale-105"
                       >
@@ -145,7 +145,7 @@ export default function UsersTable({
                     <div className="relative group">
                       <button
                         onClick={() => resetPassword(u)}
-                        title="Réinitialiser le mot de passe"
+                        title=""
                         className="px-3 py-1.5 rounded-lg border border-yellow-100 text-yellow-600 hover:bg-yellow-600 hover:text-white 
                                       transition-transform transform focus:outline-none focus:ring-2 focus:ring-offset-1 hover:scale-105"
                       >
@@ -160,7 +160,7 @@ export default function UsersTable({
                       <button
                         onClick={() => toggleActive(u)}
                         aria-pressed={u.is_active}
-                        title={u.is_active ? "Désactiver le compte" : "Activer le compte"}
+                        title=""
                         className={`px-3 py-1.5 rounded-lg border transition-transform transform focus:outline-none focus:ring-2 focus:ring-offset-1 ${u.is_active
                           ? "text-red-600 border-red-100 hover:bg-red-600 hover:text-white hover:scale-105"
                           : "text-green-600 border-green-100 hover:bg-green-600 hover:text-white hover:scale-105"
