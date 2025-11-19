@@ -464,7 +464,7 @@ const FiltreSalesList = ({
                                 <button
                                   onClick={() => openModal(sale.id)}
                                   title=""
-                                  className=" px-3 py-1.5 rounded-lg border border-green-100 text-blue-600 hover:bg-blue-600 hover:text-white
+                                  className=" px-3 py-1.5 rounded-lg border border-blue-100 text-blue-600 hover:bg-blue-600 hover:text-white
                                                                                                               transition-transform transform focus:outline-none focus:ring-2 focus:ring-offset-1 hover:scale-105">
                                   <FileText className="w-4 h-4" />
                                 </button>
