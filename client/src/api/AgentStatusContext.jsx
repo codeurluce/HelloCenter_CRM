@@ -64,7 +64,7 @@ export const AgentStatusProvider = ({ children }) => {
     console.log("🕒 Inactivity check started");
     inactivityIntervalRef.current = setInterval(() => {
       const elapsed = Date.now() - lastActivityRef.current;
-    if (elapsed >= 1_800_000) triggerForcedLogout(); // 30 min (30 * 60 * 1000)
+    if (elapsed >= 10_800_000) triggerForcedLogout(); // 3 heures (3 * 60 * 60 * 1000)
     }, 60_000);
   };
 

@@ -2,7 +2,7 @@
 const db = require('./db');
 const { getIo } = require('./socketInstance');
 
-const INACTIVITY_THRESHOLD_MS = 1_800_000; // 30 minutes d'inactivité en "Disponible"
+const INACTIVITY_THRESHOLD_MS = 10_800_000; // 3 heures d'inactivité en "Disponible"
 
 async function checkInactiveAgents() {
   try {
@@ -48,7 +48,7 @@ async function checkInactiveAgents() {
       try {
         const io = getIo();
         io.to(`agent_${userId}`).emit("session_closed_force", {
-          reason: "Déconnexion automatique pour inactivité (30 minutes)",
+          reason: "Déconnexion automatique pour inactivité (3 Heures)",
         });
         console.log(`[SOCKET] 🔔 session_closed_force envoyé à agent_${userId}`);
         console.log(`[INACTIVITY CHECK ${new Date().toISOString()}] Found ${activeAvailable.rows.length} inactive agents`);
