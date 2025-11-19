@@ -109,6 +109,12 @@ exports.forcePauseByAdmin = async (req, res) => {
   try {
     const userId = Number(req.params.id);
     const requester = req.user; // contient { id, role }
+    const { rows: adminRows } = await db.query(
+      `SELECT firstname, lastname FROM users WHERE id = $1`,
+      [requester.id]
+    );
+    const admin = adminRows[0];
+    const adminName = admin ? `${admin.firstname} ${admin.lastname}` : "Administrateur";
 
     if (!userId) {
       return res.status(400).json({ error: "userId manquant." });
@@ -182,7 +188,7 @@ exports.forcePauseByAdmin = async (req, res) => {
     await db.query(
       `INSERT INTO session_agents (user_id, status, start_time, pause_type)
        VALUES ($1, $2, $3, $4)`,
-      [userId, "Déjeuner", now, "Forcée par l'admin"]
+      [userId, "Déjeuner", now, `Action forcée par ${adminName}`]
     );
 
     // Émettre les événements Socket.IO
@@ -969,7 +975,7 @@ exports.getAllHistorySessions = async (req, res) => {
 
       // --- Cas 1 : pause forcée (toujours afficher même si statut identique)
       if (isForcedPause) {
-        narrative = `L'agent a été forcé à passer en "${s.status}" (${s.pause_type}).`;
+        narrative = `Statut changé en "${s.status}": (${s.pause_type}).`;
       }
 
       // --- Cas 2 : première entrée (aucun statut précédent)
