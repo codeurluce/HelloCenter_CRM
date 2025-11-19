@@ -137,6 +137,8 @@ const FiltreSalesList = ({
       sale.rio || "",
       sale.ref_cmd || "",
       sale.etat_cmd || "",
+      sale.name_agent || "",
+      sale.audite ? "oui" : "non",
     ];
     const matchesSearch = searchFields.some((field) =>
       field.toLowerCase().includes(searchTerm.toLowerCase())
