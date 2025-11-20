@@ -63,8 +63,16 @@ export default function AdminLiveSessions() {
     intervalRef.current = setInterval(() => {
       setAgents((prev) =>
         prev.map((agent) => {
-          if (!agent.is_connected) return agent;
+          // if (!agent.is_connected) return agent;
 
+          if (!agent.is_connected) {
+            return {
+              ...agent,
+              statut_actuel: "Hors connexion",
+              last_statut: "Hors connexion",
+              depuis_sec: 0
+            };
+          }
           const cumul = { ...agent.cumul_statuts };
           const lastStatut = agent.last_statut || agent.statut_actuel;
 
@@ -100,103 +108,114 @@ export default function AdminLiveSessions() {
     return () => clearInterval(intervalRef.current);
   }, []); // ← pas de dépendances sur q/status : on filtre en front
 
+  socket.on("connect", () => {
+  console.log("[FRONT] Socket connecté, id =", socket.id);
+});
+
   // Sockets connexion / déconnexion
-  useEffect(() => {
+useEffect(() => {
   if (!user?.id) return;
+
+  // Auth du socket
   socket.auth = { userId: user.id, role: user.role || "Admin" };
-  if (!socket.connected) socket.connect();
 
-  // Déconnexion
+  // Fonction pour s'abonner aux events après connexion
+  const subscribeSocketEvents = () => {
+    console.log("[FRONT] Socket connecté, id =", socket.id);
+
+    // Déconnexion
     socket.on("agent_disconnected", ({ userId }) => {
-      setAgents((prev) =>
-        prev.map((agent) =>
-          agent.user_id === userId
-            ? {
-                ...agent,
-                statut_actuel: "Hors connexion",
-                is_connected: false,
-                depuis_sec: 0,
-              }
-            : agent
-        )
-      );
-    }); 
-
-  // Connexion
-    socket.on("agent_connected", ({ userId }) => {
-      setAgents((prev) =>
-        prev.map((agent) =>
-          agent.user_id === userId
-            ? { 
-                ...agent, 
-                statut_actuel: "En ligne",
-                is_connected: true, 
-                depuis_sec: 0 
-              }
+      const uid = userId.toString();
+      setAgents(prev =>
+        prev.map(agent =>
+          agent.user_id.toString() === uid
+            ? { ...agent, statut_actuel: "Hors connexion", is_connected: false, depuis_sec: 0 }
             : agent
         )
       );
     });
 
-// changement de statut (ex: dispo → pause, pause → dispo)
-  socket.on("agent_status_changed", ({ userId, newStatus }) => {
-    setAgents(prev =>
-      prev.map(agent =>
-        agent.user_id === userId
-          ? { ...agent, statut_actuel: newStatus, depuis_sec: 0 }
-          : agent
-      )
-    );
-  });
+    // Connexion
+    socket.on("agent_connected", ({ userId }) => {
+      const uid = userId.toString();
+      setAgents(prev =>
+        prev.map(agent =>
+          agent.user_id.toString() === uid
+            ? { ...agent, statut_actuel: "En ligne", is_connected: true, depuis_sec: 0 }
+            : agent
+        )
+      );
+    });
 
-  // Pause forcée par admin
-socket.on("force_pause_by_admin", (data) => {
-  console.log("🟢 [FRONT] force_pause_by_admin reçu :", data);
-  setAgents(prev =>
-    prev.map(agent =>
-      agent.user_id === data.userId
-        ? { ...agent, statut_actuel: data.newStatus, depuis_sec: 0 }
-        : agent
-    )
-  );
-});
+    // Changement de statut
+    socket.on("agent_status_changed", ({ userId, newStatus }) => {
+      const uid = userId.toString();
+      setAgents(prev =>
+        prev.map(agent =>
+          agent.user_id.toString() === uid
+            ? { ...agent, statut_actuel: newStatus, depuis_sec: 0 }
+            : agent
+        )
+      );
+    });
 
-   // Déconnexion forcée par admin
-// Déconnexion forcée envoyée par closeSessionForce()
-socket.on("force_disconnect_by_admin", (data) => {
-  console.log("🟢 [FRONT] force_disconnect_by_admin reçu :", data);
+    // Déconnexion forcée côté agent
+    socket.on("force_disconnect_by_admin", ({ userId, reason, forced }) => {
+      const uid = userId.toString();
+      console.log("[FRONT] 🔔 Event reçu : force_disconnect_by_admin", { userId, reason, forced });
+      setAgents(prev =>
+        prev.map(agent =>
+          agent.user_id.toString() === uid
+            ? { ...agent, statut_actuel: "Hors connexion", last_statut: "Hors connexion", is_connected: false, depuis_sec: 0 }
+            : agent
+        )
+      );
+    });
 
-  setAgents(prev =>
-    prev.map(agent =>
-      agent.user_id === data.userId
-        ? { ...agent, is_connected: false, statut_actuel: "Hors ligne", depuis_sec: 0 }
-        : agent
-    )
-  );
-});
+    // Session close forcée
+    socket.on("session_closed_force", ({ userId }) => {
+      const uid = userId.toString();
+      setAgents(prev =>
+        prev.map(agent =>
+          agent.user_id.toString() === uid
+            ? { ...agent, statut_actuel: "Hors connexion", last_statut: "Hors connexion", is_connected: false, depuis_sec: 0 }
+            : agent
+        )
+      );
+    });
 
-// Déconnexion forcée envoyée par forceDisconnectSocket()
-socket.on("session_closed_force", (data) => {
-  console.log("🛑 [FRONT] session_closed_force reçu :", data);
+    // Déconnexion forcée côté admin (pour update tableau live)
+    socket.on("agent_disconnected_for_admin", ({ userId, newStatus }) => {
+      const uid = userId.toString();
+      setAgents(prev =>
+        prev.map(agent =>
+          agent.user_id.toString() === uid
+            ? { ...agent, statut_actuel: newStatus, is_connected: false, depuis_sec: 0 }
+            : agent
+        )
+      );
+    });
+  };
 
-  setAgents(prev =>
-    prev.map(agent =>
-      agent.user_id === user.id
-        ? { ...agent, is_connected: false, statut_actuel: "Hors ligne", depuis_sec: 0 }
-        : agent
-    )
-  );
-});
+  // Si socket déjà connecté, on s'abonne immédiatement, sinon après le connect
+  if (socket.connected) {
+    subscribeSocketEvents();
+  } else {
+    socket.once("connect", subscribeSocketEvents);
+    socket.connect();
+  }
 
+  // Désabonnement propre
   return () => {
     socket.off("agent_disconnected");
     socket.off("agent_connected");
     socket.off("agent_status_changed");
-    socket.off("force_pause_by_admin");
     socket.off("force_disconnect_by_admin");
     socket.off("session_closed_force");
+    socket.off("agent_disconnected_for_admin");
   };
 }, [user?.id, user?.role]);
+
 
   // ---- Filtrage côté front (comme ta page AdministrationUsers) ----
   const normalize = (s = "") =>

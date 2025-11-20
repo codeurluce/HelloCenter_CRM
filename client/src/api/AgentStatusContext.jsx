@@ -150,7 +150,7 @@ export const AgentStatusProvider = ({ children }) => {
 
         toast.info(reason || "Pause forcée par l’administrateur", { autoClose: 4500 });
 
-        try { 
+        try {
           if (userRef.current?.id) {
             await axiosInstance.post("/session_agents/start", {
               user_id: userRef.current.id,

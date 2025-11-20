@@ -639,7 +639,7 @@ exports.pingSession = async (req, res) => {
   }
 };
 
-exports.closeSessionForce = async (userId) => {
+exports.closeSessionForce = async (userId, userSockets) => {
   try {
     console.log(`[SERVER] closeSessionForce called for user ${userId}`);
 
@@ -675,26 +675,46 @@ exports.closeSessionForce = async (userId) => {
     const session = result.rows[0];
     console.log(`[SERVER] closeSessionForce: session closed for ${userId}`, session);
 
+    
     // ⚡ EMETTRE SOCKET pour mise à jour live
-   const io = getIo();
+    const io = getIo();
 
-    // 📢 Notifier les admins
+    // Notifier les admins
     console.log("[SERVER] ⚡ Emit: agent_status_changed → admins");
-    io.to("admins").emit("agent_status_changed", {
-      userId,
-      newStatus: "Hors ligne"
-    });
+    io.to("admins").emit("agent_status_changed", { userId, newStatus: "Hors ligne" });
 
     console.log("[SERVER] ⚡ Emit: agent_disconnected → admins");
     io.to("admins").emit("agent_disconnected", { userId });
 
-    // 📢 Notifier l'agent
+    // Notifier l’agent
     console.log("[SERVER] ⚡ Emit: force_disconnect_by_admin → agent");
     io.to(`agent_${userId}`).emit("force_disconnect_by_admin", {
       userId,
       reason: "Déconnecté par l’administrateur",
       forced: true
     });
+
+    // 🔹 Notifier les admins pour mettre à jour leur tableau live
+io.to("admins").emit("agent_disconnected_for_admin", {
+  userId,
+  newStatus: "Hors connexion"
+});
+
+// Déconnexion physique du socket après un petit délai pour garantir réception front
+    const sockets = userSockets.get(userId);
+    if (sockets && sockets.size > 0) {
+      sockets.forEach(socketId => {
+        const s = io.sockets.sockets.get(socketId);
+        if (s) {
+          // Déconnexion différée pour laisser le temps au front de traiter les sockets
+          setTimeout(() => {
+            console.log(`[BACK] ⚡ Déconnexion socket ${socketId} de user ${userId}`);
+            s.disconnect(true);
+          }, 100); // 100ms suffisent
+        }
+      });
+      userSockets.delete(userId);
+    }
 
     return session;
 

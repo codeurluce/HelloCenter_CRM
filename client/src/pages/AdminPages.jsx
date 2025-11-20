@@ -168,35 +168,7 @@ useEffect(() => {
   const handleLogout = () => {
     logoutAgent();
   };
-
-  // Gestion déconnexion
-  // const handleLogout = async () => {
-  //   try {
-  //     const user = JSON.parse(localStorage.getItem('user'));
-  //     if (user) {
-  //       // ⚡ Notifie le backend que l'agent se déconnecte
-  //       await axiosInstance.post('/agent/disconnect', { 
-  //         userId: user.id,
-  //         timers: {
-  //         sessionTime,
-  //         pauseTime,
-  //         dispoTime,
-  //       },
-  //     });
-  //       socket.emit('agent_disconnected', { userId: user.id });
-  //     }
-
-  //     // Nettoyage local
-  //     localStorage.clear();
-  //     fichesData.loadFiches([]);
-  //     setUser(null);
-
-  //   } catch (err) {
-  //     console.error('Erreur lors de la déconnexion:', err.response?.data || err.message);
-  //     toast.error("Impossible de se déconnecter correctement !");
-  //   }
-  // };
-
+  
   return (
     <AgentStatusProvider>
       <NotificationsProvider>

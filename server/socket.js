@@ -11,33 +11,16 @@ async function forceDisconnectSocket(userId, reason = "Déconnexion forcée") {
   console.log(`[BACK] 🔌 Déconnexion forcée pour user ${userId}, raison: ${reason}`);
 
   try {
-    await closeSessionForce(userId);  // ⚡ déjà envoie les bons sockets (admins + agent)
+    // 👉 Cela suffit : cette fonction émet TOUT (admins + agent)
+    await closeSessionForce(userId, userSockets);
 
-    await db.query("UPDATE users SET session_closed = TRUE WHERE id = $1", [userId]);
-
-    console.log(`[BACK] ⚡ Emit: session_closed_force → agent_${userId}`);
-    io.to(`agent_${userId}`).emit("session_closed_force", { userId, reason });
-
-    setTimeout(() => {
-      const sockets = userSockets.get(userId);
-      if (!sockets) {
-        console.log(`[BACK] aucun socket pour ${userId}`);
-        return;
-      }
-
-      sockets.forEach(socketId => {
-        console.log(`[BACK] ⚡ Déconnexion socket ${socketId}`);
-        io.sockets.sockets.get(socketId)?.disconnect(true);
-      });
-
-      userSockets.delete(userId);
-      console.log(`[BACK] ✅ Agent ${userId} complètement déconnecté`);
-    }, 300);
+    return { success: true };
 
   } catch (err) {
     console.error(`[BACK] ❌ Erreur forceDisconnectSocket ${userId}:`, err);
   }
 }
+
 
 // 🔹 Initialisation de Socket.io
 function initSockets(server) {
@@ -84,4 +67,4 @@ function initSockets(server) {
   return io;
 }
 
-module.exports = { initSockets, forceDisconnectSocket };
+module.exports = { initSockets, forceDisconnectSocket, userSockets };

@@ -293,8 +293,8 @@ const disconnectAgent = async (req, res) => {
       [userId]
     );
 
+    // 🔔 Émettre l’événement à tous les admins
     const io = getIo();
-        // 🔔 Émettre l’événement à tous les admins
     io.emit("agent_disconnected", { userId });
     res.json({ success: true, message: "Déconnexion réussie et session sauvegardés." });
   } catch (err) {
@@ -342,7 +342,7 @@ const disconnectAgentForce = async (req, res) => {
         // 🔔 Émettre l’événement à tous les admins pour live update
     const io = getIo();
     io.emit("agent_disconnected", { userId });
-    
+
     res.json({
       success: true,
       message: "Déconnexion forcée traitée.",
