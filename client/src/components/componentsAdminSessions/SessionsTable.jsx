@@ -250,5 +250,5 @@ export default function SessionsTable({ sessions, loading, refresh }) {
         />
       )}
     </div>
-  );
+  ); 
 }

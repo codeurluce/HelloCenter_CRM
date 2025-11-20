@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const { findUserByEmail, createUserWithGeneratedEmail } = require('../models/userModels');
 const { forceDisconnectSocket } = require('../socket') 
+const { getIo } = require("../socketInstance");
 
 // Vérifier que JWT_SECRET est défini
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -254,6 +255,10 @@ const connectAgent = async (req, res) => {
       [userId]
     );
 
+    const io = getIo();
+//  Émettre l’événement à tous les admins
+    io.emit("agent_connected", { userId });
+
     res.json({ success: true });
   } catch (err) {
     console.error(err);
@@ -288,6 +293,9 @@ const disconnectAgent = async (req, res) => {
       [userId]
     );
 
+    const io = getIo();
+        // 🔔 Émettre l’événement à tous les admins
+    io.emit("agent_disconnected", { userId });
     res.json({ success: true, message: "Déconnexion réussie et session sauvegardés." });
   } catch (err) {
     console.error("Erreur disconnectAgent:", err);
@@ -331,6 +339,10 @@ const disconnectAgentForce = async (req, res) => {
       [userId]
     );
 
+        // 🔔 Émettre l’événement à tous les admins pour live update
+    const io = getIo();
+    io.emit("agent_disconnected", { userId });
+    
     res.json({
       success: true,
       message: "Déconnexion forcée traitée.",

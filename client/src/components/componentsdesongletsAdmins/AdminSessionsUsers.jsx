@@ -120,14 +120,19 @@ export default function AdminLiveSessions() {
             : agent
         )
       );
-    });
+    }); 
 
   // Connexion
     socket.on("agent_connected", ({ userId }) => {
       setAgents((prev) =>
         prev.map((agent) =>
           agent.user_id === userId
-            ? { ...agent, is_connected: true, depuis_sec: 0 }
+            ? { 
+                ...agent, 
+                statut_actuel: "En ligne",
+                is_connected: true, 
+                depuis_sec: 0 
+              }
             : agent
         )
       );
