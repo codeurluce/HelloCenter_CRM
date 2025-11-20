@@ -6,7 +6,6 @@ import {
   // XCircle, 
   BarChart3,
   CalendarCheck,
-  Calendar,
   FileTextIcon, 
   // CircleArrowOutUpRight, 
 } from 'lucide-react';
@@ -99,13 +98,13 @@ const StatGroup = ({ setActiveItem }) => {
           title: 'Total des ventes du jour',
           value: statsData.totalTransactions,
           icon: CalendarCheck,
-          color: 'border-blue-500 text-blue-600',
+          color: 'border-orange-500 text-orange-600',
           onClick: () => setActiveItem('sales'),
         },
         {
           title: 'Total des ventes du mois', 
           value: statsData.ventesMois,
-          icon: CalendarDays,
+          icon: BarChart3,
           color: 'border-blue-500 text-blue-600',
           onClick: () => setActiveItem('sales'),
         }
