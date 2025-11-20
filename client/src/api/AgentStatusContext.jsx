@@ -21,6 +21,7 @@ export const AgentStatusProvider = ({ children }) => {
   const [currentStatus, setCurrentStatus] = useState(null);
   const [isInactive, setIsInactive] = useState(false);
   const [pauseForcedByAdmin, setPauseForcedByAdmin] = useState(false);
+  const [agentsLive, setAgentsLive] = useState([]);
 
   const navigate = useNavigate();
 
@@ -147,7 +148,7 @@ export const AgentStatusProvider = ({ children }) => {
         console.log("[FRONT] 📩 Pause forcée reçue :", reason);
         setPauseForcedByAdmin(true);
 
-        toast.info(reason || "Pause forcée par l’administrateur", { autoClose: 5000 });
+        toast.info(reason || "Pause forcée par l’administrateur", { autoClose: 4500 });
 
         try {
           if (userRef.current?.id) {

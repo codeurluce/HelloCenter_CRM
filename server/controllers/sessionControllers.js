@@ -3,125 +3,30 @@ const db = require('../db');
 const dayjs = require("dayjs");
 const { getIo } = require("../socketInstance");
 
-// Activer la session active 
-exports.createSession = async (req, res) => {
-  try {
-    console.log('📥 Requête reçue pour session :', req.body);
-    const { user_id, status, start_time, end_time } = req.body;
-    console.log("🆕 CRÉATION SESSION - userId:", user_id, "status:", status); // ← LOG ICI
-
-    if (status === 'pause') {
-      return res.status(400).json({ message: 'Le type de pause est requis pour une session de pause.' });
-    }
-
-    if (!user_id || !status || !start_time) {
-      return res.status(400).json({ message: 'Champs requis manquants' });
-    }
-
-    // Calculer la durée en secondes si endTime existe
-    let duration = null;
-    if (end_time) {
-      const start = new Date(start_time);
-      const end = new Date(end_time);
-      duration = Math.floor((end - start) / 1000);
-      if (duration < 0) duration = null; // sécurité
-    }
-
-    await db.query(
-      `INSERT INTO session_agents (user_id, status, start_time, end_time, duration)
-       VALUES ($1, $2, $3, $4, $5,)
-       RETURNING id`,
-      [user_id, status, start_time, end_time || null, duration]
-    );
-    res.status(201).json({ message: 'Session enregistrée avec succès' });
-
-  } catch (error) {
-    console.error('Erreur enregistrement session :', error);
-    res.status(500).json({ message: 'Erreur serveur' });
-  }
-};
-
-// Fermer la session active 
-exports.closeCurrentSession = async (req, res) => {
-  try {
-    const { user_id } = req.body;
-    console.log("CloseOperation: Fermeture FORCE pour", user_id);
-
-    if (!user_id) {
-      return res.status(400).json({
-        success: false,
-        message: "❌ user_id est requis",
-      });
-    }
-
-    const now = new Date();
-
-    // Mettre fin à la session active de l’utilisateur
-    const result = await db.query(
-      `
-      UPDATE session_agents
-      SET end_time = $1,
-          duration = EXTRACT(EPOCH FROM ($1 - start_time))
-      WHERE user_id = $2
-        AND end_time IS NULL
-      RETURNING id, status, start_time, end_time, duration
-      `,
-      [now, user_id]
-    );
-
-    if (result.rowCount === 0) {
-      // Aucun enregistrement mis à jour → pas de session active
-      console.warn(`⚠️ Aucun session active trouvée pour user_id=${user_id}`);
-      return res.status(200).json({
-        success: true,
-        message: "ℹ️ Aucune session active à fermer",
-        is_connected: false,
-        session: null,
-      });
-    }
-
-    // Session fermée avec succès
-    const session = result.rows[0];
-    res.status(200).json({
-      success: true,
-      message: "✅ Session fermée avec succès",
-      is_connected: false,
-      session: {
-        id: session.id,
-        status: session.status,
-        start_time: session.start_time,
-        end_time: session.end_time,
-        duration: session.duration,
-      },
-    });
-
-  } catch (error) {
-    console.error("❌ Erreur fermeture session :", error);
-    res.status(500).json({
-      success: false,
-      message: "Erreur serveur lors de la fermeture de session",
-    });
-  }
-};
-
 // POST /agent/:id/forcePause - Mettre un agent en pause déjeuner forcée par l'admin
 exports.forcePauseByAdmin = async (req, res) => {
   try {
     const userId = Number(req.params.id);
     const requester = req.user; // contient { id, role }
+    console.log(`[BACK] 🔄 forcePauseByAdmin appelé par admin ${requester.id} sur user ${userId}`);
+
     const { rows: adminRows } = await db.query(
       `SELECT firstname, lastname FROM users WHERE id = $1`,
       [requester.id]
     );
     const admin = adminRows[0];
     const adminName = admin ? `${admin.firstname} ${admin.lastname}` : "Administrateur";
+    console.log(`[BACK] Admin: ${adminName}`);
+
 
     if (!userId) {
+      console.log(`[BACK] ❌ userId manquant`);
       return res.status(400).json({ error: "userId manquant." });
     }
 
     // Vérifier que l'utilisateur est un admin
     if (requester.role !== "Admin") {
+      console.log(`[BACK] ❌ Role non autorisé: ${requester.role}`);
       return res
         .status(403)
         .json({ error: "Vous n'avez pas la permission de mettre un agent en pause." });
@@ -136,12 +41,16 @@ exports.forcePauseByAdmin = async (req, res) => {
     );
 
     if (userRows.length === 0) {
+      console.log(`[BACK] ❌ Agent introuvable: ${userId}`);
       return res.status(404).json({ error: "Agent introuvable." });
     }
 
     const { is_connected, session_closed } = userRows[0];
+    console.log(`[BACK] Agent ${userId} connecté? ${is_connected}, session_closed? ${session_closed}`);
+
 
     if (!is_connected || session_closed) {
+      console.log(`[BACK] ❌ Impossible de forcer la pause`);
       return res.status(400).json({
         error: "Impossible de forcer la pause : l'agent n'est pas connecté ou sa session est fermée.",
       });
@@ -159,6 +68,7 @@ exports.forcePauseByAdmin = async (req, res) => {
     );
 
     if (sessionRows.length === 0) {
+      console.log(`[BACK] ❌ Aucune session active trouvée pour ${userId}`);
       return res.status(400).json({
         error: "Aucune session active trouvée pour cet agent.",
       });
@@ -184,6 +94,7 @@ exports.forcePauseByAdmin = async (req, res) => {
       [now, currentSession.id]
     );
 
+    console.log(`[BACK] 🔄 Création nouvelle session "Déjeuner" forcée pour ${userId}`);
     // Créer une nouvelle session "Déjeuner" forcée
     await db.query(
       `INSERT INTO session_agents (user_id, status, start_time, pause_type)
@@ -193,7 +104,8 @@ exports.forcePauseByAdmin = async (req, res) => {
 
     // Émettre les événements Socket.IO
     const io = getIo();
-    io.emit("agent_status_changed", { userId, newStatus: "Déjeuner" });
+    console.log(`[BACK] ⚡ Émission socket "agent_status_changed" et "force_pause_by_admin"`);
+    io.to("admins").emit("agent_status_changed", { userId, newStatus: "Déjeuner" });
     io.to(`agent_${userId}`).emit("force_pause_by_admin", {
       reason: "Pause forcée par l’administrateur",
       pause_type: "Déjeuner",
@@ -204,8 +116,10 @@ exports.forcePauseByAdmin = async (req, res) => {
       success: true,
       message: "L'agent est maintenant en pause déjeuner (forcée).",
     });
+    console.log(`[BACK] ✅ forcePauseByAdmin terminé pour ${userId}`);
+
   } catch (err) {
-    console.error("Erreur forcePauseByAdmin:", err);
+    console.error(`[BACK] ❌ Erreur forcePauseByAdmin:`, err);
     res.status(500).json({
       error: "Erreur serveur lors de la mise en pause de l'agent.",
     });
@@ -271,76 +185,6 @@ exports.getLiveSessionAgents = async (req, res) => {
     res.status(500).json({ error: "Erreur récupération sessions live" });
   }
 };
-
-// GET /api/sessions/agents/live/:userId
-// exports.getSessionAgent = async (req, res) => {
-//   const { userId } = req.params;
-
-//   if (!userId) {
-//     return res.status(400).json({ error: "userId manquant" });
-//   }
-
-//   try {
-//     const query = `
-//       WITH sessions_today AS (
-//         SELECT user_id, status, start_time, COALESCE(end_time, NOW()) AS end_time
-//         FROM session_agents
-//         WHERE DATE(start_time) = CURRENT_DATE
-//           AND user_id = $1
-//       ),
-//       cumuls AS (
-//         SELECT user_id, status, SUM(EXTRACT(EPOCH FROM (end_time - start_time)))::INT AS sec
-//         FROM sessions_today
-//         GROUP BY user_id, status
-//       ),
-//       cumul_total AS (
-//         SELECT user_id, SUM(sec)::INT AS presence_totale_sec
-//         FROM cumuls
-//         GROUP BY user_id
-//       ),
-//       last_status AS (
-//         SELECT DISTINCT ON (user_id)
-//                user_id,
-//                status AS statut_actuel,
-//                EXTRACT(EPOCH FROM (NOW() - start_time))::INT AS depuis_sec
-//         FROM session_agents
-//         WHERE end_time IS NULL
-//           AND DATE(start_time) = CURRENT_DATE
-//           AND user_id = $1
-//         ORDER BY user_id, start_time DESC
-//       ),
-//       cumul_json AS (
-//         SELECT c.user_id,
-//                json_object_agg(c.status, c.sec) AS cumul_statuts
-//         FROM cumuls c
-//         GROUP BY c.user_id
-//       )
-//       SELECT 
-//         u.id AS user_id,
-//         u.lastname,
-//         u.firstname,
-//         COALESCE(ls.statut_actuel, 
-//                  CASE WHEN u.is_connected = false THEN 'Hors ligne' ELSE 'En ligne' END
-//         ) AS statut_actuel,
-//         COALESCE(ls.depuis_sec, 0) AS depuis_sec,
-//         COALESCE(ct.presence_totale_sec, 0) AS presence_totale_sec,
-//         u.is_connected,
-//         COALESCE(cj.cumul_statuts, '{}'::json) AS cumul_statuts
-//       FROM users u
-//       LEFT JOIN last_status ls ON u.id = ls.user_id
-//       LEFT JOIN cumul_total ct ON u.id = ct.user_id
-//       LEFT JOIN cumul_json cj ON u.id = cj.user_id
-//       WHERE u.id = $1
-//       ORDER BY u.lastname, u.firstname;
-//     `;
-
-//     const result = await db.query(query, [userId]);
-//     res.json(result.rows[0] || null); // renvoie l'agent unique
-//   } catch (err) {
-//     console.error("Erreur getLiveSessionAgent:", err);
-//     res.status(500).json({ error: "Erreur récupération session live" });
-//   }
-// };
 
 // GET /api/session_agents/user/live/:userId
 exports.getSessionAgent = async (req, res) => {
@@ -624,6 +468,7 @@ exports.exportSessionsAgent = async (req, res) => {
   }
 };
 
+
 exports.getUserStatusToday = async (req, res) => {
   const { id } = req.params;
 
@@ -656,6 +501,7 @@ exports.getUserStatusToday = async (req, res) => {
     res.status(500).json({ message: "Erreur serveur" });
   }
 };
+
 
 exports.splitSessionsAtMidnight = async () => {
   try {
@@ -708,6 +554,13 @@ exports.startSession = async (req, res) => {
       [user_id]
     );
     if (active.rowCount > 0) {
+      // ⚡ Émettre l'événement Socket.IO pour que l'admin voit le statut
+      const io = getIo();
+      io.to("admins").emit("agent_status_changed", {
+        userId: user_id,
+        newStatus: status
+      });
+
       return res.json({ success: true, session_id: active.rows[0].id, reused: true });
     }
 
@@ -717,6 +570,13 @@ exports.startSession = async (req, res) => {
        RETURNING id, start_time`,
       [user_id, status]
     );
+
+    // ⚡ Émettre l'événement Socket.IO pour que l'admin voie le statut
+    const io = getIo();
+    io.to("admins").emit("agent_status_changed", {
+      userId: user_id,
+      newStatus: status
+    });
 
     res.json({ success: true, session_id: result.rows[0].id, start_time: result.rows[0].start_time });
   } catch (err) {
@@ -743,6 +603,13 @@ exports.stopSession = async (req, res) => {
     if (result.rowCount === 0) {
       return res.json({ success: true, message: 'no active session to stop' });
     }
+
+    // ⚡ Émettre l'événement Socket.IO pour que l'admin voie le statut "Hors Ligne"
+    const io = getIo();
+    io.to("admins").emit("agent_status_changed", {
+      userId: user_id,
+      newStatus: "Hors Ligne"
+    });
 
     res.json({ success: true, session: result.rows[0] });
   } catch (err) {
@@ -807,6 +674,28 @@ exports.closeSessionForce = async (userId) => {
 
     const session = result.rows[0];
     console.log(`[SERVER] closeSessionForce: session closed for ${userId}`, session);
+
+    // ⚡ EMETTRE SOCKET pour mise à jour live
+   const io = getIo();
+
+    // 📢 Notifier les admins
+    console.log("[SERVER] ⚡ Emit: agent_status_changed → admins");
+    io.to("admins").emit("agent_status_changed", {
+      userId,
+      newStatus: "Hors ligne"
+    });
+
+    console.log("[SERVER] ⚡ Emit: agent_disconnected → admins");
+    io.to("admins").emit("agent_disconnected", { userId });
+
+    // 📢 Notifier l'agent
+    console.log("[SERVER] ⚡ Emit: force_disconnect_by_admin → agent");
+    io.to(`agent_${userId}`).emit("force_disconnect_by_admin", {
+      userId,
+      reason: "Déconnecté par l’administrateur",
+      forced: true
+    });
+
     return session;
 
   } catch (err) {
@@ -923,7 +812,6 @@ exports.getSessions = async (req, res) => {
     res.status(500).json({ message: "Erreur serveur" });
   }
 };
-
 
 exports.getAllHistorySessions = async (req, res) => {
   const userId = req.params.id;
@@ -1043,4 +931,3 @@ exports.getAllHistorySessions = async (req, res) => {
     res.status(500).json({ error: "Erreur serveur" });
   }
 };
-

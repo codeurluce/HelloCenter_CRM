@@ -7,8 +7,11 @@ import SessionsTable from "../componentsAdminSessions/SessionsTable";
 import SessionFilters from "../componentsAdminSessions/SessionFilters";
 import ExportModal from "../componentsAdminSessions/ExportModalSessions.jsx";
 import { statuses } from '../../shared/StatusSelector';
+import { useAgentStatus } from "../../api/AgentStatusContext.jsx";
 
 export default function AdminLiveSessions() {
+  const { user } = useAgentStatus();
+
   const [agents, setAgents] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -18,6 +21,7 @@ export default function AdminLiveSessions() {
 
   const [showExport, setShowExport] = useState(false);
   const intervalRef = useRef();
+
 
   // Statuts qui incrémentent un timer (hors connexion exclu)
   const STATUTS_VALIDES = statuses.map(status => status.statusFr);
@@ -98,16 +102,27 @@ export default function AdminLiveSessions() {
 
   // Sockets connexion / déconnexion
   useEffect(() => {
+  if (!user?.id) return;
+  socket.auth = { userId: user.id, role: user.role || "Admin" };
+  if (!socket.connected) socket.connect();
+
+  // Déconnexion
     socket.on("agent_disconnected", ({ userId }) => {
       setAgents((prev) =>
         prev.map((agent) =>
           agent.user_id === userId
-            ? { ...agent, statut_actuel: "Hors connexion", is_connected: false, depuis_sec: 0 }
+            ? {
+                ...agent,
+                statut_actuel: "Hors connexion",
+                is_connected: false,
+                depuis_sec: 0,
+              }
             : agent
         )
       );
     });
 
+  // Connexion
     socket.on("agent_connected", ({ userId }) => {
       setAgents((prev) =>
         prev.map((agent) =>
@@ -118,22 +133,65 @@ export default function AdminLiveSessions() {
       );
     });
 
-    socket.on("agent_status_changed", ({ userId, newStatus }) => {
-      setAgents(prev =>
-        prev.map(agent =>
-          agent.user_id === userId
-            ? { ...agent, statut_actuel: newStatus, depuis_sec: 0 }
-            : agent
-        )
-      );
-    });
+// changement de statut (ex: dispo → pause, pause → dispo)
+  socket.on("agent_status_changed", ({ userId, newStatus }) => {
+    setAgents(prev =>
+      prev.map(agent =>
+        agent.user_id === userId
+          ? { ...agent, statut_actuel: newStatus, depuis_sec: 0 }
+          : agent
+      )
+    );
+  });
 
-    return () => {
-      socket.off("agent_disconnected");
-      socket.off("agent_connected");
-      socket.off("agent_status_changed");
-    };
-  }, []);
+  // Pause forcée par admin
+socket.on("force_pause_by_admin", (data) => {
+  console.log("🟢 [FRONT] force_pause_by_admin reçu :", data);
+  setAgents(prev =>
+    prev.map(agent =>
+      agent.user_id === data.userId
+        ? { ...agent, statut_actuel: data.newStatus, depuis_sec: 0 }
+        : agent
+    )
+  );
+});
+
+   // Déconnexion forcée par admin
+// Déconnexion forcée envoyée par closeSessionForce()
+socket.on("force_disconnect_by_admin", (data) => {
+  console.log("🟢 [FRONT] force_disconnect_by_admin reçu :", data);
+
+  setAgents(prev =>
+    prev.map(agent =>
+      agent.user_id === data.userId
+        ? { ...agent, is_connected: false, statut_actuel: "Hors ligne", depuis_sec: 0 }
+        : agent
+    )
+  );
+});
+
+// Déconnexion forcée envoyée par forceDisconnectSocket()
+socket.on("session_closed_force", (data) => {
+  console.log("🛑 [FRONT] session_closed_force reçu :", data);
+
+  setAgents(prev =>
+    prev.map(agent =>
+      agent.user_id === user.id
+        ? { ...agent, is_connected: false, statut_actuel: "Hors ligne", depuis_sec: 0 }
+        : agent
+    )
+  );
+});
+
+  return () => {
+    socket.off("agent_disconnected");
+    socket.off("agent_connected");
+    socket.off("agent_status_changed");
+    socket.off("force_pause_by_admin");
+    socket.off("force_disconnect_by_admin");
+    socket.off("session_closed_force");
+  };
+}, [user?.id, user?.role]);
 
   // ---- Filtrage côté front (comme ta page AdministrationUsers) ----
   const normalize = (s = "") =>

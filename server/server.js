@@ -14,6 +14,7 @@ const cors = require('cors');
 const http = require('http');
 const cron = require('node-cron');
 const { checkContrats } = require("./controllers/rhControllers");
+const { initSockets } = require('./socket');
 
 require ('./inactivityChecker')
 const sessionRoutes = require('./routes/sessionRoutes');
@@ -23,7 +24,6 @@ const historiquesfilesRoutes = require('./routes/historiquesfilesRoutes');
 const historiquesVentesRoutes = require('./routes/historiquesVentesRoutes');
 const userRoutes = require('./routes/userRoutes');
 const rhRoutes = require('./routes/rhRoutes')
-const initSockets = require('./socket');
 const { splitSessionsAtMidnight } = require('./controllers/sessionControllers');
 
 const app = express();
@@ -32,7 +32,6 @@ const server = http.createServer(app);
 // Middleware
 app.use(cors({
   origin: (origin, callback) => {
-    console.log("🔍 Origin reçu :", JSON.stringify(origin));
     // Autorise les requêtes :
     // - Depuis le frontend en prod (159.65.121.14)
     // - Depuis le dev local (localhost:3000)
