@@ -17,6 +17,7 @@ const {
     getAgentsWeeklySales, // diagramme horizontal
     getMonthlySalesAllAgents,
     getAgentsMonthlySales,
+    getAdminSalesMonthly,
     } = require('../controllers/salesControllers');
 const auth = require('../middlewares/authMiddleware');
 
@@ -24,6 +25,7 @@ const auth = require('../middlewares/authMiddleware');
 
 router.get('/today-summary', auth, getTodaySummary); // Récupère le résumé des ventes du jour pour l'agent connecté (authentification requise) // Méthode : GET /api/sales/today-sum
 router.get('/admin-summary', auth, getAdminSalesSummary); // Récupère le résumé global des ventes du jour pour l'administration (authentification requise) // Méthode : GET /api/sales/admin-summary
+router.get('/admin-monthly', auth, getAdminSalesMonthly)   // Récupère le résumé global des ventes du mois pour l'administration
 router.get('/weekly', auth, getWeeklySales); // Récupère les ventes hebdomadaires de l'agent connecté (authentification requise) // Méthode : GET /api/sales/weekly
 router.get('/weekly-agents', auth, getWeeklySalesAllAgents); // Récupère les ventes hebdomadaires de tous les agents pour l'administration (authentification requise) // Méthode : GET /api/sales/weekly-agents
 router.get('/weekly-agents-charthorizontal', auth, getAgentsWeeklySales);// Récupère les ventes hebdomadaires détaillées par agent sous forme de diagramme horizontal (authentification requise) // Méthode : GET /api/sales/weekly-agents-charthorizontal

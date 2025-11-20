@@ -65,6 +65,30 @@ exports.getAdminSalesSummary = async (req, res) => {
   }
 };
 
+// Résumé des ventes du mois (Admin / Manager)
+exports.getAdminSalesMonthly = async (req, res) => {
+  try {
+    const query = `
+      SELECT
+        COUNT(*) AS total_sales_month,
+        COUNT(*) FILTER (WHERE status = 'pending') AS pending_sales_month,
+        COUNT(*) FILTER (WHERE status = 'validated') AS validated_sales_month,
+        COUNT(*) FILTER (WHERE status = 'cancelled') AS cancelled_sales_month
+      FROM sales
+      WHERE created_at >= date_trunc('month', CURRENT_DATE)
+        AND created_at < date_trunc('month', CURRENT_DATE) + interval '1 month'
+    `;
+
+    const { rows } = await db.query(query);
+
+    res.json(rows[0]);
+
+  } catch (error) {
+    console.error("Erreur getAdminSalesMonthly:", error);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+};
+
 // Récupère, pour l'agent connecté, le nombre de ventes validées chaque jour depuis le début de la semaine en cours.
 exports.getWeeklySales = async (req, res) => {
   try {

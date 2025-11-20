@@ -4,7 +4,10 @@ import {
   CalendarDays, 
   // CheckCircle, 
   // XCircle, 
-  BarChart3, 
+  BarChart3,
+  CalendarCheck,
+  Calendar,
+  FileTextIcon, 
   // CircleArrowOutUpRight, 
 } from 'lucide-react';
 import axiosInstance from '../../api/axiosInstance';
@@ -33,25 +36,42 @@ const StatGroup = ({ setActiveItem }) => {
           ? '/files/admin-summary'
           : '/files/today-summary';
 
-        const [salesRes, filesRes] = await Promise.all([
-          axiosInstance.get(salesEndpoint, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          axiosInstance.get(filesEndpoint, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-        ]);
+        // Nouveau endpoint du mois pour admin
+        const monthlyEndpoint = isAdminOrManager
+        ? '/sales/admin-monthly'
+        : null;
 
-        const salesData = salesRes.data;
-        const filesData = filesRes.data;
+            // Appels API
+      const requests = [
+        axiosInstance.get(salesEndpoint, { headers: { Authorization: `Bearer ${token}` }}),
+        axiosInstance.get(filesEndpoint, { headers: { Authorization: `Bearer ${token}` }}),
+      ];
 
-        setStatsData({
-          totalTransactions: parseInt(salesData.total_sales_today) || 0,
+      if (monthlyEndpoint)
+        requests.push(
+          axiosInstance.get(monthlyEndpoint, { headers: { Authorization: `Bearer ${token}` }})
+        );
+
+      const [salesRes, filesRes, monthlyRes] = await Promise.all(requests);
+
+      const salesData = salesRes.data;
+      const filesData = filesRes.data;
+      const monthData = monthlyRes ? monthlyRes.data : null;
+
+      setStatsData({
+        totalTransactions: parseInt(salesData.total_sales_today) || 0,
         ventesEnAttente: parseInt(salesData.pending_sales_today) || 0,
         ventesValidees: parseInt(salesData.validated_sales_today) || 0,
         ventesAnnulees: parseInt(salesData.cancelled_sales_today) || 0,
         fichesDisponibles: parseInt(filesData.total_files_today) || 0,
-        });
+
+        // stats du mois
+        ventesMois: monthData ? parseInt(monthData.total_sales_month) : 0,
+        ventesMoisValidees: monthData ? parseInt(monthData.validated_sales_month) : 0,
+        ventesMoisAnnulees: monthData ? parseInt(monthData.cancelled_sales_month) : 0,
+        ventesMoisEnAttente: monthData ? parseInt(monthData.pending_sales_month) : 0,
+      });
+
       } catch (error) {
         console.error("❌ Erreur lors du fetch des statistiques :", error.response?.data || error.message);
       } finally {
@@ -69,19 +89,26 @@ const StatGroup = ({ setActiveItem }) => {
   const stats = isAdminOrManager
     ? [
         {
-          title: 'Fiches disponibles (global)',
+          title: 'Total Fiches disponibles',
           value: statsData.fichesDisponibles,
-          icon: CalendarDays,
+          icon: FileTextIcon,
           color: 'border-green-500 text-green-600',
           onClick: () => setActiveItem('files'),
         },
         {
-          title: 'Total des ventes (global)',
+          title: 'Total des ventes du jour',
           value: statsData.totalTransactions,
-          icon: BarChart3,
+          icon: CalendarCheck,
           color: 'border-blue-500 text-blue-600',
           onClick: () => setActiveItem('sales'),
         },
+        {
+          title: 'Total des ventes du mois', 
+          value: statsData.ventesMois,
+          icon: CalendarDays,
+          color: 'border-blue-500 text-blue-600',
+          onClick: () => setActiveItem('sales'),
+        }
       ]
     : [
         {
@@ -125,7 +152,7 @@ const StatGroup = ({ setActiveItem }) => {
       ];
 
   return (
-    <div className={`grid grid-cols-1 sm:grid-cols-2 ${!isAdminOrManager ? 'lg:grid-cols-3 xl:grid-cols-4' : 'lg:grid-cols-2'} gap-6 w-full`}>
+    <div className={`grid grid-cols-1 sm:grid-cols-2 ${!isAdminOrManager ? 'lg:grid-cols-3 xl:grid-cols-4' : 'lg:grid-cols-3'} gap-6 w-full`}>
       {stats.map((stat, index) => (
         <StatCard key={index} {...stat} />
       ))}
