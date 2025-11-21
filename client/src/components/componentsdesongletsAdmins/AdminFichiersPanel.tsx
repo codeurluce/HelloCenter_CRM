@@ -44,6 +44,7 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
     const [fiches, setFiches] = useState<Fiche[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [searchAgentTerm, setSearchAgentTerm] = useState('');
     const [showImportModal, setShowImportModal] = useState(false);
     const [selectedFiches, setSelectedFiches] = useState<number[]>([]);
     const [selectedFiche, setSelectedFiche] = useState<Fiche | null>(null);
@@ -140,6 +141,7 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
             case 'rendez_vous': result = result.filter(f => f.statut === 'rendez_vous'); break;
             case 'cloturees': result = result.filter(f => f.statut === 'cloturee'); break;
         }
+        // Filter sur infos fiches
         if (searchTerm) {
             const term = searchTerm.toLowerCase();
             result = result.filter(f =>
@@ -149,11 +151,22 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
                 (f.numero_fixe || '').includes(term) ||
                 (f.mail_client || '').toLowerCase().includes(term) ||
                 (f.ville_client || '').toLowerCase().includes(term) ||
-                (f.univers || '').toLowerCase().includes(term)
+                (f.univers || '').toLowerCase().includes(term) ||
+                (f.id.toString().includes(term))
             );
         }
+
+        // Filter par agent assignée
+        if (searchAgentTerm) {
+            const agentTerm = searchAgentTerm.toLowerCase();
+            result = result.filter(f =>
+                (f.assigned_to_name || '').toLowerCase().includes(agentTerm)
+            );
+        }
+
+        // Ajoute d'autres filtres si besoin (activeTab, activeFilter...)
         return result;
-    }, [fiches, activeFilter, searchTerm, activeTab]);
+    }, [fiches, activeFilter, activeTab, searchTerm, searchAgentTerm]);
 
     // Compteurs
     const counters = useMemo(() => {
@@ -209,7 +222,7 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
                             <Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                             <input
                                 type="text"
-                                placeholder="Rechercher par nom, téléphone, email..."
+                                placeholder="nom client, téléphone, email..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-80"
@@ -257,9 +270,22 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
                                 {f} <span className="px-2 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-600">{counters[f]}</span>
                             </button>
                         ))}
+                        <div className="relative">
+                            <Search
+                                size={20}
+                                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                            />
+                            <input
+                                type="text"
+                                placeholder="Filtre par agent..."
+                                value={searchAgentTerm}
+                                onChange={(e) => setSearchAgentTerm(e.target.value)}
+                                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full"
+                            />
+                        </div>
                         <button
                             onClick={() => fetchFiches()}
-                            className="flex ml-6 items-center gap-2 py-1 px-3 rounded-md border border-blue-500 text-blue-600 hover:bg-blue-100 transition">
+                            className="flex ml-6 items-center gap-2 py-1 px-3 rounded-md border border-blue-500 text-blue-600 hover:bg-blue-100 transition ml-auto">
                             <RefreshCw size={16} /> Rafraîchir
                         </button>
                     </div>
@@ -305,7 +331,6 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
                                             <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Assignée à</th>
                                             <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700 whitespace-nowrap">Date import</th>
                                             <th className="px-6 py-3 text-center text-sm font-semibold text-blue-700">Actions</th>
-                                            {activeFilter === 'nouvelles' && (
                                                 <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
                                                     <input
                                                         type="checkbox"
@@ -316,7 +341,6 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
                                                         checked={selectedFiches.length === filteredFiches.length && filteredFiches.length > 0}
                                                     />
                                                 </th>
-                                            )}
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -396,7 +420,7 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
                                                         </div>
                                                     )}
                                                 </td>
-                                                {activeFilter === 'nouvelles' && (
+                                                {/* {activeFilter === 'nouvelles' && ( */}
                                                     <td className="px-6 py-3 text-gray-800">
                                                         <input
                                                             type="checkbox"
@@ -407,7 +431,7 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
                                                             }}
                                                         />
                                                     </td>
-                                                )}
+                                                {/* )} */}
                                             </tr>
                                         ))}
                                     </tbody>
@@ -416,7 +440,6 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
                         )}
                     </div>
                 </div>
-
 
                 {/* Modals */}
                 <ImportModal
