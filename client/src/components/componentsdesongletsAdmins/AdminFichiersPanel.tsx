@@ -8,6 +8,8 @@ import {
     RefreshCw,
     FileUp,
     Eye,
+    Trash2Icon,
+    Repeat,
 } from 'lucide-react';
 import { Fiche, ClotureData } from '../componentsAdminFiches/fiche.ts';
 import ImportModal from '../componentsAdminFiches/ImportModal.tsx';
@@ -17,6 +19,7 @@ import { AuthContext } from '../../pages/AuthContext.jsx';
 import axiosInstance from '../../api/axiosInstance.js';
 import HistoriqueFilesModal from '../componentsAdminFiches/HistoriqueFilesModal.tsx';
 import DetailModal from '../componentsAdminFiches/DetailModal.tsx';
+import Swal from 'sweetalert2';
 
 interface AdminFichiersPanelProps {
     agents: Array<{ id: number; name: string; email: string }>;
@@ -194,6 +197,57 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
         setAssignModal({ isOpen: true, ficheId, currentAgentId: currentAgentId || null });
     };
 
+    const handleDeleteFiche = async (ficheId: number,) => {
+        const result = await Swal.fire({
+            icon: 'warning',
+            title: 'Confirmer suppression',
+            text: 'Voulez-vous vraiment supprimer cette fiche ?',
+            showCancelButton: true,
+            confirmButtonText: 'Oui, supprimer',
+            cancelButtonText: 'Annuler',
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#2563eb',
+        });
+
+        if (result.isConfirmed) {
+            try {
+                const res = await axiosInstance.delete(`/files/${ficheId}/delete`);
+                Swal.fire('Supprimé !', res.data.message, 'success');
+                // Mise à jour du state pour retirer la fiche de la liste
+                setFiches(prev => prev.filter(f => f.id !== ficheId));
+            } catch (err: any) {
+                console.error(err);
+                Swal.fire('Erreur', err.response?.data?.error || 'Erreur serveur', 'error');
+            }
+        }
+    };
+
+    // Retirer l'assignation d'une fiche
+    const handleUnassignFiche = async (fiche: Fiche,) => {
+        const result = await Swal.fire({
+            icon: 'question',
+            title: 'Retirer l\'assignation',
+            text: `Voulez-vous retirer la fiche assignée à ${fiche.assigned_to_name || 'cet agent'} ?`,
+            showCancelButton: true,
+            confirmButtonText: 'Oui, désassigner',
+            cancelButtonText: 'Annuler',
+            confirmButtonColor: '#2563eb',
+            cancelButtonColor: '#dc2626',
+        });
+
+        if (result.isConfirmed) {
+            try {
+                const res = await axiosInstance.put('/files/unassign', { ficheIds: [fiche.id] });
+                Swal.fire('Désassignée !', res.data.message, 'success');
+                // Mise à jour du state pour retirer la fiche de la liste
+                setFiches(prev => prev.filter(f => f.id !== fiche.id));
+            } catch (err: any) {
+                console.error(err);
+                Swal.fire('Erreur', err.response?.data?.error || 'Erreur serveur', 'error');
+            }
+        }
+    };
+
 
     // Statut badge
     const getStatusBadge = (statut: string, assigned_to?: number) => {
@@ -331,16 +385,16 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
                                             <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Assignée à</th>
                                             <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700 whitespace-nowrap">Date import</th>
                                             <th className="px-6 py-3 text-center text-sm font-semibold text-blue-700">Actions</th>
-                                                <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
-                                                    <input
-                                                        type="checkbox"
-                                                        onChange={(e) => {
-                                                            if (e.target.checked) setSelectedFiches(filteredFiches.map(f => f.id));
-                                                            else setSelectedFiches([]);
-                                                        }}
-                                                        checked={selectedFiches.length === filteredFiches.length && filteredFiches.length > 0}
-                                                    />
-                                                </th>
+                                            <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
+                                                <input
+                                                    type="checkbox"
+                                                    onChange={(e) => {
+                                                        if (e.target.checked) setSelectedFiches(filteredFiches.map(f => f.id));
+                                                        else setSelectedFiches([]);
+                                                    }}
+                                                    checked={selectedFiches.length === filteredFiches.length && filteredFiches.length > 0}
+                                                />
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -384,6 +438,20 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
                                                                     Détails
                                                                 </span>
                                                             </div>
+
+                                                            <div className="relative group">
+                                                                <button
+                                                                    onClick={() => handleDeleteFiche(fiche.id)}
+                                                                    title=""
+                                                                    className="px-3 py-1.5 rounded-lg border border-orange-100 text-orange-600 hover:bg-orange-600 hover:text-white 
+                                                                                                  transition-transform transform focus:outline-none focus:ring-2 focus:ring-offset-1 hover:scale-105"
+                                                                >
+                                                                    <Trash2Icon className="w-4 h-4" />
+                                                                </button>
+                                                                <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-orange-600 text-white text-xs whitespace-nowrap">
+                                                                    Supprimer
+                                                                </span>
+                                                            </div>
                                                         </div>
 
                                                     )}
@@ -391,6 +459,48 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
                                                     {/* Si besoin, tu peux aussi mettre d’autres actions visibles partout */}
                                                     {activeFilter !== 'nouvelles' && (
                                                         <div className="flex justify-end gap-2 items-center">
+                                                            <div className="relative group">
+                                                                <button
+                                                                    onClick={() => openDetailModal(fiche)}
+                                                                    title=""
+                                                                    className="px-3 py-1.5 rounded-lg border border-green-100 text-green-600 hover:bg-green-600 hover:text-white 
+                                                                                                  transition-transform transform focus:outline-none focus:ring-2 focus:ring-offset-1 hover:scale-105"
+                                                                >
+                                                                    <Eye className="w-4 h-4" />
+                                                                </button>
+                                                                <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-green-600 text-white text-xs whitespace-nowrap">
+                                                                    Détails fiches
+                                                                </span>
+                                                            </div>
+
+                                                            <div className="relative group">
+                                                                <button
+                                                                    onClick={() => handleDeleteFiche(fiche.id)}
+                                                                    title=""
+                                                                    className="px-3 py-1.5 rounded-lg border border-orange-100 text-orange-600 hover:bg-orange-600 hover:text-white 
+                                                                                                  transition-transform transform focus:outline-none focus:ring-2 focus:ring-offset-1 hover:scale-105"
+                                                                >
+                                                                    <Trash2Icon className="w-4 h-4" />
+                                                                </button>
+                                                                <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-orange-600 text-white text-xs whitespace-nowrap">
+                                                                    Supprimer
+                                                                </span>
+                                                            </div>
+
+                                                            <div className="relative group">
+                                                                <button
+                                                                    onClick={() => handleUnassignFiche(fiche)}
+                                                                    title=""
+                                                                    className="px-3 py-1.5 rounded-lg border border-purple-100 text-purple-600 hover:bg-purple-600 hover:text-white 
+                                                                                                  transition-transform transform focus:outline-none focus:ring-2 focus:ring-offset-1 hover:scale-105"
+                                                                >
+                                                                    <Repeat className="w-4 h-4" />
+                                                                </button>
+                                                                <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-purple-600 text-white text-xs whitespace-nowrap">
+                                                                    Retirer
+                                                                </span>
+                                                            </div>
+
                                                             <div className="relative group">
                                                                 <button
                                                                     onClick={() => setHistoriqueModal({ isOpen: true, ficheId: fiche.id })}
@@ -403,34 +513,20 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
                                                                     Voir l'historique
                                                                 </span>
                                                             </div>
-
-                                                            <div className="relative group">
-                                                                <button
-                                                                    onClick={() => openDetailModal(fiche)}
-                                                                    title="Consulter"
-                                                                    className="px-3 py-1.5 rounded-lg border border-green-100 text-green-600 hover:bg-green-600 hover:text-white 
-                                                                                                  transition-transform transform focus:outline-none focus:ring-2 focus:ring-offset-1 hover:scale-105"
-                                                                >
-                                                                    <Eye className="w-4 h-4" />
-                                                                </button>
-                                                                <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-green-600 text-white text-xs whitespace-nowrap">
-                                                                    Détails
-                                                                </span>
-                                                            </div>
                                                         </div>
                                                     )}
                                                 </td>
                                                 {/* {activeFilter === 'nouvelles' && ( */}
-                                                    <td className="px-6 py-3 text-gray-800">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={selectedFiches.includes(fiche.id)}
-                                                            onChange={(e) => {
-                                                                if (e.target.checked) setSelectedFiches(prev => [...prev, fiche.id]);
-                                                                else setSelectedFiches(prev => prev.filter(id => id !== fiche.id));
-                                                            }}
-                                                        />
-                                                    </td>
+                                                <td className="px-6 py-3 text-gray-800">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selectedFiches.includes(fiche.id)}
+                                                        onChange={(e) => {
+                                                            if (e.target.checked) setSelectedFiches(prev => [...prev, fiche.id]);
+                                                            else setSelectedFiches(prev => prev.filter(id => id !== fiche.id));
+                                                        }}
+                                                    />
+                                                </td>
                                                 {/* )} */}
                                             </tr>
                                         ))}

@@ -12,10 +12,12 @@ interface AssignModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAssign: (agentId: number) => void;
+  onUnassign?: (ficheId: number) => void;
   ficheId: number | null;
   agents: Agent[];
   currentAgentId?: number | null;
   selectedFiches?: number[];
+  assigned_to_name?: string | null;
 }
 const AssignModal: React.FC<AssignModalProps> = ({
   isOpen,
@@ -72,7 +74,7 @@ const AssignModal: React.FC<AssignModalProps> = ({
     return `${parts[0][0].toUpperCase()}${parts[1][0].toUpperCase()}`;
   };
 
-   const handleAssignClick = async () => {
+  const handleAssignClick = async () => {
     if (!selectedAgent) return;
 
     const result = await Swal.fire({

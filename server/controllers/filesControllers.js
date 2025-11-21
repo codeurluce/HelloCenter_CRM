@@ -280,6 +280,98 @@ exports.getAssignedFichesTo = async (req, res) => {
   }
 };
 
+// Retirer assignation d'une fiche
+exports.unassignFiches = async (req, res) => {
+  try {
+    const { ficheIds } = req.body;
+    const adminId = req.user.id; // l'admin qui retire l'assignation
+
+    if (!ficheIds || ficheIds.length === 0) {
+      return res.status(400).json({ error: 'ficheIds est obligatoire' });
+    }
+
+    // 🔎 Récupérer le nom/prénom du manager (admin)
+    let adminName;
+    if (!req.user.firstname || !req.user.lastname) {
+      const adminRes = await db.query(
+        `SELECT firstname, lastname FROM users WHERE id = $1`,
+        [adminId]
+      );
+      const admin = adminRes.rows[0];
+      adminName = admin ? `${admin.firstname} ${admin.lastname}` : `ID ${adminId}`;
+    } else {
+      adminName = `${req.user.firstname} ${req.user.lastname}`;
+    }
+
+    // 🔎 Récupérer les agents actuellement assignés aux fiches
+    const fichesRes = await db.query(
+      `SELECT id, assigned_to FROM files WHERE id = ANY($1::int[])`,
+      [ficheIds]
+    );
+
+    // Vérifier si les fiches existent
+    if (fichesRes.rows.length === 0) {
+      return res.status(404).json({ error: "Aucune fiche trouvée." });
+    }
+
+    // 🔎 Récupération des noms des agents assignés
+    const agentIds = [...new Set(fichesRes.rows.map(f => f.assigned_to).filter(Boolean))];
+
+    const agentsMap = {};
+
+    if (agentIds.length > 0) {
+      const agentsRes = await db.query(
+        `SELECT id, firstname, lastname FROM users WHERE id = ANY($1::int[])`,
+        [agentIds]
+      );
+
+      for (const a of agentsRes.rows) {
+        agentsMap[a.id] = `${a.firstname} ${a.lastname}`;
+      }
+    }
+
+    // 🔄 Mise à jour des fiches → suppression assignation
+    const result = await db.query(
+      `UPDATE files
+       SET assigned_to = NULL,
+           agent_id = NULL,
+           assigned_by = NULL,
+           statut = 'nouvelle',
+           date_assignation = NULL
+       WHERE id = ANY($1::int[])
+       RETURNING id`,
+      [ficheIds]
+    );
+
+    // 📝 Log dans historique_files
+    for (const fiche of fichesRes.rows) {
+      const oldAgentId = fiche.assigned_to;
+      const oldAgentName = oldAgentId ? agentsMap[oldAgentId] : "Agent inconnu";
+
+      await db.query(
+        `INSERT INTO historique_files (fiche_id, action, actor_id, actor_name, commentaire, created_at)
+         VALUES ($1, $2, $3, $4, $5, NOW())`,
+        [
+          fiche.id,
+          'UNASSIGNATION',
+          adminId,
+          adminName,
+          `Assignation retirée à : ${oldAgentName}) Fiche remise au statut 'nouvelle'`,
+        ]
+      );
+    }
+
+    return res.json({
+      message: `♻️ ${result.rowCount} fiche(s) désassignée(s) avec succès.`,
+      updated: result.rows.map(r => r.id),
+    });
+
+  } catch (error) {
+    console.error('Erreur unassign:', error);
+    res.status(500).json({ error: 'Erreur serveur lors de la désassignation' });
+  }
+};
+
 // API pour importer des fiches en masse et logué l'admin qui a fait l'import dans la bd
 exports.importFiles = async (req, res) => {
   try {
@@ -488,5 +580,18 @@ exports.exportFichesToXLSX = async (req, res) => {
   } catch (error) {
     console.error("Erreur export fiches:", error);
     res.status(500).json({ error: "Erreur lors de l’export des fiches" });
+  }
+};
+
+// Supprimer une fiche
+exports.deleteFile = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    await db.query("DELETE FROM files WHERE id = $1", [id]);
+    return res.status(200).json({ message: "Fiche supprimée avec succès" });
+  } catch (error) {
+    console.error("Erreur suppression fiche:", error);
+    return res.status(500).json({ error: "Erreur serveur" });
   }
 };

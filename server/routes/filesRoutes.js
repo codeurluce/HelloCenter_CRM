@@ -33,5 +33,7 @@ router.put('/:id/cloturer', filesControllers.cloturerFiche); // Clôture une fic
 router.put('/:id/programmer-rdv', filesControllers.programRdv, filesControllers.getFilesToRDV); // Programme un rendez-vous pour une fiche donnée puis récupère les fiches associées au rendez-vous // Méthode : PUT /api/files/:id/programmer-rdv
 router.put('/assigned_To', auth, filesControllers.getAssignedFichesTo); // Récupère les fiches assignées à l'agent connecté (ou autre selon le corps de requête) // Méthode : PUT /api/files/assigned_To
 router.put('/import_files', auth, filesControllers.importFiles); // Importe des fiches dans la base de données à partir d'une source externe ou fichier // Méthode : PUT /api/files/import_files
+router.put('/unassign', auth, filesControllers.unassignFiches) // Désassigne une fiche déja assigner a un agent et remet la fiche dans le statut nouvelle
+router.delete('/:id/delete', auth, filesControllers.deleteFile) // Supprime une fiche spécifique via son ID // Méthode : DELETE /api/files/:id/delete
 
 module.exports = router;
