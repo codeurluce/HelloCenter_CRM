@@ -25,9 +25,9 @@ function AppWrapper() {
       <Router>
         <AgentStatusProvider>
           <ThemeProvider>
-          <NextThemeProvider attribute="class" defaultTheme="system" enableSystem={true}>
-          <App />
-          </NextThemeProvider>
+            <NextThemeProvider attribute="class" defaultTheme="system" enableSystem={true}>
+              <App />
+            </NextThemeProvider>
           </ThemeProvider>
         </AgentStatusProvider>
         <ToastContainer position="top-right" autoClose={3000} />
@@ -106,17 +106,18 @@ const App = () => {
       {/* ✅ Login corrigé */}
       <Route path="/login" element={<Login onLogin={handleLogin} />} />
 
-      <Route path="/change-password" element={
-        user?.mustChangePassword ? (
-          <ChangePassword onPasswordChanged={() => {
-            const updatedUser = { ...user, mustChangePassword: false };
-            setUser(updatedUser);
-            localStorage.setItem('mustChangePassword', 'false');
-            localStorage.setItem('user', JSON.stringify(updatedUser));
-            navigate(routeByRole(user.role), { replace: true });
-          }} />
-        ) : <Navigate to="/" replace />
-      } />
+      <Route path="/change-password"
+        element={
+          (user?.mustChangePassword || localStorage.getItem("resetMode") === "true") ? (
+            <ChangePassword onPasswordChanged={() => {
+              const updatedUser = { ...user, mustChangePassword: false };
+              setUser(updatedUser);
+              localStorage.setItem('mustChangePassword', 'false');
+              localStorage.setItem('user', JSON.stringify(updatedUser));
+              navigate(routeByRole(user.role), { replace: true });
+            }} />
+          ) : <Navigate to="/" replace />
+        } />
 
       <Route path="/agent" element={
         <ProtectedRoute roles={['Agent']}>

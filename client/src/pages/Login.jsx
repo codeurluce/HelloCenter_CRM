@@ -34,10 +34,10 @@ const Login = ({ onLogin }) => {
       // localStorage.setItem('mustChangePassword', mustChangePassword);
       // localStorage.setItem('user', JSON.stringify(user));
       setUser(user);
-    
-    loginAgent(user, mustChangePassword);
+
+      loginAgent(user, mustChangePassword);
       // ⚡ Notifie le backend que l'agent est connecté
-      
+
       if (onLogin) onLogin(token, user, mustChangePassword);
 
       if (mustChangePassword) {
@@ -126,7 +126,13 @@ const Login = ({ onLogin }) => {
               <input type="checkbox" className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
               <span className="ml-2 text-gray-700">Se souvenir de moi</span>
             </label>
-            <button type="button" className="text-blue-600 hover:underline">Mot de passe oublié ?</button>
+            <button type="button"
+              onClick={() => {
+                localStorage.setItem("resetMode", "true");
+                navigate('/change-password');
+              }}
+              className="text-blue-600 hover:underline"
+            >Mot de passe oublié ?</button>
           </div>
 
           <button

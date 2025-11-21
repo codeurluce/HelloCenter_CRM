@@ -12,6 +12,7 @@ const ChangePassword = ({ onPasswordChanged }) => {
   const [reason, setReason] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState({ score: 0, label: '', color: '', width: '0%' });
+  const isResetMode = localStorage.getItem("resetMode") === "true";
 
   useEffect(() => {
     const storedReason = localStorage.getItem('mustChangePasswordReason');
@@ -67,64 +68,72 @@ const ChangePassword = ({ onPasswordChanged }) => {
     );
   };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setError('');
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
 
-  if (password !== confirmPassword) {
-    setError('Les mots de passe ne correspondent pas.');
-    return;
-  }
-
-  if (!validatePassword(password)) {
-    setError(
-      'Le mot de passe doit contenir au moins 8 caractères, dont une majuscule, une minuscule, un chiffre et un caractère spécial.'
-    );
-    return;
-  }
-
-  setIsSubmitting(true);
-
-  try {
-    const token = localStorage.getItem('token');
-
-    await axiosInstance.post('/change-password-first-login',  { password });
-
-    if (onPasswordChanged) onPasswordChanged();
-
-    localStorage.setItem('mustChangePassword', 'false');
-    localStorage.setItem('mustChangePasswordReason', '');
-
-    const role = localStorage.getItem('role');
-    if (role === 'Agent') navigate('/agent');
-    else if (role === 'Manager') navigate('/manager');
-    else if (role === 'Admin') navigate('/admin');
-    else navigate('/');
-  } catch (err) {
-    if (
-      err.response?.data?.message === "Le nouveau mot de passe ne peut pas être identique à l'ancien."
-    ) {
-      setError("Vous devez choisir un mot de passe différent de l'ancien.");
-    } else {
-      setError(err.response?.data?.message || 'Erreur lors du changement de mot de passe');
+    if (password !== confirmPassword) {
+      setError('Les mots de passe ne correspondent pas.');
+      return;
     }
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+
+    if (!validatePassword(password)) {
+      setError(
+        'Le mot de passe doit contenir au moins 8 caractères, dont une majuscule, une minuscule, un chiffre et un caractère spécial.'
+      );
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+
+      await axiosInstance.post('/change-password-first-login', { password });
+
+      // Pour réinitialisation le mot de passe → retour direct au login
+      if (isResetMode) {
+        localStorage.removeItem("resetMode");
+        navigate('/login');
+        return;
+      }
+
+      // Mode first login ou mot de passe expiré
+      if (onPasswordChanged) onPasswordChanged();
+      localStorage.setItem('mustChangePassword', 'false');
+      localStorage.setItem('mustChangePasswordReason', '');
+
+      const role = localStorage.getItem('role');
+      if (role === 'Agent') navigate('/agent');
+      else if (role === 'Manager') navigate('/manager');
+      else if (role === 'Admin') navigate('/admin');
+      else navigate('/');
+
+    } catch (err) {
+      const msg = err.response?.data?.message;
+      if (msg === "Le nouveau mot de passe ne peut pas être identique à l'ancien.") {
+        setError("Vous devez choisir un mot de passe différent de l'ancien.");
+      } else {
+        setError(msg || 'Erreur lors du changement de mot de passe');
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="p-6 max-w-md w-full bg-white rounded shadow-md">
-        <h2 className="text-xl font-bold mb-4 text-center">Changer le mot de passe</h2>
+        <h2 className="text-xl font-bold mb-4 text-center">
+          {isResetMode ? "Réinitialiser votre mot de passe" : "Changer votre mot de passe"}
+        </h2>
         {/* Bouton retour */}
-  {/* <button
-    type="button"
-    onClick={() => navigate('/login')}
-    className="mb-4 text-sm text-blue-600 hover:underline"
-  >
-    &larr; Retour à la page de connexion
-  </button> */}
+        <button
+          type="button"
+          onClick={() => navigate('/login')}
+          className="mb-4 text-sm text-blue-600 hover:underline"
+        >
+          &larr; Retour
+        </button>
         {reason === 'first_login' && (
           <p className="mb-4 text-center text-blue-700">
             Bienvenue ! Merci de changer votre mot de passe.
@@ -164,19 +173,19 @@ const handleSubmit = async (e) => {
             <div
               style={{ width: passwordStrength.width }}
               className={`h-2 rounded transition-all duration-300  ${passwordStrength.color === 'green'
-                  ? 'bg-green-500'
-                  : passwordStrength.color === 'orange'
-                    ? 'bg-yellow-400'
-                    : 'bg-red-500'
+                ? 'bg-green-500'
+                : passwordStrength.color === 'orange'
+                  ? 'bg-yellow-400'
+                  : 'bg-red-500'
                 }`} />
 
           </div>
           <p
             className={`text-center mt-1 text-sm font-medium ${passwordStrength.color === 'green'
-                ? 'text-green-600'
-                : passwordStrength.color === 'orange'
-                  ? 'text-yellow-600'
-                  : 'text-red-600'
+              ? 'text-green-600'
+              : passwordStrength.color === 'orange'
+                ? 'text-yellow-600'
+                : 'text-red-600'
               }`}
           >
             {passwordStrength.label}
