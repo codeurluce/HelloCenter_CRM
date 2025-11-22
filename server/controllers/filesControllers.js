@@ -519,9 +519,9 @@ exports.exportFichesToXLSX = async (req, res) => {
     } = req.query;
 
     // Requête de base : exclure "nouvelle"
-    let query = 'SELECT * FROM files WHERE statut != $1';
-    const params = ['nouvelle'];
-    let paramIndex = 2;
+    let query = 'SELECT * FROM files WHERE 1 = 1';
+    const params = [];
+    let paramIndex = 1;
 
     // Filtre agents
     if (agents) {
