@@ -595,3 +595,29 @@ exports.deleteFile = async (req, res) => {
     return res.status(500).json({ error: "Erreur serveur" });
   }
 };
+
+// Suppression de plusieurs fiches à la fois
+// Supprimer un lot de fiches
+exports.deleteFilesBatch = async (req, res) => {
+  const { ficheIds } = req.body; // ⚠️ on récupère ficheIds pour matcher le frontend
+
+  // Vérification sécurisée
+  if (!Array.isArray(ficheIds) || ficheIds.length === 0) {
+    return res.status(400).json({ error: "ficheIds est requis et doit être un tableau non vide." });
+  }
+
+  try {
+    // Suppression en batch
+    const result = await db.query(
+      `DELETE FROM files WHERE id = ANY($1::int[])`,
+      [ficheIds]
+    );
+
+    return res.status(200).json({
+      message: `${result.rowCount} fiche(s) supprimée(s) avec succès.`,
+    });
+  } catch (err) {
+    console.error("Erreur suppression batch:", err);
+    return res.status(500).json({ error: "Erreur serveur lors de la suppression" });
+  }
+};

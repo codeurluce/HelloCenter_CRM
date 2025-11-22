@@ -35,5 +35,6 @@ router.put('/assigned_To', auth, filesControllers.getAssignedFichesTo); // Récu
 router.put('/import_files', auth, filesControllers.importFiles); // Importe des fiches dans la base de données à partir d'une source externe ou fichier // Méthode : PUT /api/files/import_files
 router.put('/unassign', auth, filesControllers.unassignFiches) // Désassigne une fiche déja assigner a un agent et remet la fiche dans le statut nouvelle
 router.delete('/:id/delete', auth, filesControllers.deleteFile) // Supprime une fiche spécifique via son ID // Méthode : DELETE /api/files/:id/delete
-
+router.delete('/delete-batch', auth, filesControllers.deleteFilesBatch) // Supprime plusieurs fiches via leurs IDs // Méthode : DELETE /api/files/:id/delete
+ 
 module.exports = router;

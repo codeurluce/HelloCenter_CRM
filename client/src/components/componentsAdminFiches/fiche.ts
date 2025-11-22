@@ -10,11 +10,11 @@ export interface Fiche {
   code_postal: string;
   univers: string;
   statut: 'nouvelle' | 'en_traitement' | 'rendez_vous' | 'cloturee';
-  assigned_to?: number;
+  assigned_to?: number | null;
   assigned_to_name?: string | null;
-  agent_id?: number;
-  agent_firstname?: string;
-  agent_lastname?: string;
+  agent_id?: number | null;
+  agent_firstname?: string | null;
+  agent_lastname?: string | null;
   ref_fiche?: string;
   client_name?: string;
   date_creation: string;
