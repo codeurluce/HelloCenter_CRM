@@ -643,7 +643,9 @@ exports.closeSessionForce = async (userId, userSockets) => {
   try {
     console.log(`[SERVER] closeSessionForce called for user ${userId}`);
 
-    // Vérifier s’il existe une session active
+    const io = getIo();
+
+    // 1️⃣ Vérifier session active
     const check = await db.query(
       `SELECT id FROM session_agents
        WHERE user_id = $1 AND end_time IS NULL
@@ -651,66 +653,60 @@ exports.closeSessionForce = async (userId, userSockets) => {
       [userId]
     );
 
-    if (check.rowCount === 0) {
-      console.log(`[SERVER] closeSessionForce: aucun statut actif pour ${userId}, rien à fermer`);
-      return null; // ⛔ On ignore
+    let session = null;
+
+    if (check.rowCount > 0) {
+      session = await db.query(
+        `UPDATE session_agents
+         SET end_time = NOW(),
+             duration = EXTRACT(EPOCH FROM (NOW() - start_time))::INT
+         WHERE id = $1
+         RETURNING id, start_time, end_time, duration`,
+        [check.rows[0].id]
+      );
+      session = session.rows[0];
+
+      console.log(`[SERVER] Session clôturée pour ${userId}`);
+    } else {
+      console.log(`[SERVER] Aucune session active → statut null, on déconnecte quand même.`);
     }
 
-    // Clôturer la session active
-    const result = await db.query(
-      `UPDATE session_agents
-       SET end_time = NOW(),
-           duration = EXTRACT(EPOCH FROM (NOW() - start_time))::INT
-       WHERE id = $1
-       RETURNING id, start_time, end_time, duration`,
-      [check.rows[0].id]
-    );
-
-    // Marquer l’agent comme déconnecté
+    // 2️⃣ Déconnecter l'agent
     await db.query("UPDATE users SET is_connected = FALSE WHERE id = $1", [userId]);
 
-    //  Ajouter un événement dans l’historique des connexions
-    await db.query("INSERT INTO agent_connections_history (user_id, event_type) VALUES ($1, 'disconnect')", [userId]);
+    // 3️⃣ Historique
+    await db.query(
+      "INSERT INTO agent_connections_history (user_id, event_type) VALUES ($1, 'disconnectByAdmin')",
+      [userId]
+    );
 
-    const session = result.rows[0];
-    console.log(`[SERVER] closeSessionForce: session closed for ${userId}`, session);
+    // 4️⃣ Notifier admins
+    io.to("admins").emit("agent_status_changed", {
+      userId,
+      newStatus: "Hors ligne"
+    });
 
-    
-    // ⚡ EMETTRE SOCKET pour mise à jour live
-    const io = getIo();
+    io.to("admins").emit("agent_disconnected_for_admin", {
+      userId,
+      newStatus: "Hors ligne"
+    });
 
-    // Notifier les admins
-    console.log("[SERVER] ⚡ Emit: agent_status_changed → admins");
-    io.to("admins").emit("agent_status_changed", { userId, newStatus: "Hors ligne" });
-
-    console.log("[SERVER] ⚡ Emit: agent_disconnected → admins");
-    io.to("admins").emit("agent_disconnected", { userId });
-
-    // Notifier l’agent
-    console.log("[SERVER] ⚡ Emit: force_disconnect_by_admin → agent");
+    // 5️⃣ Notifier l’agent
     io.to(`agent_${userId}`).emit("force_disconnect_by_admin", {
       userId,
       reason: "Déconnecté par l’administrateur",
       forced: true
     });
 
-    // 🔹 Notifier les admins pour mettre à jour leur tableau live
-io.to("admins").emit("agent_disconnected_for_admin", {
-  userId,
-  newStatus: "Hors connexion"
-});
-
-// Déconnexion physique du socket après un petit délai pour garantir réception front
+    // 6️⃣ Déconnecter sockets physiquement
     const sockets = userSockets.get(userId);
-    if (sockets && sockets.size > 0) {
+    if (sockets) {
       sockets.forEach(socketId => {
         const s = io.sockets.sockets.get(socketId);
         if (s) {
-          // Déconnexion différée pour laisser le temps au front de traiter les sockets
           setTimeout(() => {
-            console.log(`[BACK] ⚡ Déconnexion socket ${socketId} de user ${userId}`);
             s.disconnect(true);
-          }, 100); // 100ms suffisent
+          }, 100);
         }
       });
       userSockets.delete(userId);

@@ -1,7 +1,7 @@
 // if (process.env.NODE_ENV !== 'production') {
 //   require('dotenv').config();
 // }
-require('dotenv').config(); 
+require('dotenv').config();
 
 console.log("🔑 Loaded ENV variables:");
 console.log("DATABASE_URL:", process.env.DATABASE_URL);
@@ -16,7 +16,7 @@ const cron = require('node-cron');
 const { checkContrats } = require("./controllers/rhControllers");
 const { initSockets } = require('./socket');
 
-require ('./inactivityChecker')
+require('./inactivityChecker')
 const sessionRoutes = require('./routes/sessionRoutes');
 const salesRoutes = require('./routes/salesRoutes');
 const filesRoutes = require('./routes/filesRoutes');
@@ -78,6 +78,10 @@ app.get('/', (req, res) => res.send('API CRM en ligne ✅'));
 
 // Configuration Socket.IO
 const io = initSockets(server);
+
+const { userSockets } = require('./socket'); // récupérer la Map
+app.locals.userSockets = userSockets;
+
 const { setIo } = require("./socketInstance");
 setIo(io);
 

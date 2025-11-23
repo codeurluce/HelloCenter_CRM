@@ -1,26 +1,9 @@
 // initSockets.js
 const db = require('./db');
 const { Server } = require("socket.io");
-const { closeSessionForce } = require("./controllers/sessionControllers");
 
 let io; // Socket.io global
 const userSockets = new Map();
-
-// 🔌 Déconnexion forcée accessible globalement
-async function forceDisconnectSocket(userId, reason = "Déconnexion forcée") {
-  console.log(`[BACK] 🔌 Déconnexion forcée pour user ${userId}, raison: ${reason}`);
-
-  try {
-    // 👉 Cela suffit : cette fonction émet TOUT (admins + agent)
-    await closeSessionForce(userId, userSockets);
-
-    return { success: true };
-
-  } catch (err) {
-    console.error(`[BACK] ❌ Erreur forceDisconnectSocket ${userId}:`, err);
-  }
-}
-
 
 // 🔹 Initialisation de Socket.io
 function initSockets(server) {
@@ -67,4 +50,4 @@ function initSockets(server) {
   return io;
 }
 
-module.exports = { initSockets, forceDisconnectSocket, userSockets };
+module.exports = { initSockets, userSockets };

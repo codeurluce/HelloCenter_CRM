@@ -3,8 +3,8 @@ const db = require('../db');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const { findUserByEmail, createUserWithGeneratedEmail } = require('../models/userModels');
-const { forceDisconnectSocket } = require('../socket') 
 const { getIo } = require("../socketInstance");
+const { closeSessionForce } = require('./sessionControllers');
 
 // Vérifier que JWT_SECRET est défini
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -256,7 +256,7 @@ const connectAgent = async (req, res) => {
     );
 
     const io = getIo();
-//  Émettre l’événement à tous les admins
+    //  Émettre l’événement à tous les admins
     io.emit("agent_connected", { userId });
 
     res.json({ success: true });
@@ -339,7 +339,7 @@ const disconnectAgentForce = async (req, res) => {
       [userId]
     );
 
-        // 🔔 Émettre l’événement à tous les admins pour live update
+    // 🔔 Émettre l’événement à tous les admins pour live update
     const io = getIo();
     io.emit("agent_disconnected", { userId });
 
@@ -355,59 +355,12 @@ const disconnectAgentForce = async (req, res) => {
 };
 
 // POST /agents/disconnect
-// const disconnectAgentbyAdmin = async (req, res) => {
-//   const userId = req.params.id;
-//   const requester = req.user; // info du token : id + role
-
-//   if (!userId) {
-//     return res.status(400).json({ error: "userId manquant" });
-//   }
-
-//   try {
-//     // Vérifier si c'est soi-même ou un admin
-//     if (requester.id !== userId && requester.role !== "Admin") {
-//       return res.status(403).json({ error: "Action réservée aux administrateurs" });
-//     }
-//     // Empecher un admin de se deconnecter lui mm via cet endpoint
-//     if (requester.id.toString() === userId) {
-//       return res.status(400).json({ error: "Vous ne pouvez pas vous déconnecter vous-même via cet methode." });
-//     }
-
-//     // Fermer la session active
-//     await db.query(
-//       `UPDATE session_agents
-//        SET end_time = NOW(),
-//            duration = EXTRACT(EPOCH FROM (NOW() - start_time))
-//        WHERE user_id = $1 AND end_time IS NULL`,
-//       [userId]
-//     );
-
-//     // Marquer l’agent comme déconnecté
-//     await db.query("UPDATE users SET is_connected = FALSE WHERE id = $1", [userId]);
-
-//     // Récupérer le nom complet de l'admin depuis la table users
-//     const adminResult = await db.query(
-//       'SELECT firstname, lastname FROM users WHERE id = $1',
-//       [requester.id]
-//     );
-//     const admin = adminResult.rows[0];
-//     const adminName = `${admin.firstname} ${admin.lastname}`;
-
-//     // Ajouter un événement dans l’historique des connexions
-//     await db.query(
-//       "INSERT INTO agent_connections_history (user_id, event_type, admin_id, admin_name) VALUES ($1, 'disconnectByAdmin', $2, $3)",
-//       [userId, requester.id, adminName]
-//     );
-
-//     res.json({ success: true, message: "Déconnexion réussie" });
-//   } catch (err) {
-//     console.error("Erreur disconnectAgent:", err);
-//     res.status(500).json({ error: "Erreur lors de la déconnexion de l’agent" });
-//   }
-// };
 const disconnectAgentbyAdmin = async (req, res) => {
   const userId = req.params.id;
   const requester = req.user;
+
+  console.log("requester.id", requester.id, typeof requester.id);
+  console.log("userId", userId, typeof userId);
 
   if (!userId) {
     return res.status(400).json({ error: "userId manquant" });
@@ -415,21 +368,26 @@ const disconnectAgentbyAdmin = async (req, res) => {
 
   try {
     // Permissions
-    if (requester.id === userId) {
+    if (requester.id.toString() === userId.toString()) {
       return res.status(400).json({ error: "Vous ne pouvez pas vous déconnecter vous-même" });
     }
+
     if (requester.role !== "Admin") {
       return res.status(403).json({ error: "Action réservée aux administrateurs" });
     }
 
-    // ⚡ Remplacer TOUT ton code par un seul appel :
-    await forceDisconnectSocket(userId, "Déconnecté par un administrateur");
+    const userRes = await db.query("SELECT is_connected FROM users WHERE id = $1", [userId]);
+    if (!userRes.rows[0]?.is_connected) {
+      return res.status(400).json({ error: "L'agent est déjà déconnecté" });
+    }
 
-    return res.json({ success: true, message: "Déconnexion forcée envoyée" });
+    // ⚡ Remplacer TOUT ton code par un seul appel :
+    const result = await closeSessionForce(userId, req.app.locals.userSockets);
+    return res.json({ success: true, result });
 
   } catch (err) {
     console.error("Erreur disconnectAgent:", err);
-    return res.status(500).json({ error: "Erreur lors de la déconnexion de l’agent" });
+    return res.status(500).json({ error: "Erreur lors de la déconnexion" });
   }
 };
 
