@@ -382,7 +382,7 @@ const disconnectAgentbyAdmin = async (req, res) => {
     }
 
     // ⚡ Remplacer TOUT ton code par un seul appel :
-    const result = await closeSessionForce(userId, req.app.locals.userSockets);
+    const result = await closeSessionForce(userId, req.app.locals.userSockets, requester.id);
     return res.json({ success: true, result });
 
   } catch (err) {

@@ -5,6 +5,7 @@ import { exportData } from "../utils/exportUtils";
 import axiosInstance from "../../api/axiosInstance";
 import Swal from "sweetalert2";
 import StatusSelector, { statuses, formatTime } from "../../shared/StatusSelector.jsx";
+import AgentWorkSummary from "./AgentWorkSummary.jsx";
 
 export default function AgentInfoPanel({ userId, etat, timers, currentSession, onStatusChange }) {
   const [elapsed, setElapsed] = useState(0);
@@ -114,7 +115,7 @@ const handleExport = async () => {
     <>
           {/* Export date range */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-6">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+        {/*<div className="flex flex-col sm:flex-row sm:items-center gap-3">
           <div className="flex flex-col">
             <label className="text-xs text-gray-500 mb-1">Date de début</label>
             <input
@@ -135,14 +136,14 @@ const handleExport = async () => {
           </div>
         </div>
 
-        <button
+         <button
           onClick={handleExport}
           disabled={isExporting}
           className="mt-3 sm:mt-0 bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
         >
           <Download className="h-4 w-4" />
           {isExporting ? "Export en cours..." : "Exporter mes données"}
-        </button>
+        </button> */}
       </div>
       
     <div style={{ width: "100%", padding: 24, background: "#f9fafb", borderRadius: 12, overflowY: "auto" }}>
@@ -220,7 +221,12 @@ const handleExport = async () => {
       <div className="flex flex-wrap gap-3 justify-center w-full mx-auto">
         <StatusSelector currentStatus={etat} onSelect={handleSelect} mode="buttons" />
       </div>
-    </div></>
+    </div>
+    <div className="pt-24">
+      <AgentWorkSummary />
+      </div> 
+
+    </>
   );
 }
 

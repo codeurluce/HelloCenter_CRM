@@ -26,7 +26,7 @@ export default function SessionAgentDetailsModal({ agent, onClose }) {
     useEffect(() => {
         const fetchConnectionTimes = async () => {
             try {
-                const res = await axiosInstance.get("/session_agents/user/agent_connection_details");
+                const res = await axiosInstance.get("/session_agents/user/agent-connection-details");
                 // On récupère uniquement les infos pour l'agent actuel
                 const userData = res.data.find(item => item.user_id === agent.user_id);
                 if (userData) setConnectionTimes(userData);
