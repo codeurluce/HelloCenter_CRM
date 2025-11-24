@@ -135,10 +135,10 @@ export const AgentStatusProvider = ({ children }) => {
       }
 
       socket.off("connect");
-      socket.on("connect", () => console.log("[FRONT] ✅ Socket connecté :", socket.id));
+      socket.on("connect", () => socket.id);
 
       socket.off("disconnect");
-      socket.on("disconnect", () => console.log("[FRONT] ❌ Socket déconnecté :", socket.id));
+      socket.on("disconnect", () => socket.id);
 
       socket.off("session_closed_force");
       socket.on("session_closed_force", ({ reason }) => handleForcedLogout(reason));
@@ -207,7 +207,7 @@ export const AgentStatusProvider = ({ children }) => {
     const sendHeartbeat = async () => {
       try {
         await axiosInstance.post("/session_agents/heartbeat");
-        console.log('💓 Heartbeat envoyé du frontend à', new Date().toLocaleString());
+        // console.log('💓 Heartbeat envoyé du frontend à', new Date().toLocaleString());
       } catch {
         console.warn("Heartbeat échoué");
       }

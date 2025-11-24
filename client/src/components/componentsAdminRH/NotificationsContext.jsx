@@ -13,7 +13,6 @@ export const NotificationsProvider = ({ children }) => {
     const fetchNotifications = async () => {
       try {
         const res = await axiosInstance.get("/rh/notifications/fin-contrat");
-        console.log("Res API:", res.data);
         setFinContratNotifs(res.data || []);
       } catch (err) {
         console.error("Erreur chargement notifications fin contrat:", err);

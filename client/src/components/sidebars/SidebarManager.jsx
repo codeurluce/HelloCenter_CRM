@@ -98,6 +98,7 @@ const SidebarAdmin = ({ activeItem, setActiveItem, onLogout }) => {
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
             className="text-white hover:bg-white hover:bg-opacity-20 p-2 rounded-lg transition-colors"
+            aria-label="Ouvrir Sidebar"
           >
             {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
           </button>

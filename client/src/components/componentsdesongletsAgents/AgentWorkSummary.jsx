@@ -202,12 +202,12 @@ export default function AgentWorkSummary({ userId }) {
                         </tbody>
                     </table>
 
-                    <div className="flex justify-end">
+                    {/* <div className="flex justify-end">
                         <div className="mt-4 p-2 bg-red-50 rounded-lg text-center ml-auto w-max">
                             <div className="text-xs text-orange-700">Total période filtrée (heure de travail)</div>
                             <div className="text-lg font-mono">{formatTime(totalPeriode)}</div>
                         </div>
-                    </div>
+                    </div> */}
                 </>
             )}
         </div>

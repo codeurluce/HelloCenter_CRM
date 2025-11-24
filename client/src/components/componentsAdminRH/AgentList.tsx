@@ -18,7 +18,6 @@ export default function AgentList() {
         setLoading(true);
         try {
             const res = await axiosInstance.get("/rh/users-contrat");
-            console.log("🧩 Données reçues :", res.data);
             setAgents(res.data);
         } catch (err) {
             console.error("Erreur fetch agents:", err);
