@@ -458,6 +458,15 @@ exports.importFiles = async (req, res) => {
     // Insertion des fichiers
     const result = await db.query(queryText, flatValues);
 
+if (!result.rowCount || result.rowCount === 0) {
+  await db.query('ROLLBACK');
+  return res.status(400).json({
+    success: false,
+    message: "Aucune fiche n’a été importée.",
+    addedFiches: []
+  });
+}
+
     // Insertion dans historique_files
     for (const fiche of result.rows) {
       await db.query(
@@ -477,10 +486,11 @@ exports.importFiles = async (req, res) => {
     // Commit transaction
     await db.query('COMMIT');
 
-    return res.json({
-      message: `✅ ${result.rowCount} fiche(s) importée(s) avec succès`,
-      addedFiches: result.rows.map(r => r.id)
-    });
+return res.json({
+  success: true,
+  message: `✅ ${result.rowCount} fiche(s) importée(s) avec succès`,
+  addedFiches: result.rows.map(r => r.id)
+});
 
   } catch (error) {
     // Rollback en cas d'erreur

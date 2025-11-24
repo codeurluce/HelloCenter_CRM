@@ -101,12 +101,207 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
         setAssignModal({ isOpen: true, ficheId, currentAgentId: currentAgentId ?? null });
     };
 
-    const handleDeleteFiche = async (ficheId: number) => { /* ... */ };
-    const handleUnassignFiche = async (fiche: Fiche) => { /* ... */ };
-    const handleBatchUnassign = async () => { /* ... */ };
-    const handleBatchDelete = async () => { /* ... */ };
-    const handleAssignSubmit = async (agentId: number) => { /* ... */ };
-    const onImportFiches = async (importedData: any) => { /* ... */ };
+/**
+ * ============================
+ *   ASSIGNATION D’UNE FICHE
+ * ============================
+ */
+    const handleAssignSubmit = async (agentId: number) => {
+        try {
+            const ficheIds = assignModal.ficheId ? [assignModal.ficheId] : selectedFiches;
+
+            const res = await axiosInstance.put('/files/assigned_To', {
+                ficheIds,
+                agentId,
+            });
+
+            console.log(res.data.message);
+
+            // 🔥 Mise à jour locale
+            setFiches(prev =>
+                prev.map(f =>
+                    ficheIds.includes(f.id)
+                        ? { ...f, assigned_to: agentId, statut: 'nouvelle' }
+                        : f
+                )
+            );
+
+            // Nettoyer la sélection
+            setSelectedFiches(prev => prev.filter(id => !ficheIds.includes(id)));
+
+            // Fermer le modal
+            setAssignModal({
+                isOpen: false,
+                ficheId: null,
+                currentAgentId: null,
+            });
+
+            return res.data;
+        } catch (err: any) {
+            console.error('Erreur assignation:', err.response?.data || err.message);
+            throw err;
+        }
+    };
+
+
+/**
+ * ============================
+ *   DÉSASSIGNER UNE FICHE
+ * ============================
+ */
+    const handleUnassignFiche = async (fiche: Fiche) => {
+        const result = await Swal.fire({
+            icon: 'question',
+            title: 'Retirer l\'assignation',
+            text: `Voulez-vous retirer la fiche assignée à ${fiche.assigned_to_name || 'cet agent'} ?`,
+            showCancelButton: true,
+            confirmButtonText: 'Oui, désassigner',
+            cancelButtonText: 'Annuler',
+            confirmButtonColor: '#2563eb',
+            cancelButtonColor: '#dc2626',
+        });
+
+        if (result.isConfirmed) {
+            try {
+                const res = await axiosInstance.put('/files/unassign', { ficheIds: [fiche.id] });
+                Swal.fire('Désassignée !', res.data.message, 'success');
+                setFiches(prev => prev.filter(f => f.id !== fiche.id));
+            } catch (err: any) {
+                console.error(err);
+                Swal.fire('Erreur', err.response?.data?.error || 'Erreur serveur', 'error');
+            }
+        }
+    };
+
+/**
+ * ============================
+ *   DÉSASSIGNER plusieurs fiches
+ * ============================
+ */    
+    const handleBatchUnassign = async () => {
+        const result = await Swal.fire({
+            icon: 'question',
+            title: 'Confirmer désassignation',
+            text: `Voulez-vous vraiment désassigner ${selectedFiches.length} fiche(s) ?`,
+            showCancelButton: true,
+            confirmButtonText: 'Oui, désassigner',
+            cancelButtonText: 'Annuler',
+            confirmButtonColor: '#6d28d9',
+            cancelButtonColor: '#dc2626',
+        });
+
+        if (!result.isConfirmed) return;
+
+        try {
+            const ids = selectedFiches;
+
+            const res = await axiosInstance.put('/files/unassign', {
+                ficheIds: ids
+            });
+
+            Swal.fire('Succès', res.data.message, 'success');
+
+            setFiches(prev =>
+                prev.map(f =>
+                    ids.includes(f.id)
+                        ? { ...f, agent_id: null, agent_name: null }
+                        : f
+                )
+            );
+
+            setSelectedFiches([]);
+
+        } catch (e: any) {
+            Swal.fire('Erreur', e.response?.data?.error || 'Erreur serveur', 'error');
+        }
+    };
+
+/**
+* ============================
+*   Supprimer une fiche
+* ============================
+*/
+    const handleDeleteFiche = async (ficheId: number) => {
+        const result = await Swal.fire({
+            icon: 'warning',
+            title: 'Confirmer suppression',
+            text: 'Voulez-vous vraiment supprimer cette fiche ?',
+            showCancelButton: true,
+            confirmButtonText: 'Oui, supprimer',
+            cancelButtonText: 'Annuler',
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#2563eb',
+        });
+
+        if (result.isConfirmed) {
+            try {
+                const res = await axiosInstance.delete(`/files/${ficheId}/delete`);
+                Swal.fire('Supprimé !', res.data.message, 'success');
+                setFiches(prev => prev.filter(f => f.id !== ficheId));
+            } catch (err: any) {
+                console.error(err);
+                Swal.fire('Erreur', err.response?.data?.error || 'Erreur serveur', 'error');
+            }
+        }
+    };
+
+/**
+* ============================
+*   Supprimer plusieurs fiches
+* ============================
+*/
+    const handleBatchDelete = async () => {
+        const result = await Swal.fire({
+            icon: 'warning',
+            title: 'Confirmer suppression',
+            text: `Voulez-vous vraiment supprimer ${selectedFiches.length} fiche(s) ?`,
+            showCancelButton: true,
+            confirmButtonText: 'Oui, supprimer',
+            cancelButtonText: 'Annuler',
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#2563eb',
+        });
+
+        if (!result.isConfirmed) return;
+
+        try {
+            const ids = selectedFiches;
+
+            const res = await axiosInstance.delete('/files/delete-batch', {
+                data: { ficheIds: ids }
+            });
+
+            Swal.fire('Supprimées', res.data.message, 'success');
+
+            setFiches(prev => prev.filter(f => !ids.includes(f.id)));
+            setSelectedFiches([]);
+
+        } catch (e: any) {
+            Swal.fire('Erreur', e.response?.data?.error || 'Erreur serveur', 'error');
+        }
+    };
+/**
+* ============================
+*   importer des fiches
+* ============================
+*/
+    const onImportFiches = async (importedData: any) => {
+        try {
+            const response = await axiosInstance.put("/files/import_files", {
+                files: importedData,
+            });
+
+            const result = response.data;
+
+            setFiches((prev) => [...prev, ...result.addedFiches]);
+            console.log("✅ Import réussi:", result);
+
+            return result;
+        } catch (error: any) {
+            console.error("❌ Erreur import:", error.response?.data || error.message);
+            throw error;
+        }
+    };
 
     const filteredFiches = useMemo(() => {
         let result = fiches.filter((f) => f.univers === activeTab);

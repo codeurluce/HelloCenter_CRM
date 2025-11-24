@@ -26,7 +26,7 @@ const ImportModal: React.FC<ImportModalProps> = ({
     'nom_client',
     'adresse_client',
     'numero_mobile',
-    'prenom_client', 
+    'prenom_client',
     'ville_client',
     'numero_fixe',
     'mail_client',
@@ -46,7 +46,7 @@ const ImportModal: React.FC<ImportModalProps> = ({
       adresse_client: '123 Rue de la Paix',
       ville_client: 'Paris',
       code_postal: '75001',
-      univers: 'Assurance Auto',
+      univers: 'Energie',
       pdl: '12345678901234',
       pce: '56789012345678'
       // commentaire: 'Client intéressé par une nouvelle police'
@@ -60,7 +60,7 @@ const ImportModal: React.FC<ImportModalProps> = ({
       adresse_client: '456 Avenue des Champs',
       ville_client: 'Lyon',
       code_postal: '69001',
-      univers: 'Assurance Habitation',
+      univers: 'Energie',
       pdl: '04568329743280',
       pce: '98765432109876'
       // commentaire: 'Demande de devis pour appartement'
@@ -81,7 +81,7 @@ const ImportModal: React.FC<ImportModalProps> = ({
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    
+
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       handleFile(e.dataTransfer.files[0]);
     }
@@ -95,7 +95,7 @@ const ImportModal: React.FC<ImportModalProps> = ({
 
   const handleFile = (selectedFile: File) => {
     const fileType = selectedFile.name.split('.').pop()?.toLowerCase();
-    
+
     if (!['csv', 'xlsx', 'xls'].includes(fileType || '')) {
       setErrors(['Format de fichier non supporté. Utilisez CSV, XLS ou XLSX.']);
       return;
@@ -103,7 +103,7 @@ const ImportModal: React.FC<ImportModalProps> = ({
 
     setFile(selectedFile);
     setErrors([]);
-    
+
     if (fileType === 'csv') {
       parseCSV(selectedFile);
     } else {
@@ -113,11 +113,11 @@ const ImportModal: React.FC<ImportModalProps> = ({
 
   const parseCSV = (file: File) => {
     setIsProcessing(true);
-    
+
     Papa.parse(file, {
       complete: (results) => {
         setIsProcessing(false);
-        
+
         if (results.errors.length > 0) {
           setErrors(results.errors.map(err => err.message));
           return;
@@ -131,7 +131,7 @@ const ImportModal: React.FC<ImportModalProps> = ({
 
         const headers = Object.keys(data[0] || {});
         const missingColumns = requiredColumns.filter(col => !headers.includes(col));
-        
+
         if (missingColumns.length > 0) {
           setErrors([`Colonnes manquantes: ${missingColumns.join(', ')}`]);
           return;
@@ -188,32 +188,44 @@ const ImportModal: React.FC<ImportModalProps> = ({
 
 const handleImport = () => {
   if (!file) return;
-
   setIsProcessing(true);
 
-  const fileType = file.name.split('.').pop()?.toLowerCase();
   const parseAndSend = (validFiches: any[]) => {
     onImport(validFiches)
-      .then(() => {
+      .then((res: any) => {
+        // Si le backend renvoie success:false ou tableau vide
+        const addedFiches = res?.addedFiches || [];
+        const message = res?.message || (addedFiches.length > 0
+          ? `${addedFiches.length} fiche(s) importée(s)` 
+          : "Aucune fiche importée");
+
         Swal.fire({
-          icon: "success",
-          title: "Import réussi",
-          text: `${validFiches.length} fiche(s) importée(s) avec succès ✅`,
-          confirmButtonColor: "#2563eb"
+          icon: addedFiches.length > 0 ? "success" : "warning",
+          title: addedFiches.length > 0 ? "Import réussi" : "Aucune fiche importée",
+          text: message,
+          confirmButtonColor: addedFiches.length > 0 ? "#2563eb" : "#f59e0b"
         });
         handleClose();
       })
       .catch((err: any) => {
+        // Récupération sécurisée des fiches même en cas d'erreur HTTP (400)
+        const addedFiches = err?.response?.data?.addedFiches || [];
+        const message = err?.response?.data?.message 
+                        || err?.response?.data?.error 
+                        || err?.message 
+                        || "Une erreur est survenue lors de l’import.";
+
         Swal.fire({
-          icon: "error",
-          title: "Erreur d'import",
-          text: err?.response?.data?.error || "Une erreur est survenue lors de l’import.",
-          confirmButtonColor: "#dc2626"
+          icon: addedFiches.length > 0 ? "success" : "warning",
+          title: addedFiches.length > 0 ? "Import réussi" : "Aucune fiche importée",
+          text: message,
+          confirmButtonColor: addedFiches.length > 0 ? "#2563eb" : "#f59e0b"
         });
       })
       .finally(() => setIsProcessing(false));
   };
 
+  const fileType = file.name.split('.').pop()?.toLowerCase();
   if (fileType === "csv") {
     Papa.parse(file, {
       complete: (results) => {
@@ -251,6 +263,7 @@ const handleImport = () => {
     reader.readAsArrayBuffer(file);
   }
 };
+
 
   const handleClose = () => {
     setFile(null);
@@ -302,13 +315,12 @@ const handleImport = () => {
                 Télécharger le modèle
               </button>
             </div>
-            
+
             <div
-              className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-all duration-200 ${
-                dragActive 
-                  ? 'border-blue-400 bg-blue-50' 
-                  : 'border-gray-300 hover:border-gray-400'
-              }`}
+              className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-all duration-200 ${dragActive
+                ? 'border-blue-400 bg-blue-50'
+                : 'border-gray-300 hover:border-gray-400'
+                }`}
               onDragEnter={handleDrag}
               onDragLeave={handleDrag}
               onDragOver={handleDrag}
@@ -321,12 +333,12 @@ const handleImport = () => {
                 onChange={handleFileSelect}
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
               />
-              
+
               <div className="space-y-4">
                 <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
                   <FileSpreadsheet size={32} className="text-blue-600" />
                 </div>
-                
+
                 {file ? (
                   <div>
                     <p className="text-lg font-medium text-gray-900">{file.name}</p>
@@ -377,7 +389,7 @@ const handleImport = () => {
                   </span>
                 </div>
               </div>
-              
+
               <div className="overflow-x-auto border border-gray-200 rounded-lg">
                 <table className="w-full text-sm">
                   <thead className="bg-gray-50">
