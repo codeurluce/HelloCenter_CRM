@@ -18,6 +18,7 @@ const {
     getMonthlySalesAllAgents,
     getAgentsMonthlySales,
     getAdminSalesMonthly,
+    deleteMultipleSales,
     } = require('../controllers/salesControllers');
 const auth = require('../middlewares/authMiddleware');
 
@@ -44,7 +45,7 @@ router.put('/energie/:id', auth, updateSale); // Modifie une vente énergie par 
 router.put('/offre-mobile/:id', auth, updateSaleMobile); // Modifie une vente offre mobile par son ID (authentification requise) // Méthode : PUT /api/sales/offre-mobile/:id
 router.put('/:id/audit', auth, auditeSale); // Audite une vente spécifique par ID (authentification requise) // Méthode : PUT /api/sales/:id/audit
 
-// Route DELETE : suppression de données
-router.delete('/:id', auth, deleteSale); // Supprime une vente spécifique par son ID (authentification requise) // Méthode : DELETE /api/sales/:id
-
+// Route DELETE : suppression de données dans le fichier SalesActions (frontend)
+router.delete('/:id/delete', auth, deleteSale); // Supprime une vente spécifique par son ID (authentification requise) // Méthode : DELETE /api/sales/:id
+router.delete('/delete-multiple', auth, deleteMultipleSales); // supprimer plusieurs ventes à la fois
 module.exports = router;

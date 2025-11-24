@@ -10,7 +10,8 @@ import {
   FileText,
   FileTextIcon,
   Search,
-  LucideFileText
+  LucideFileText,
+  Trash2Icon
 } from "lucide-react";
 import { BadgeCheck, X as BadgeX } from "lucide-react";
 import Swal from "sweetalert2";
@@ -27,6 +28,9 @@ const FiltreSalesList = ({
   dateFilter,
   setDateFilter,
   onDeleteSale,
+  selectedSales,
+  setSelectedSales,
+  onDeleteMultiple,
   onViewSale,
   onEditSale,
   onUpdateStatus,
@@ -49,6 +53,7 @@ const FiltreSalesList = ({
   const [tempEndDate, setTempEndDate] = useState("");
   const [customLoading, setCustomLoading] = useState(false);
   const [auditModalSale, setAuditModalSale] = useState(null);
+  // const [selectedSales, setSelectedSales] = useState([]);
 
 
   const openModal = (id) => {
@@ -154,8 +159,6 @@ const FiltreSalesList = ({
     return matchesSearch && matchesStatus && matchesDate;
   });
 
-  // console.log("univers dans FiltreSalesList:", univers);
-
   return (
     <div>
       {/* Barre filtres */}
@@ -256,6 +259,16 @@ const FiltreSalesList = ({
           >
             <RefreshCw size={16} /> Rafraîchir
           </button>
+
+          {isAdmin && selectedSales.length > 0 && (
+            <button
+              onClick={onDeleteMultiple}
+              className="flex ml-auto items-center gap-2 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors shadow"
+            >
+              <Trash2Icon size={18} />
+              Supprimer {selectedSales.length} vente(s)
+            </button>
+          )}
         </div>
 
         {/* Tableau */}
@@ -274,6 +287,25 @@ const FiltreSalesList = ({
               <table className="w-full border-collapse">
                 <thead className="bg-blue-50">
                   <tr>
+                    {isAdmin && (
+                      <th className="px-4 py-3 text-center">
+                        <input
+                          type="checkbox"
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedSales(filteredSales.map((s) => s.id));
+                            } else {
+                              setSelectedSales([]);
+                            }
+                          }}
+                          checked={
+                            filteredSales.length > 0 &&
+                            selectedSales.length === filteredSales.length
+                          }
+                        />
+                      </th>
+                    )}
+
                     {/* Colonnes selon univers */}
                     {!isAdmin && univers === "Energie" && (
                       <>
@@ -341,6 +373,22 @@ const FiltreSalesList = ({
                       key={sale.id}
                       className="border-b border-gray-100 hover:bg-blue-50"
                     >
+                      {isAdmin && (
+                        <td className="text-center px-4">
+                          <input
+                            type="checkbox"
+                            checked={selectedSales.includes(sale.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedSales((prev) => [...prev, sale.id]);
+                              } else {
+                                setSelectedSales((prev) => prev.filter((id) => id !== sale.id));
+                              }
+                            }}
+                          />
+                        </td>
+                      )}
+
                       {/* Colonnes selon univers */}
                       {!isAdminOrManager && univers === "Energie" && (
                         <>

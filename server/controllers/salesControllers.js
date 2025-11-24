@@ -434,6 +434,37 @@ exports.deleteSale = async (req, res) => {
   }
 };
 
+exports.deleteMultipleSales = async (req, res) => {
+  const { ids } = req.body; // [1, 2, 3]
+  const intIds = ids.map(id => Number(id));
+
+  if (!ids || !Array.isArray(ids) || ids.length === 0) {
+    return res.status(400).json({ message: "Aucun ID fourni." });
+  }
+
+  try {
+const result = await db.query(
+  `DELETE FROM sales WHERE id = ANY($1::int[])`,
+  [intIds]
+);
+if (result.rowCount === 0) {
+  return res.status(404).json({
+    message: "Aucune vente trouvée à supprimer.",
+    deleted: []
+  });
+}
+
+    res.json({
+      message: `${ids.length} vente(s) supprimée(s) avec succès`,
+      deleted: ids
+    });
+
+  } catch (error) {
+    console.error("Erreur deleteMultipleSales :", error);
+    res.status(500).json({ error: "Erreur serveur lors de la suppression multiple" });
+  }
+};
+
 // Export pour mettre à jour une vente energie
 exports.updateSale = async (req, res) => {
   try {

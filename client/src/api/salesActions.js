@@ -47,10 +47,23 @@ export const updateSaleMobile = async (id, saleData) => {
 // 🔹 Supprimer une vente
 export const deleteSale = async (id) => {
   try {
-    const res = await axiosInstance.delete(`/sales/${id}`);
+    const res = await axiosInstance.delete(`/sales/${id}/delete`);
     return res.data;
   } catch (error) {
     console.error(`Erreur lors de la suppression de la vente ID ${id} :`, error);
+    throw error;
+  }
+};
+
+// 🔹 Supprimer plusieurs ventes
+export const deleteMultipleSales = async (ids) => {
+  try {
+    const res = await axiosInstance.delete(`/sales/delete-multiple`, {
+      data: { ids } // ⚠️ important : DELETE utilise "data"
+    });
+    return res.data;
+  } catch (error) {
+    console.error("Erreur suppression multiple :", error);
     throw error;
   }
 };

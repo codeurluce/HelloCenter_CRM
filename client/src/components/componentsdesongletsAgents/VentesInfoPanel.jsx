@@ -8,7 +8,7 @@ import FormTypeSelector from "../componentsdesventes/FormTypeSelector";
 import FiltreSalesList from "../componentsdesventes/FiltreSalesList";
 import SaleDetailsModalOffreMobile from "../componentsdesventes/SaleDetailsModalOffreMobile";
 import SaleDetailsModal from "../componentsdesventes/SaleDetailsModal";
-import { deleteSale, updateSale, updateSaleMobile, createSale } from "../../api/salesActions";
+import { deleteSale, deleteMultipleSales, updateSale, updateSaleMobile, createSale } from "../../api/salesActions";
 import axiosInstance from "../../api/axiosInstance";
 
 
@@ -34,6 +34,7 @@ const VentesInfoPanel = ({ agentId }) => {
   const [connectedAgent, setConnectedAgent] = useState(null);
   const [selectedSale, setSelectedSale] = useState(null);
   const [modalType, setModalType] = useState(null);
+  const [selectedSales, setSelectedSales] = useState([]);
 
 
   useEffect(() => {
@@ -212,6 +213,36 @@ const VentesInfoPanel = ({ agentId }) => {
     }
   };
 
+  const handleDeleteMultiple = async () => {
+  if (selectedSales.length === 0) {
+    Swal.fire("Aucune sélection", "Sélectionnez au moins une vente.", "info");
+    return;
+  }
+
+  const result = await Swal.fire({
+    title: "Supprimer les ventes sélectionnées ?",
+    text: `${selectedSales.length} vente(s) seront supprimées.`,
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#d33",
+    cancelButtonColor: "#3085d6",
+    confirmButtonText: "Oui, supprimer",
+    cancelButtonText: "Annuler",
+  });
+
+  if (result.isConfirmed) {
+    try {
+      await deleteMultipleSales(selectedSales);
+      setSales((prev) => prev.filter((s) => !selectedSales.includes(s.id)));
+      setSelectedSales([]); // vider la sélection
+      Swal.fire("Supprimées !", "Les ventes ont été supprimées.", "success");
+    } catch (error) {
+      Swal.fire("Erreur", "Impossible de supprimer les ventes.", "error");
+    }
+  }
+};
+
+
   // Mise à jour statut (admin)
   const handleUpdateStatus = async (saleId, newStatus, motif = null) => {
     if (!isAdminOrManager) return;
@@ -315,6 +346,10 @@ const VentesInfoPanel = ({ agentId }) => {
         loading={loading}
         onOpenNewSale={handleOpenSelector}
         univers={univers}
+
+          selectedSales={selectedSales}
+  setSelectedSales={setSelectedSales}
+  onDeleteMultiple={handleDeleteMultiple} 
       />
 
       {selectedSale && modalType === "energie" && (
