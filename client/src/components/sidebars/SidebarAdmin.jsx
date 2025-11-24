@@ -30,7 +30,7 @@ const SidebarAdmin = ({ activeItem, setActiveItem, onLogout }) => {
     { id: 'activité', label: 'Activité', icon: CircleUser },
     { id: 'sessions', label: 'Sessions', icon: Clock },
     { id: 'rh', label: 'RH', icon: Users },
-    { id: 'comptable', label: 'Comptable', icon: Calculator },
+    // { id: 'comptable', label: 'Comptable', icon: Calculator },
     { id: 'administration', label: 'Administration', icon: UserSearch },
   ];
 
