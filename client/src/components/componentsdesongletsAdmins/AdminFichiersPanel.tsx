@@ -322,7 +322,9 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
                 (f.mail_client || '').toLowerCase().includes(term) ||
                 (f.ville_client || '').toLowerCase().includes(term) ||
                 (f.univers || '').toLowerCase().includes(term) ||
+                (f.tag || '').toLocaleLowerCase().includes(term) ||
                 f.id.toString().includes(term)
+
             );
         }
         if (searchAgentTerm) {

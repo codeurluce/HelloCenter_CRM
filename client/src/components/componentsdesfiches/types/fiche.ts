@@ -35,6 +35,7 @@ export const PREDEFINED_TAGS = [
   'Client injoignable',
   'Refus client',
   'Dossier incomplet',
+  'Accord vente',
   'Traité avec succès',
   'Report à plus tard',
   'Doublon',
