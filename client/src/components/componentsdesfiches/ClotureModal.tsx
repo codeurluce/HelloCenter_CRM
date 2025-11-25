@@ -1,6 +1,6 @@
 // src/componentsdesfiches/ClotureModal.tsx
 import React, { useState, useEffect } from 'react';
-import { X, Check, AlertCircle } from 'lucide-react';
+import { X, Check, AlertCircle, CalendarPlus } from 'lucide-react';
 import { ClotureData, PREDEFINED_TAGS, Fiche } from './types/fiche.ts';
 import CreateSaleFromFicheModal from './CreateSaleFromFicheModal.tsx';
 import FormTypeSelector from '../componentsdesventes/FormTypeSelector';
@@ -14,6 +14,7 @@ interface ClotureModalProps {
   ficheId: number;
   clientName: string;
   fiche: Fiche | null;
+  onProgramRdv: (id: number) => void;
 }
 
 const ClotureModal: React.FC<ClotureModalProps> = ({
@@ -22,7 +23,8 @@ const ClotureModal: React.FC<ClotureModalProps> = ({
   onSubmit,
   ficheId,
   clientName,
-  fiche
+  fiche,
+  onProgramRdv,
 }) => {
 
   const [formData, setFormData] = useState<ClotureData>({
@@ -35,6 +37,7 @@ const ClotureModal: React.FC<ClotureModalProps> = ({
   const [showSaleModal, setShowSaleModal] = useState(false);
   const [saleInitialData, setSaleInitialData] = useState<any>(null);
   const [submittingSale, setSubmittingSale] = useState(false);
+  const [selectedTag, setSelectedTag] = React.useState<string>('');
 
   useEffect(() => {
     if (isOpen) {
@@ -59,6 +62,7 @@ const ClotureModal: React.FC<ClotureModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!fiche) return;
 
     const newErrors: Partial<ClotureData> = {};
     if (!formData.tag) newErrors.tag = 'Veuillez sélectionner un tag';
@@ -68,10 +72,15 @@ const ClotureModal: React.FC<ClotureModalProps> = ({
       return;
     }
 
-    // Si tag Accord vente → ouvrir processus vente
-    if (formData.tag === "Vente") {
-      if (!fiche) return;
+    // Si tag Relance ou Rappel → RDV
+    if (formData.tag === 'Relance (RL)' || formData.tag === 'Rappel (R)') {
+      onProgramRdv(fiche.id); // déclenche le bouton RDV
+      handleClose();
+      return;
+    }
 
+    // Si tag Vente → processus vente
+    if (formData.tag === 'Vente') {
       const ficheData = {
         nomClient: fiche.nom_client,
         prenomClient: fiche.prenom_client,
@@ -82,18 +91,19 @@ const ClotureModal: React.FC<ClotureModalProps> = ({
         numMobile: fiche.numero_mobile || "",
         pdl: fiche.pdl || "",
         pce: fiche.pce || "",
-        product_type: null // à choisir
+        product_type: null
       };
-
       setSaleInitialData(ficheData);
       setShowFormTypeSelector(true);
       return; // ne pas clôturer tout de suite
     }
 
-    // Sinon, clôture normale
+    // Sinon → clôture normale
     onSubmit(formData);
     handleClose();
   };
+
+
 
   const handleFormTypeSelect = (type: 'energie' | 'offreMobile') => {
     if (!saleInitialData) return;
@@ -183,7 +193,7 @@ const ClotureModal: React.FC<ClotureModalProps> = ({
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Commentaire *
+              Commentaire
             </label>
             <textarea
               value={formData.commentaire}
@@ -208,13 +218,27 @@ const ClotureModal: React.FC<ClotureModalProps> = ({
               Annuler
             </button>
 
+            {/* ici il faut mettre le bouton rdv supprimer dans fichecard qui saffiche si on clique sur le tag relance ou rappel */}
             <button
               type="submit"
-              className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-white ${formData.tag === 'Vente' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700'}`}
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-white 
+                          ${formData.tag === 'Vente' ? 'bg-blue-600 hover:bg-blue-700' :
+                  formData.tag === 'Relance (RL)' || formData.tag === 'Rappel (R)' ? 'bg-amber-500 hover:bg-amber-600' : 'bg-green-600 hover:bg-green-700'}`}
               disabled={submittingSale}
             >
-              <Check size={16} />
-              {formData.tag === 'Vente' ? 'Vendre' : 'Clôturer'}
+              {formData.tag === 'Vente' ? (
+                <>
+                  <Check size={16} /> Vendre
+                </>
+              ) : formData.tag === 'Relance (RL)' || formData.tag === 'Rappel (R)' ? (
+                <>
+                  <CalendarPlus size={16} /> Rendez-vous
+                </>
+              ) : (
+                <>
+                  <Check size={16} /> Clôturer
+                </>
+              )}
             </button>
           </div>
         </form>

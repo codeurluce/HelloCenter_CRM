@@ -302,6 +302,8 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
         ficheId={clotureModal.ficheId || 0}
         clientName={clotureModal.clientName}
         fiche={selectedClotureFiche}
+        onProgramRdv={(ficheId: number) => {handleOpenRdvModal(ficheId);
+  }}
       />
 
       <RendezVousModal

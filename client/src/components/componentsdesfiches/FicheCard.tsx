@@ -237,13 +237,13 @@ const FicheCard: React.FC<FicheCardProps> = ({
                 <Check size={16} />
                 Clôturer
               </button>
-              <button
+              {/* <button
                 onClick={() => onProgramRdv(fiche.id)}
                 className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors font-medium shadow-sm"
               >
                 <CalendarPlus size={16} />
                 Rendez-vous
-              </button>
+              </button> */}
               {/* <button
                 onClick={() => {
                   console.log("🧪 Bouton Annuler cliqué pour la fiche ID :", fiche.id)
