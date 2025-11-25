@@ -32,13 +32,13 @@ export interface ClotureData {
 }
 
 export const PREDEFINED_TAGS = [
-  'Client injoignable',
-  'Refus client',
-  'Dossier incomplet',
-  'Accord vente',
-  'Traité avec succès',
-  'Report à plus tard',
-  'Doublon',
-  'Hors périmètre',
-  'Autre'
+  'Vente',
+  'Ne répond pas (NRP)',
+  'Refus d\'Entretien (RE)',
+  'Repondeur (Rep)',
+  'Refus Argumenté (RA)',
+  'Rappel (R)',
+  'Faux Numéro (FN)',
+  'Relance (RL)',
+  'Hors Cible',
 ];

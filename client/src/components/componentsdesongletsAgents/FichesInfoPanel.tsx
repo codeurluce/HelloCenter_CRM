@@ -42,6 +42,8 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
   const [showRdvModal, setShowRdvModal] = useState(false);
   const [selectedFiche, setSelectedFiche] = useState<Fiche | null>(null);
   const [showRdvDetailsModal, setShowRdvDetailsModal] = useState(false);
+  const [selectedClotureFiche, setSelectedClotureFiche] = useState<Fiche | null>(null);
+
   // const [loading, setLoading] = useState(false);
   // const [fiches, setFiches] = useState<Fiche[]>([]);
 
@@ -91,6 +93,7 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
   const handleOpenClotureModal = (ficheId: number) => {
     const fiche = fiches.find((f) => f.id === ficheId);
     if (fiche) {
+      setSelectedClotureFiche(fiche);
       setClotureModal({
         isOpen: true,
         ficheId,
@@ -292,10 +295,13 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
 
       <ClotureModal
         isOpen={clotureModal.isOpen}
-        onClose={() => setClotureModal({ isOpen: false, ficheId: null, clientName: '' })}
+        onClose={() => {
+          setClotureModal({ isOpen: false, ficheId: null, clientName: '' });
+          setSelectedClotureFiche(null);}}
         onSubmit={handleClotureSubmit}
         ficheId={clotureModal.ficheId || 0}
         clientName={clotureModal.clientName}
+        fiche={selectedClotureFiche}
       />
 
       <RendezVousModal

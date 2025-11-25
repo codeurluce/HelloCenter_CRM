@@ -1,15 +1,19 @@
-// component/componentsdesfiches/ClotureModal.tsx
-
-import React, { useState } from 'react';
+// src/componentsdesfiches/ClotureModal.tsx
+import React, { useState, useEffect } from 'react';
 import { X, Check, AlertCircle } from 'lucide-react';
-import { ClotureData, PREDEFINED_TAGS } from './types/fiche.ts';
+import { ClotureData, PREDEFINED_TAGS, Fiche } from './types/fiche.ts';
+import CreateSaleFromFicheModal from './CreateSaleFromFicheModal.tsx';
+import FormTypeSelector from '../componentsdesventes/FormTypeSelector';
+import { toast } from 'react-toastify';
+import { createSale } from '../../api/salesActions.js';
 
 interface ClotureModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: ClotureData) => void;
+  onSubmit: (data: ClotureData) => void; // fonction pour clôturer la fiche
   ficheId: number;
   clientName: string;
+  fiche: Fiche | null;
 }
 
 const ClotureModal: React.FC<ClotureModalProps> = ({
@@ -17,45 +21,130 @@ const ClotureModal: React.FC<ClotureModalProps> = ({
   onClose,
   onSubmit,
   ficheId,
-  clientName
+  clientName,
+  fiche
 }) => {
+
   const [formData, setFormData] = useState<ClotureData>({
     commentaire: '',
     tag: ''
   });
+
   const [errors, setErrors] = useState<Partial<ClotureData>>({});
+  const [showFormTypeSelector, setShowFormTypeSelector] = useState(false);
+  const [showSaleModal, setShowSaleModal] = useState(false);
+  const [saleInitialData, setSaleInitialData] = useState<any>(null);
+  const [submittingSale, setSubmittingSale] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setFormData({ commentaire: '', tag: '' });
+      setErrors({});
+      setShowFormTypeSelector(false);
+      setShowSaleModal(false);
+      setSaleInitialData(null);
+    }
+  }, [isOpen, ficheId]);
+
+  if (!isOpen || !fiche) return null;
+
+  const handleClose = () => {
+    setFormData({ commentaire: '', tag: '' });
+    setErrors({});
+    setShowFormTypeSelector(false);
+    setShowSaleModal(false);
+    setSaleInitialData(null);
+    onClose();
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     const newErrors: Partial<ClotureData> = {};
-    if (!formData.commentaire.trim()) {
-      newErrors.commentaire = 'Le commentaire est obligatoire';
-    }
-    if (!formData.tag) {
-      newErrors.tag = 'Veuillez sélectionner un tag';
-    }
+    if (!formData.tag) newErrors.tag = 'Veuillez sélectionner un tag';
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
 
+    // Si tag Accord vente → ouvrir processus vente
+    if (formData.tag === "Vente") {
+      if (!fiche) return;
+
+      const ficheData = {
+        nomClient: fiche.nom_client,
+        prenomClient: fiche.prenom_client,
+        adresseClient: fiche.adresse_client || "",
+        codePostal: fiche.code_postal || "",
+        villeClient: fiche.ville_client || "",
+        emailClient: fiche.mail_client || "",
+        numMobile: fiche.numero_mobile || "",
+        pdl: fiche.pdl || "",
+        pce: fiche.pce || "",
+        product_type: null // à choisir
+      };
+
+      setSaleInitialData(ficheData);
+      setShowFormTypeSelector(true);
+      return; // ne pas clôturer tout de suite
+    }
+
+    // Sinon, clôture normale
     onSubmit(formData);
     handleClose();
   };
 
-  const handleClose = () => {
-    setFormData({ commentaire: '', tag: '' });
-    setErrors({});
-    onClose();
+  const handleFormTypeSelect = (type: 'energie' | 'offreMobile') => {
+    if (!saleInitialData) return;
+    // On complète saleInitialData avec le type choisi
+    const updatedSaleData = { ...saleInitialData, product_type: type };
+    setSaleInitialData(updatedSaleData);
+
+    setShowFormTypeSelector(false);
+    setShowSaleModal(true);
   };
 
-  if (!isOpen) return null;
+  // Soumission du formulaire de vente
+  const handleSaleSubmit = async (formDataFromModal: any) => {
+    if (!saleInitialData?.product_type) {
+      toast.error("Veuillez sélectionner le type de vente !");
+      return;
+    }
+
+    setSubmittingSale(true);
+
+    try {
+      // Fusionner les données initiales + celles du formulaire
+      const saleDataToSend = { ...saleInitialData, ...formDataFromModal };
+
+      // Appel API
+      const response = await createSale(saleDataToSend);
+
+      toast.success("✅ Vente créée avec succès !");
+      setShowSaleModal(false);
+
+      // Clôturer la fiche après succès
+      onSubmit({
+        commentaire: formData.commentaire,
+        tag: formData.tag
+      });
+
+      handleClose();
+    } catch (error: any) {
+      console.error(error);
+      const message = error.response?.data?.message || "❌ Erreur lors de la création de la vente";
+      toast.error(message);
+    } finally {
+      setSubmittingSale(false);
+    }
+  };
+
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+        {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div>
             <h2 className="text-xl font-bold text-gray-900">Clôturer la fiche</h2>
@@ -63,14 +152,12 @@ const ClotureModal: React.FC<ClotureModalProps> = ({
               Fiche #{ficheId} - {clientName}
             </p>
           </div>
-          <button
-            onClick={handleClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          >
+          <button onClick={handleClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
             <X size={20} className="text-gray-500" />
           </button>
         </div>
 
+        {/* Formulaire */}
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -79,15 +166,11 @@ const ClotureModal: React.FC<ClotureModalProps> = ({
             <select
               value={formData.tag}
               onChange={(e) => setFormData({ ...formData, tag: e.target.value })}
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                errors.tag ? 'border-red-300 bg-red-50' : 'border-gray-300'
-              }`}
+              className={`w-full px-4 py-3 border rounded-lg ${errors.tag ? 'border-red-300 bg-red-50' : 'border-gray-300'}`}
             >
               <option value="">Sélectionnez un motif</option>
               {PREDEFINED_TAGS.map((tag) => (
-                <option key={tag} value={tag}>
-                  {tag}
-                </option>
+                <option key={tag} value={tag}>{tag}</option>
               ))}
             </select>
             {errors.tag && (
@@ -105,11 +188,8 @@ const ClotureModal: React.FC<ClotureModalProps> = ({
             <textarea
               value={formData.commentaire}
               onChange={(e) => setFormData({ ...formData, commentaire: e.target.value })}
-              placeholder="Décrivez les actions réalisées et la raison de la clôture..."
               rows={4}
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none ${
-                errors.commentaire ? 'border-red-300 bg-red-50' : 'border-gray-300'
-              }`}
+              className={`w-full px-4 py-3 border rounded-lg resize-none ${errors.commentaire ? 'border-red-300 bg-red-50' : 'border-gray-300'}`}
             />
             {errors.commentaire && (
               <div className="flex items-center gap-2 mt-2 text-red-600 text-sm">
@@ -117,29 +197,44 @@ const ClotureModal: React.FC<ClotureModalProps> = ({
                 <span>{errors.commentaire}</span>
               </div>
             )}
-            <div className="text-right text-xs text-gray-500 mt-1">
-              {formData.commentaire.length}/500 caractères
-            </div>
           </div>
 
           <div className="flex gap-3 pt-4">
             <button
               type="button"
               onClick={handleClose}
-              className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
+              className="flex-1 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50"
             >
               Annuler
             </button>
+
             <button
               type="submit"
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors"
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-white ${formData.tag === 'Vente' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700'}`}
+              disabled={submittingSale}
             >
               <Check size={16} />
-              Clôturer
+              {formData.tag === 'Vente' ? 'Vendre' : 'Clôturer'}
             </button>
           </div>
         </form>
       </div>
+
+      {showFormTypeSelector && (
+        <FormTypeSelector
+          onSelect={handleFormTypeSelect}
+          onClose={() => setShowFormTypeSelector(false)}
+        />
+      )}
+
+      {showSaleModal && saleInitialData && (
+        <CreateSaleFromFicheModal
+          isOpen={showSaleModal}
+          onClose={() => setShowSaleModal(false)}
+          initialData={saleInitialData}
+          onSubmit={handleSaleSubmit}
+        />
+      )}
     </div>
   );
 };
