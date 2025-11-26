@@ -22,7 +22,7 @@ router.get('/', async (req, res) => { // => GET    /api/files
 router.get('/rendezvous/upcoming/:agentId', filesControllers.getUpcomingRendezVous); // Récupère les rendez-vous à venir pour un agent spécifique // Méthode : GET /api/files/rendezvous/upcoming/:agentId
 router.get('/today-summary', auth, filesControllers.getNewFilesCountByAgent); // Récupère le résumé des nouvelles fiches assignées au agent connecté pour la journée en cours // Méthode : GET /api/files/today-summary
 router.get('/admin-summary', auth, filesControllers.getAdminFilesSummary); // Récupère le résumé global des nouvelles fiches pour l'administration // Méthode : GET /api/files/admin-summary
-router.get('/files_by_agents', filesControllers.getFilesbyAgent); // Récupère toutes les fiches assignées à chaque agent (par agent)        // Méthode : GET /api/files/files_by_agents
+router.get('/files-by-agents', auth, filesControllers.getFilesbyAgent); // Récupère toutes les fiches assignées à chaque agent (par agent)        // Méthode : GET /api/files/files_by_agents
 router.get('/all_files', filesControllers.getAllFiches); // Récupère toutes les fiches enregistrées dans la base de données, sans filtre    // Méthode : GET /api/files/all_files
 router.get('/export_files', filesControllers.exportFichesToXLSX);// Exporte les fiches au format XLSX pour téléchargement ou traitement externe // Méthode : GET /api/files/export_files
 

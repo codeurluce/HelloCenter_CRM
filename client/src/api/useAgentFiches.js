@@ -1,13 +1,13 @@
 // src/api/useAgentFiches.js
 import { useState, useEffect } from 'react';
-import { fetchFiches, handleTraitement, onCancelFiche, handleCloture, handleProgramRdv } from '../api/filesActions.js';
+import { fetchFichesAssigned, handleTraitement, onCancelFiche, handleCloture, handleProgramRdv } from '../api/filesActions.js';
 
 export default function useFiches(user) {
   const [fiches, setFiches] = useState([]);
 
   const loadFiches = async () => {
     if (!user?.id) return;
-    const allFiches = await fetchFiches();
+    const allFiches = await fetchFichesAssigned();
 if (Array.isArray(allFiches)) {
     // Tri explicite par date_creation ASC
     const sortedFiches = allFiches.sort((a, b) => new Date(a.date_creation) - new Date(b.date_creation));

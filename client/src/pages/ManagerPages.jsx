@@ -19,10 +19,15 @@ import WeeklySalesChartAdmin from '../components/cards/WeeklySalesChartAdmin.jsx
 import StatGroup from '../components/cards/StatGroup.js';
 import AdminSettings from '../components/componentsdesongletsAdmins/AdminSettings.jsx';
 import Footer from '../components/dashbords/Footer.jsx';
+import FichesInfoPanel from '../components/componentsdesongletsAgents/FichesInfoPanel.tsx';
+import useFiches from '../api/useAgentFiches.js';
 
 
 const ManagerDashboard = () => {
   const { user, setUser } = useContext(AuthContext);
+  const { fiches, loadFiches, onTreatFiche, onCancelFiche, onCloseFiche, onProgramRdv } = useFiches(user);
+  const [loadingFiches, setLoadingFiches] = useState(false);
+
   const [activeItem, setActiveItem] = useState(() => { return localStorage.getItem("activeSidebarItem") || "dashboard"; });
   const { logoutAgent, setCurrentStatus } = useAgentStatus();
 
@@ -115,6 +120,14 @@ const ManagerDashboard = () => {
     logoutAgent();
   };
 
+    const fetchFichesFromBackend = async () => {
+    setLoadingFiches(true);
+    try { await loadFiches(); }
+    catch (error) { console.error('Erreur chargement fiches:', error); }
+    finally { setLoadingFiches(false); }
+  };
+  useEffect(() => { if (user) fetchFichesFromBackend(); }, [user]);
+
   return (
     <AgentStatusProvider>
       <div className="flex h-screen">
@@ -157,6 +170,18 @@ const ManagerDashboard = () => {
               />}
             {activeItem === 'sales' && <VentesInfoPanel setActiveItem={setActiveItem} />}
             {activeItem === 'files' && <AdminFichiersPanel />}
+            {activeItem === 'Myfiles' && (
+            <FichesInfoPanel 
+              fiches={fiches}
+              currentAgent={user?.id?.toString()}
+              loading={loadingFiches}
+              onRefresh={fetchFichesFromBackend}
+              onTreatFiche={onTreatFiche}
+              onCancelFiche={onCancelFiche}
+              onCloseFiche={onCloseFiche}
+              onProgramRdv={onProgramRdv}
+            />
+          )}
             {activeItem === 'sessions' && <AdminSessionsUsers />}
             {/* {activeItem === 'administration' && <AdministrationUsers />} */}
             {activeItem === 'settings' && <AdminSettings />}

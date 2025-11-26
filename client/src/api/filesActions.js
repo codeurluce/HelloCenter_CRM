@@ -19,6 +19,16 @@ export const fetchFiches = async () => {
 };
 
 
+export const fetchFichesAssigned = async () => {
+  try {
+    const response = await axiosInstance.get('/files/files-by-agents');
+    return response.data;
+  } catch (error) {
+    console.error("Erreur lors du chargement des fiches de l'agent :", error);
+    return [];
+  }
+};
+
 // ⚙️ Prise en charge fiche (mise à jour)
 export const handleTraitement = async (ficheId, user, setFiches) => {
 console.log('👤 Utilisateur courant :', user);

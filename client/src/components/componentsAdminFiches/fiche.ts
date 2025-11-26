@@ -30,6 +30,7 @@ export interface Fiche {
   date_import: string;
   pdl: string;
   pce: string;
+  date_modification: string;
 }
 
 export interface ClotureData {
@@ -37,23 +38,15 @@ export interface ClotureData {
   tag: string;
 }
 
-export const PREDEFINED_TAGS = [
-  'Vente réalisée',
-  'Client non intéressé',
-  'Devis envoyé',
-  'Rappel programmé',
-  'Dossier incomplet',
-  'Client injoignable',
-  'Hors critères',
-  'Autre'
-];
 
-export const UNIVERS_OPTIONS = [
-  'Assurance Auto',
-  'Assurance Habitation',
-  'Assurance Santé',
-  'Assurance Vie',
-  'Épargne',
-  'Crédit',
-  'Autre'
+export const PREDEFINED_TAGS = [
+  'Vente',
+  'Ne répond pas (NRP)',
+  'Refus d\'Entretien (RE)',
+  'Repondeur (Rep)',
+  'Refus Argumenté (RA)',
+  'Rappel (R)',
+  'Faux Numéro (FN)',
+  'Relance (RL)',
+  'Hors Cible',
 ];

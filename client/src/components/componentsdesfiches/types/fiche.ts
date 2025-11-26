@@ -14,12 +14,13 @@ export interface Fiche {
   statut: 'nouvelle' | 'en_traitement' | 'rendez_vous' | 'cloturee';
   commentaire?: string;
   agent_id: number;
+  agent_firstname?: string | null;
+  agent_lastname?: string | null;
   date_creation: string;
   date_modification: string;
   date_import: string;
   tag?: string;
-  assignedTo?: string;
-  assignedToName?: string;
+  assigned_to_name?: string;
   rendez_vous_date?: string;
   rendez_vous_commentaire?: string;
   pdl?: string;

@@ -63,7 +63,7 @@ exports.traiterFiche = async (req, res) => {
       [assigned_to]
     );
     const user = agentResult.rows[0];
-    const assigned_to_name = user ? `${user.lastname} ${user.firstname}` : null;
+    const assigned_to_name = user ? `${user.firstname} ${user.lastname}` : null;
 
     res.status(200).json({
       ...updatedFiche,

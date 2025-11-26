@@ -95,13 +95,13 @@ const FicheCard: React.FC<FicheCardProps> = ({
           </span>
 
           {/* Badge initiales si en traitement */}
-          {/* {fiche.statut === 'en_traitement' && fiche.assignedToName && (
+          {/* {fiche.statut === 'en_traitement' && fiche.assigned_To_Name && (
             <div
               className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold shadow"
-              title={fiche.assignedToName}
+              title={fiche.assigned_to_name}
               translate="no"
             >
-              {getInitials(fiche.assignedToName)}
+              {getInitials(fiche.assigned_to_name)}
             </div>
           )} */}
         </div>
@@ -155,13 +155,13 @@ const FicheCard: React.FC<FicheCardProps> = ({
             </span>
           </div>
 
-          {fiche.assignedToName && (
+          {fiche.assigned_to_name && (
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <User size={16} className="text-gray-400" />
               <span>
                 Assignée à:{' '}
                 <span className="font-medium" translate="no">
-                  {fiche.assignedToName}
+                  {fiche.assigned_to_name}
                 </span>
               </span>
             </div>
@@ -417,13 +417,13 @@ export default FicheCard;
 //             </span>
 //           </div>
 
-//           {fiche.assignedToName && (
+//           {fiche.assigned_to_name && (
 //             <div className="flex items-center gap-2">
 //               <User size={16} className="text-gray-400" />
 //               <span>
 //                 Assignée à{" "}
 //                 <span className="font-semibold" translate="no">
-//                   {fiche.assignedToName}
+//                   {fiche.assigned_to_name}
 //                 </span>
 //               </span>
 //             </div>

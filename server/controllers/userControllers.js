@@ -448,7 +448,7 @@ const getAllUsersBd = async (req, res) => {
     const result = await db.query(
       `SELECT id, firstname, lastname, email, role, is_active, created_at
        FROM users
-       WHERE role = 'Agent' AND is_active = true
+       WHERE is_active = true
        ORDER BY lastname ASC`
     );
 
