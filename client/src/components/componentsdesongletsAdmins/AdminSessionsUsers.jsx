@@ -15,6 +15,11 @@ export default function AdminLiveSessions() {
   const [agents, setAgents] = useState([]);
   const [loading, setLoading] = useState(false);
 
+    const role = localStorage.getItem("role");
+    const isAdmin = role === "Admin";
+    const isManager = role === "Manager";
+    const isAdminOrManager = isAdmin || isManager;
+
   // Etats de la barre de filtre/recherche
   const [q, setQ] = useState("");
   const [sessionStatusFilter, setSessionStatusFilter] = useState("");
@@ -246,14 +251,17 @@ useEffect(() => {
           setSessionStatusFilter={setSessionStatusFilter}
           onResetPage={() => { }}
         />
+        
         <div className="flex-1" /> {/* Ceci pousse le bouton à droite */}
-        <button
+        {isAdmin && (
+          <button
           onClick={() => setShowExport(true)}
           className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium shadow-sm"
         >
           <Upload size={16} /> Exporter
-        </button>
+        </button>)}
       </div>
+      
 
       <SessionsTable
         sessions={filteredAgents}

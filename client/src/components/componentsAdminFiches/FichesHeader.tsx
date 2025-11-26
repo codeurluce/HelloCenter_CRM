@@ -15,6 +15,11 @@ const FichesHeader: React.FC<FichesHeaderProps> = ({
     onOpenImport,
     onOpenExport,
 }) => {
+    const role = localStorage.getItem("role");
+    const isAdmin = role === "Admin";
+    const isManager = role === "Manager";
+    const isAdminOrManager = isAdmin || isManager;
+
     return (
         <div className="flex justify-between items-center">
             <div>
@@ -35,18 +40,23 @@ const FichesHeader: React.FC<FichesHeaderProps> = ({
                         className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-80"
                     />
                 </div>
-                <button
-                    onClick={onOpenImport}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm"
-                >
-                    <Download size={18} /> Importer
-                </button>
-                <button
-                    onClick={onOpenExport}
-                    className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium shadow-sm"
-                >
-                    <Upload size={18} /> Exporter
-                </button>
+                {isAdmin && (
+                    <>
+                        <button
+                            onClick={onOpenImport}
+                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm"
+                        >
+                            <Download size={18} /> Importer
+                        </button>
+
+                        <button
+                            onClick={onOpenExport}
+                            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium shadow-sm"
+                        >
+                            <Upload size={18} /> Exporter
+                        </button>
+                    </>
+                )}
             </div>
         </div>
     )

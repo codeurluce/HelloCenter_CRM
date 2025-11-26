@@ -44,10 +44,6 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
   const [showRdvDetailsModal, setShowRdvDetailsModal] = useState(false);
   const [selectedClotureFiche, setSelectedClotureFiche] = useState<Fiche | null>(null);
 
-  // const [loading, setLoading] = useState(false);
-  // const [fiches, setFiches] = useState<Fiche[]>([]);
-
-
   // Filtrage selon rôle utilisateur
   const fichesFiltreesParRole = useMemo(() => {
     if (!user || !Array.isArray(fiches)) return [];
