@@ -335,6 +335,7 @@ exports.createSale = async (req, res) => {
       etatContrat: etat_contrat,
       status = 'pending',
       product_type,
+      fournisseur,
 
       // Champs spécifiques pour les offres Mobile
       free_agent_account,
@@ -360,20 +361,20 @@ exports.createSale = async (req, res) => {
       INSERT INTO sales (
         agent_id, status, partenaire, civilite, client_name, client_firstname, client_email,
         client_phone, client_phone_fix, ville_client, adresse_client, code_postal_client, ref_client, ref_contrat,
-        energie, pdl, pce, nature_offre, puissance_compteur, etat_contrat, fichier, product_type, free_agent_account,
+        energie, pdl, pce, nature_offre, puissance_compteur, etat_contrat, fichier, product_type, fournisseur, free_agent_account,
         ancien_operateur, pto, option_smartphone, autres_options, engagement, type_technologie, prix_offre, provenance_fichier, 
         iban, rio, etat_cmd, ref_cmd
       ) VALUES (
         $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,
         $11,$12,$13,$14,$15,$16,$17,$18,$19,$20,
         $21,$22,$23,$24,$25,$26,$27,$28,$29,$30,
-        $31,$32,$33,$34,$35
+        $31,$32,$33,$34,$35,$36
       ) RETURNING *;
     `,
       [
         agentId, status, partenaire, civilite, client_name, client_firstname, client_email,
         client_phone, client_phone_fix || null, ville_client, adresse_client, code_postal_client, ref_client, ref_contrat || null,
-        energie, pdl || null, pce || null, nature_offre, puissance_compteur, etat_contrat, fichier, product_type, free_agent_account,
+        energie, pdl || null, pce || null, nature_offre, puissance_compteur, etat_contrat, fichier, product_type, fournisseur, free_agent_account,
         ancienOperateur, pto, optionSmartphone || null, autresOptions || null, engagementBool, typeTechnologie, prixOffre, provenanceFichier,
         iban || null, rio || null, etat_cmd || null, ref_cmd || null
       ]
@@ -494,6 +495,7 @@ exports.updateSale = async (req, res) => {
       natureOffre: nature_offre,
       puissanceCompteur: puissance_compteur,
       partenaire,
+      fournisseur,
       etatContrat: etat_contrat,
       created_at,
       fichier
@@ -507,9 +509,9 @@ exports.updateSale = async (req, res) => {
          adresse_client = $8,         code_postal_client = $9,         ref_client = $10,
          ref_contrat = $11,         energie = $12,         pdl = $13,
          pce = $14,         nature_offre = $15,         puissance_compteur = $16,
-         partenaire = $17,         etat_contrat = $18,   
-          created_at = $19,     fichier = $20,    updated_at = NOW()
-       WHERE id = $21
+         partenaire = $17,  fournisseur = $18,      etat_contrat = $19,   
+          created_at = $20,     fichier = $21,    updated_at = NOW()
+       WHERE id = $22
        RETURNING *`,
       [
         civilite,
@@ -529,6 +531,7 @@ exports.updateSale = async (req, res) => {
         nature_offre,
         puissance_compteur,
         partenaire,
+        fournisseur,
         etat_contrat,
         created_at,
         fichier,
@@ -543,7 +546,7 @@ exports.updateSale = async (req, res) => {
     const fieldsToCheck = [
       'civilite', 'nomClient', 'prenomClient', 'emailClient', 'numMobile', 'numFixe',
       'villeClient', 'adresseClient', 'codePostal', 'refClient', 'refContrat',
-      'energie', 'pdl', 'pce', 'natureOffre', 'puissanceCompteur', 'partenaire', 'etatContrat', 'created_at', 'fichier'
+      'energie', 'pdl', 'pce', 'natureOffre', 'puissanceCompteur', 'partenaire', 'fournisseur', 'etatContrat', 'created_at', 'fichier'
     ];
 
     const keyMap = {

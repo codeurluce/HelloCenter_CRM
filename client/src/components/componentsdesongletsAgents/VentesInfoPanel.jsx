@@ -120,6 +120,7 @@ const VentesInfoPanel = ({ agentId }) => {
       natureOffre: sale.nature_offre || "",
       puissanceCompteur: sale.puissance_compteur || "",
       etatContrat: sale.etat_contrat || "",
+      fournisseur: sale.fournisseur || "",
       fichier: sale.fichier || null,
 
       // Champs Offre Mobile

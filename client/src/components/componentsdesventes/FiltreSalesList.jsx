@@ -144,6 +144,7 @@ const FiltreSalesList = ({
       sale.etat_cmd || "",
       sale.name_agent || "",
       sale.audite ? "oui" : "non",
+      sale.fournisseur || "",
     ];
     const matchesSearch = searchFields.some((field) =>
       field.toLowerCase().includes(searchTerm.toLowerCase())

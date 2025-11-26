@@ -1,7 +1,7 @@
 import React from 'react';
 import { X, Send } from 'lucide-react';
 
-const partenaires = ['Artesia', 'Partenaire A', 'Partenaire B', 'Partenaire C'];
+const partenaires = ['Artesia', 'Autre'];
 
 // Formulaire Vente Énergie
 const SalesFormEnergie = ({ formData, setFormData, onSubmit, onClose }) => {
@@ -12,14 +12,19 @@ const SalesFormEnergie = ({ formData, setFormData, onSubmit, onClose }) => {
     const { name, value, files } = e.target;
     if (name === 'fichier') {
       setFormData(prev => ({ ...prev, [name]: files[0] || null }));
+    } else if (name === 'energie') {
+      setFormData(prev => ({ ...prev, pdl: '', pce: '', energie: value }));
+    } else if (name === 'partenaire') {
+      setFormData(prev => ({
+        ...prev,
+        partenaire: value,
+        fournisseur: value === 'Artesia' ? prev.fournisseur : ''  // reset fournisseur sauf si artesia
+      }));
     } else {
-      if (name === 'energie') {
-        setFormData(prev => ({ ...prev, pdl: '', pce: '', energie: value }));
-      } else {
-        setFormData(prev => ({ ...prev, [name]: value }));
-      }
+      setFormData(prev => ({ ...prev, [name]: value }));
     }
   };
+
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -40,7 +45,8 @@ const SalesFormEnergie = ({ formData, setFormData, onSubmit, onClose }) => {
       (formData.energie === 'Gaz' && !formData.pce) ||
       !formData.natureOffre ||
       !formData.puissanceCompteur ||
-      !formData.etatContrat
+      !formData.etatContrat ||
+      !formData.fournisseur
     ) {
       alert('Veuillez remplir tous les champs obligatoires.');
       return;
@@ -68,6 +74,22 @@ const SalesFormEnergie = ({ formData, setFormData, onSubmit, onClose }) => {
           </select>
         </div>
 
+        {formData.partenaire === 'Artesia' && (
+          <div className="">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Fournisseur *</label>
+            <select
+              name="fournisseur"
+              value={formData.fournisseur || ''}
+              onChange={handleChange}
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">Sélectionner un fournisseur</option>
+              <option value="OHM">OHM</option>
+              <option value="Primeo">Primeo</option>
+            </select>
+          </div>
+        )}
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">civilite *</label>

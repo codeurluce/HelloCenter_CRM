@@ -92,7 +92,16 @@ const SaleDetailsModal = ({ sale, onClose, onEdit, getStatusText, isAdmin }) => 
                             </h3>
                             <Detail label="Réf. Contrat" value={sale.ref_contrat || "-"} />
                             {/* <Detail label="Type de vente" value={sale.product_type || "-"} /> */}
-                            <Detail label="Partenaire" value={sale.partenaire || "-"} />
+                            <Detail label="Partenaire" value={
+                                sale.partenaire ? (
+                                <>
+                                    {sale.partenaire} 
+                                    {sale.fournisseur && (<strong> ({sale.fournisseur })</strong>)}
+                                </>
+                            ) : (
+                                "-"
+                            )
+                            } />
                             <Detail label="Nature Offre" value={sale.nature_offre || "-"} />
 
                             {/* Énergie et champs associés */}
