@@ -468,6 +468,97 @@ exports.exportSessionsAgent = async (req, res) => {
   }
 };
 
+
+// exports.getMonthlySessions = async (req, res) => {
+//   try {
+//     const userId = req.user?.id || req.query.userId;
+//     if (!userId) {
+//       return res.status(400).json({ error: "User ID manquant" });
+//     }
+
+//     const startDate = dayjs().startOf("month").format("YYYY-MM-DD");
+//     const endDate = dayjs().format("YYYY-MM-DD");
+
+//     const query = `
+//       WITH sessions AS (
+//         SELECT 
+//           sa.user_id,
+//           sa.status,
+//           DATE(sa.start_time) AS session_date,
+//           EXTRACT(EPOCH FROM (COALESCE(sa.end_time, NOW()) - sa.start_time))::INT AS duree_sec
+//         FROM session_agents sa
+//         WHERE sa.user_id = $1
+//           AND DATE(sa.start_time) BETWEEN $2 AND $3
+//       ),
+
+//       mapped AS (
+//         SELECT
+//           session_date,
+//           duree_sec,
+//           CASE
+//             WHEN status ILIKE 'Disponible' THEN 'dispo'
+
+//             WHEN status ILIKE ANY(ARRAY[
+//               'Déjeuner',
+//               'Pausette 1',
+//               'Pausette 2'
+//             ]) THEN 'pause'
+
+//             WHEN status ILIKE ANY(ARRAY[
+//               'Réunion',
+//               'Formation',
+//               'Brief'
+//             ]) THEN 'indispo'
+
+//             ELSE 'autre'
+//           END AS category
+//         FROM sessions
+//       ),
+
+//       cumuls AS (
+//         SELECT 
+//             session_date,
+//             SUM(CASE WHEN category = 'dispo'  THEN duree_sec ELSE 0 END) AS dispo,
+//             SUM(CASE WHEN category = 'pause'  THEN duree_sec ELSE 0 END) AS pauses,
+//             SUM(CASE WHEN category = 'indispo' THEN duree_sec ELSE 0 END) AS indispo,
+//             SUM(CASE WHEN category IN ('dispo','indispo') THEN duree_sec ELSE 0 END) AS travail
+//         FROM mapped
+//         GROUP BY session_date
+//         ORDER BY session_date DESC
+//       )
+
+//       SELECT *
+//       FROM cumuls;
+//     `;
+
+//     const { rows } = await db.query(query, [userId, startDate, endDate]);
+
+
+// // Calcul du cumul de travail sur le mois et présence
+// let cumul = 0;
+// const result = rows.map(row => {
+//   const travail = Number(row.travail) || 0;
+//   const pauses = Number(row.pauses) || 0;
+
+//   cumul += travail;
+
+//   return {
+//     ...row,
+//     travail,
+//     presence: travail + pauses,   // <-- calcul présence ici
+//     cumul_travail: cumul,
+//   };
+// });
+
+// res.json(result);
+
+//   } catch (err) {
+//     console.error("Erreur getMonthlySessions:", err);
+//     res.status(500).json({ error: "Erreur récupération sessions mensuelles" });
+//   }
+// };
+
+// test 
 exports.getMonthlySessions = async (req, res) => {
   try {
     const userId = req.user?.id || req.query.userId;
@@ -496,19 +587,16 @@ exports.getMonthlySessions = async (req, res) => {
           duree_sec,
           CASE
             WHEN status ILIKE 'Disponible' THEN 'dispo'
-
             WHEN status ILIKE ANY(ARRAY[
               'Déjeuner',
               'Pausette 1',
               'Pausette 2'
             ]) THEN 'pause'
-
             WHEN status ILIKE ANY(ARRAY[
               'Réunion',
               'Formation',
               'Brief'
             ]) THEN 'indispo'
-
             ELSE 'autre'
           END AS category
         FROM sessions
@@ -523,39 +611,31 @@ exports.getMonthlySessions = async (req, res) => {
             SUM(CASE WHEN category IN ('dispo','indispo') THEN duree_sec ELSE 0 END) AS travail
         FROM mapped
         GROUP BY session_date
-        ORDER BY session_date DESC
       )
 
-      SELECT *
-      FROM cumuls;
+      SELECT
+        session_date,
+        dispo,
+        pauses,
+        indispo,
+        travail,
+        (travail + pauses) AS presence,
+        SUM(travail) OVER (ORDER BY session_date ASC) AS cumul_travail
+      FROM cumuls
+      ORDER BY session_date DESC;
     `;
 
     const { rows } = await db.query(query, [userId, startDate, endDate]);
 
-
-// Calcul du cumul de travail sur le mois et présence
-let cumul = 0;
-const result = rows.map(row => {
-  const travail = Number(row.travail) || 0;
-  const pauses = Number(row.pauses) || 0;
-
-  cumul += travail;
-
-  return {
-    ...row,
-    travail,
-    presence: travail + pauses,   // <-- calcul présence ici
-    cumul_travail: cumul,
-  };
-});
-
-res.json(result);
+    // rows contains : session_date, dispo, pauses, indispo, travail, presence, cumul_travail (tous en secondes)
+    res.json(rows);
 
   } catch (err) {
     console.error("Erreur getMonthlySessions:", err);
     res.status(500).json({ error: "Erreur récupération sessions mensuelles" });
   }
 };
+
 
 
 exports.getUserStatusToday = async (req, res) => {

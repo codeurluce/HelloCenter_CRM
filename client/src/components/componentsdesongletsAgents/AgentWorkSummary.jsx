@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import dayjs from "dayjs";
 import axiosInstance from "../../api/axiosInstance";
 
-// Utilitaire format HH:mm
+// format HH:mm:ss (inchangé)
 const formatTime = (seconds) => {
     if (!seconds || seconds <= 0) return "00:00:00";
     const h = Math.floor(seconds / 3600);
@@ -11,12 +11,40 @@ const formatTime = (seconds) => {
     return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 };
 
-export default function AgentWorkSummary({ userId }) {
+// Convertit secondes -> format H,MM (ex: 5h30 => "5,30")
+// Règle : arrondir les secondes en minutes (si fraction de minute >= 0.5 on arrondit vers le haut)
+const formatHoursWithRoundedMinutes = (totalSeconds) => {
+    if (!totalSeconds || totalSeconds <= 0) return "0,00";
+    let hours = Math.floor(totalSeconds / 3600);
+    // minutes fraction before rounding
+    const remainingSeconds = totalSeconds % 3600;
+    const minutesFloat = remainingSeconds / 60; // ex 30.333...
+    const minutesRounded = Math.round(minutesFloat); // arrondi normal (.5 -> up)
 
+    // si minutesRounded === 60, on incrémente l'heure
+    if (minutesRounded === 60) {
+        hours += 1;
+        return `${hours},00`;
+    }
+    // format minutes with two digits
+    return `${hours},${String(minutesRounded).padStart(2, "0")}`;
+};
+
+// Pour l'affichage du cumul en table (on garde cumul_travail en secondes côté back)
+const secondsToDecimalHours = (sec) => {
+    if (!sec || sec <= 0) return 0;
+    const hours = sec / 3600;
+    return Number(hours.toFixed(2)); // si tu veux garder le cumul du mois sous forme décimale
+};
+
+export default function AgentWorkSummary({ userId }) {
     const [todayWork, setTodayWork] = useState(6 * 3600);
     const [monthWork, setMonthWork] = useState(120 * 3600);
 
-    const [autoHistory, setAutoHistory] = useState([]); // Historique auto (J−1, J−2…)
+    const [autoHistory, setAutoHistory] = useState([]); // Historique auto (renvoyé par le back)
+
+    // tri côté frontend : 'desc' par défaut (récent en haut)
+    const [sortOrder, setSortOrder] = useState("desc");
 
     // Filtres
     const [filterStart, setFilterStart] = useState("");
@@ -31,50 +59,28 @@ export default function AgentWorkSummary({ userId }) {
         setTotalPeriode(0);
     };
 
-
     const formatDate = (isoString) => {
         if (!isoString) return "";
         return isoString.split("T")[0];
     };
 
-
-    const secondsToDecimalHours = (sec) => {
-        if (!sec || sec <= 0) return 0;
-        const hours = sec / 3600;
-        return Number(hours.toFixed(2)); // arrondi propre
-    };
-
     useEffect(() => {
         const fetchSessions = async () => {
             try {
-                const { data } = await axiosInstance.get("/session_agents/monthly");
-
-                // Calcul cumul et today/month totals
-                let cumul = 0;
-                const hist = data.map((d) => {
-                    const travail = Number(d.travail) || 0;
-                    const pauses = Number(d.pauses) || 0;
-                    const indispo = Number(d.indispo) || 0;
-
-                    cumul += travail;
-
-                    return {
-                        date: d.session_date,
-                        travail,
-                        pauses,
-                        indispo,
-                        presence: Number(d.presence) || 0,
-                        cumul_travail: cumul,
-                    };
+                const { data } = await axiosInstance.get("/session_agents/monthly", {
+                  params: { userId },
                 });
 
-                setAutoHistory(hist);
+                // data est un array d'objets contenant :
+                // session_date, dispo, pauses, indispo, travail, presence, cumul_travail (secs)
+                setAutoHistory(data);
 
-                // Aujourd'hui
-                const today = hist.find(h => dayjs(h.date).isSame(dayjs(), "day"));
-                setTodayWork(today ? today.travail : 0);
+                // Trouver aujourd'hui dans les données
+                const today = data.find(h => dayjs(h.session_date).isSame(dayjs(), "day"));
+                setTodayWork(today ? Number(today.travail) : 0);
 
-                // Cumul du mois
+                // Calcul cumul du mois (total seconds)
+                const cumul = data.reduce((acc, d) => acc + (Number(d.travail) || 0), 0);
                 setMonthWork(cumul);
 
             } catch (err) {
@@ -83,7 +89,20 @@ export default function AgentWorkSummary({ userId }) {
         };
 
         fetchSessions();
-    }, []);
+    }, [userId]);
+
+    // tri local selon sortOrder
+    const sortedAutoHistory = [...autoHistory].sort((a, b) => {
+        const da = dayjs(a.session_date);
+        const db = dayjs(b.session_date);
+        if (sortOrder === "desc") return db.isAfter(da) ? 1 : (db.isBefore(da) ? -1 : 0);
+        return da.isAfter(db) ? 1 : (da.isBefore(db) ? -1 : 0);
+    });
+
+    // toggle sortOrder quand on clique sur l'en-tête Date
+    const toggleSort = () => {
+        setSortOrder(prev => prev === "desc" ? "asc" : "desc");
+    };
 
     const fetchHistorique = () => {
         if (!filterStart) return;
@@ -92,20 +111,27 @@ export default function AgentWorkSummary({ userId }) {
         const end = filterEnd ? dayjs(filterEnd) : start;
 
         const result = autoHistory.filter((d) => {
-            const dDate = dayjs(d.date);
+            const dDate = dayjs(d.session_date);
             return dDate.isAfter(start.subtract(1, "day")) && dDate.isBefore(end.add(1, "day"));
         });
 
-        setHistorique(result);
+        // on retourne le résultat trié selon sortOrder aussi
+        const sorted = result.sort((a, b) => {
+            const da = dayjs(a.session_date);
+            const db = dayjs(b.session_date);
+            if (sortOrder === "desc") return db.isAfter(da) ? 1 : (db.isBefore(da) ? -1 : 0);
+            return da.isAfter(db) ? 1 : (da.isBefore(db) ? -1 : 0);
+        });
+
+        setHistorique(sorted);
 
         let tot = 0;
-        result.forEach((d) => (tot += d.travail));
+        result.forEach((d) => (tot += Number(d.travail || 0)));
         setTotalPeriode(tot);
     };
 
     return (
         <div className="mt-10 p-5 bg-white rounded-xl shadow">
-
             <h2 className="text-lg font-semibold mb-4 text-center">
                 📅 Heures de travail – Aujourd’hui / Mois / Historique / Filtres
             </h2>
@@ -121,7 +147,6 @@ export default function AgentWorkSummary({ userId }) {
                     <div className="text-sm text-green-700">Cumul du mois</div>
                     <div className="text-xl font-mono">{secondsToDecimalHours(monthWork)}</div>
                 </div>
-
             </div>
 
             {/* === Historique Auto : J-1, J-2, J-3 === */}
@@ -130,22 +155,27 @@ export default function AgentWorkSummary({ userId }) {
             <table className="w-full text-sm mt-2 border">
                 <thead>
                     <tr className="bg-gray-100">
-                        <th className="p-2 border">Date</th>
+                        <th
+                          className="p-2 border cursor-pointer"
+                          onClick={toggleSort}
+                          title="Cliquer pour inverser l'ordre (asc/desc)"
+                        >
+                          Date {sortOrder === "desc" ? "↓" : "↑"}
+                        </th>
                         <th className="p-2 border">Travail</th>
                         <th className="p-2 border">Cumul jusque là</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {autoHistory.map((h, index) => {
-
-                        return (
-                            <tr key={h.date}>
-                                <td className="p-2 border">{formatDate(h.date)}</td>
-                                <td className="p-2 border font-mono">{formatTime(h.travail)}</td>
-                                <td className="p-2 border font-mono font-bold">{secondsToDecimalHours(h.cumul_travail)}</td>
-                            </tr>
-                        );
-                    })}
+                    {sortedAutoHistory.map((h) => (
+                        <tr key={h.session_date}>
+                            <td className="p-2 border">{formatDate(h.session_date)}</td>
+                            <td className="p-2 border font-mono">{formatTime(Number(h.travail || 0))}</td>
+                            <td className="p-2 border font-mono font-bold">
+                                {formatHoursWithRoundedMinutes(Number(h.cumul_travail || 0))}
+                            </td>
+                        </tr>
+                    ))}
                 </tbody>
             </table>
 
@@ -186,28 +216,22 @@ export default function AgentWorkSummary({ userId }) {
                                 <th className="p-2 border">Date</th>
                                 <th className="p-2 border">Travail</th>
                                 <th className="p-2 border">Pauses</th>
-                                <th className="p-2 border">Présence </th>
+                                <th className="p-2 border">Présence</th>
+                                <th className="p-2 border">Cumul</th>
                             </tr>
                         </thead>
                         <tbody>
                             {historique.map((h) => (
-                                <tr key={h.date}>
-                                    <td className="p-2 border">{formatDate(h.date)}</td>
-                                    <td className="p-2 border font-mono font-bold">{formatTime(h.travail)}</td>
-                                    <td className="p-2 border font-mono">{formatTime(h.pauses)}</td>
-                                    <td className="p-2 border font-mono">{formatTime(h.cumul_travail)}</td>
-
+                                <tr key={h.session_date}>
+                                    <td className="p-2 border">{formatDate(h.session_date)}</td>
+                                    <td className="p-2 border font-mono font-bold">{formatTime(Number(h.travail || 0))}</td>
+                                    <td className="p-2 border font-mono">{formatTime(Number(h.pauses || 0))}</td>
+                                    <td className="p-2 border font-mono">{formatTime(Number(h.presence || 0))}</td>
+                                    <td className="p-2 border font-mono font-bold">{formatHoursWithRoundedMinutes(Number(h.cumul_travail || 0))}</td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
-
-                    {/* <div className="flex justify-end">
-                        <div className="mt-4 p-2 bg-red-50 rounded-lg text-center ml-auto w-max">
-                            <div className="text-xs text-orange-700">Total période filtrée (heure de travail)</div>
-                            <div className="text-lg font-mono">{formatTime(totalPeriode)}</div>
-                        </div>
-                    </div> */}
                 </>
             )}
         </div>
