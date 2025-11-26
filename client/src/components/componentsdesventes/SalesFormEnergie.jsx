@@ -18,19 +18,20 @@ const SalesFormEnergie = ({ formData, setFormData, onSubmit, onClose }) => {
       setFormData(prev => ({
         ...prev,
         partenaire: value,
-        fournisseur: value === 'Artesia' ? prev.fournisseur : ''  // reset fournisseur sauf si artesia
+        fournisseur: value === 'Artesia' ? prev.fournisseur : '',  // reset fournisseur sauf si artesia
+        partenaireAutre: value === 'Autre' ? prev.partenaireAutre : '',
       }));
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
   };
 
-
   const handleSubmit = (e) => {
     e.preventDefault();
 
     if (
-      !formData.partenaire ||
+      (formData.partenaire === 'Artesia' && !formData.fournisseur) ||
+      !formData.partenaire || (formData.partenaire === 'Autre' && !formData.partenaireAutre) ||
       !formData.civilite ||
       !formData.nomClient ||
       !formData.prenomClient ||
@@ -45,14 +46,18 @@ const SalesFormEnergie = ({ formData, setFormData, onSubmit, onClose }) => {
       (formData.energie === 'Gaz' && !formData.pce) ||
       !formData.natureOffre ||
       !formData.puissanceCompteur ||
-      !formData.etatContrat ||
-      !formData.fournisseur
+      !formData.etatContrat
     ) {
       alert('Veuillez remplir tous les champs obligatoires.');
       return;
     }
 
-    onSubmit(formData);
+    const finalFormData = {
+      ...formData,
+      partenaire: formData.partenaire === 'Autre' ? formData.partenaireAutre : formData.partenaire,
+    };
+
+    onSubmit(finalFormData);
   };
 
   return (
@@ -72,6 +77,17 @@ const SalesFormEnergie = ({ formData, setFormData, onSubmit, onClose }) => {
               <option key={p} value={p}>{p}</option>
             ))}
           </select>
+          {formData.partenaire === 'Autre' && (
+            <input
+              type="text"
+              name="partenaireAutre"
+              value={formData.partenaireAutre || ''}
+              onChange={handleChange}
+              required
+              placeholder="Entrez un autre partenaire"
+              className="mt-2 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          )}
         </div>
 
         {formData.partenaire === 'Artesia' && (
@@ -104,10 +120,8 @@ const SalesFormEnergie = ({ formData, setFormData, onSubmit, onClose }) => {
             <option value="Mr">Mr</option>
             <option value="Mme">Mdme</option>
             <option value="Mlle">Mlle</option>
-            <option value="Autre">Autre</option>
           </select>
         </div>
-
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Nom client *</label>
