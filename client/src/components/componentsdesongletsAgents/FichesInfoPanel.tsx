@@ -74,23 +74,23 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
 
 
   // Filtrage affichage par filtre actif
-const filteredFiches = useMemo(() => {
-  const base = activeFilter === 'toutes'
-    ? fichesFiltreesParRole
-    : fichesFiltreesParRole.filter((f) => f.statut === activeFilter);
+  const filteredFiches = useMemo(() => {
+    const base = activeFilter === 'toutes'
+      ? fichesFiltreesParRole
+      : fichesFiltreesParRole.filter((f) => f.statut === activeFilter);
 
-  if (!searchTerm.trim()) return base;
+    if (!searchTerm.trim()) return base;
 
-  return base.filter((f) => {
-    const term = searchTerm.toLowerCase();
-    return (
-      f.nom_client?.toLowerCase().includes(term) ||
-      f.prenom_client?.toLowerCase().includes(term) ||
-      f.numero_mobile?.toLowerCase().includes(term) ||
-      f.id?.toString().includes(term)
-    );
-  });
-}, [fichesFiltreesParRole, activeFilter, searchTerm]);
+    return base.filter((f) => {
+      const term = searchTerm.toLowerCase();
+      return (
+        f.nom_client?.toLowerCase().includes(term) ||
+        f.prenom_client?.toLowerCase().includes(term) ||
+        f.numero_mobile?.toLowerCase().includes(term) ||
+        f.id?.toString().includes(term)
+      );
+    });
+  }, [fichesFiltreesParRole, activeFilter, searchTerm]);
 
   // Ouvre la modal RDV pour programmer un rendez-vous
   const handleOpenRdvModal = (ficheId: number) => {
