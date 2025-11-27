@@ -2,7 +2,7 @@
 import React from 'react';
 import { Fiche } from './fiche.ts';
 import { StatusBadge } from './StatusBadge.tsx';
-import { ActionButton } from './ActionButton.tsx';
+import { ActionButton,  } from './ActionButton.tsx';
 import { Eye, FileUp, Trash2Icon, Repeat, FileText } from 'lucide-react';
 import type { AdminFilterType } from '../componentsdesongletsAdmins/AdminFichiersPanel'; // ⬅️ chemin à ajuster si nécessaire
 
@@ -59,19 +59,19 @@ export const FichesTable: React.FC<FichesTableProps> = ({
               onClick={() => onAssign(fiche.id, fiche.assigned_to ?? undefined)}
               icon={<FileUp className="w-4 h-4" />}
               tooltip="Assigner"
-              colorClass="blue-600"
+              color="blue"
             />
             <ActionButton
               onClick={() => onOpenDetail(fiche)}
               icon={<Eye className="w-4 h-4" />}
               tooltip="Détails"
-              colorClass="green-600"
+              color="green"
             />
             <ActionButton
               onClick={() => onDelete(fiche.id)}
               icon={<Trash2Icon className="w-4 h-4" />}
               tooltip="Supprimer"
-              colorClass="orange-600"
+              color="orange"
             />
           </>
         ) : (
@@ -80,25 +80,25 @@ export const FichesTable: React.FC<FichesTableProps> = ({
               onClick={() => onOpenDetail(fiche)}
               icon={<Eye className="w-4 h-4" />}
               tooltip="Détails fiches"
-              colorClass="green-600"
+              color="green"
             />
             <ActionButton
               onClick={() => onDelete(fiche.id)}
               icon={<Trash2Icon className="w-4 h-4" />}
               tooltip="Supprimer"
-              colorClass="orange-600"
+              color="orange"
             />
             <ActionButton
               onClick={() => onUnassign(fiche)}
               icon={<Repeat className="w-4 h-4" />}
               tooltip="Retirer"
-              colorClass="purple-600"
+              color="purple"
             />
             <ActionButton
               onClick={() => onOpenHistorique(fiche.id)}
               icon={<FileText className="w-4 h-4" />}
               tooltip="Voir l'historique"
-              colorClass="blue-600"
+              color="blue"
             />
           </>
         )}
