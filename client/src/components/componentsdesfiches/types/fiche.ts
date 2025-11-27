@@ -32,6 +32,12 @@ export interface ClotureData {
   tag: string;
 }
 
+export interface RdvData {
+  rdvDate: string;
+  commentaire: string;
+  tag?: string;
+}
+
 export const PREDEFINED_TAGS = [
   'Vente',
   'Ne répond pas (NRP)',
@@ -42,4 +48,13 @@ export const PREDEFINED_TAGS = [
   'Faux Numéro (FN)',
   'Relance (RL)',
   'Hors Cible',
+];
+
+export const SAVE_ONLY_TAGS = [
+  "Ne répond pas (NRP)",
+  "Repondeur (Rep)",
+  "Faux Numéro (FN)",
+  "Refus d'Entretien (RE)",
+  "Refus Argumenté (RA)",
+  "Hors Cible",
 ];

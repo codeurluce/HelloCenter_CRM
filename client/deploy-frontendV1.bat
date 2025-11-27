@@ -34,7 +34,7 @@ if errorlevel 1 (
 )
 
 echo ==================================================
-echo ✅ Déploiement frontend terminé avec succès !
+echo ✅ Déploiement frontend termine avec succes !
 echo ✅ Rendez-vous sur http://159.65.121.14
 echo ==================================================
 pause

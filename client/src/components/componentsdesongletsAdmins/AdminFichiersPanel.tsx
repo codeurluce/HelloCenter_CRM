@@ -101,11 +101,11 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
         setAssignModal({ isOpen: true, ficheId, currentAgentId: currentAgentId ?? null });
     };
 
-/**
- * ============================
- *   ASSIGNATION D’UNE FICHE
- * ============================
- */
+    /**
+     * ============================
+     *   ASSIGNATION D’UNE FICHE
+     * ============================
+     */
     const handleAssignSubmit = async (agentId: number) => {
         try {
             const ficheIds = assignModal.ficheId ? [assignModal.ficheId] : selectedFiches;
@@ -144,11 +144,11 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
     };
 
 
-/**
- * ============================
- *   DÉSASSIGNER UNE FICHE
- * ============================
- */
+    /**
+     * ============================
+     *   DÉSASSIGNER UNE FICHE
+     * ============================
+     */
     const handleUnassignFiche = async (fiche: Fiche) => {
         const result = await Swal.fire({
             icon: 'question',
@@ -173,11 +173,11 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
         }
     };
 
-/**
- * ============================
- *   DÉSASSIGNER plusieurs fiches
- * ============================
- */    
+    /**
+     * ============================
+     *   DÉSASSIGNER plusieurs fiches
+     * ============================
+     */
     const handleBatchUnassign = async () => {
         const result = await Swal.fire({
             icon: 'question',
@@ -216,11 +216,11 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
         }
     };
 
-/**
-* ============================
-*   Supprimer une fiche
-* ============================
-*/
+    /**
+    * ============================
+    *   Supprimer une fiche
+    * ============================
+    */
     const handleDeleteFiche = async (ficheId: number) => {
         const result = await Swal.fire({
             icon: 'warning',
@@ -245,11 +245,11 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
         }
     };
 
-/**
-* ============================
-*   Supprimer plusieurs fiches
-* ============================
-*/
+    /**
+    * ============================
+    *   Supprimer plusieurs fiches
+    * ============================
+    */
     const handleBatchDelete = async () => {
         const result = await Swal.fire({
             icon: 'warning',
@@ -280,11 +280,11 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
             Swal.fire('Erreur', e.response?.data?.error || 'Erreur serveur', 'error');
         }
     };
-/**
-* ============================
-*   importer des fiches
-* ============================
-*/
+    /**
+    * ============================
+    *   importer des fiches
+    * ============================
+    */
     const onImportFiches = async (importedData: any) => {
         try {
             const response = await axiosInstance.put("/files/import_files", {
@@ -407,7 +407,7 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
                                             <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700 whitespace-nowrap">N° fiche</th>
                                             <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Client</th>
                                             <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700 whitespace-nowrap">Numéro mobile</th>
-                                            <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Statut</th>
+                                            <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Statut / tag</th>
                                             <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Assignée à</th>
                                             <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700 whitespace-nowrap">Date import</th>
                                             <th className="px-6 py-3 text-center text-sm font-semibold text-blue-700">Actions</th>

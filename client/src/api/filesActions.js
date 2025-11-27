@@ -3,7 +3,7 @@
 
 import axiosInstance from './axiosInstance';
 import { logHistorique } from './historiqueFiles.ts';
-import dayjs from 'dayjs'; 
+import dayjs from 'dayjs';
 import { toast } from 'react-toastify';
 
 
@@ -31,8 +31,8 @@ export const fetchFichesAssigned = async () => {
 
 // ⚙️ Prise en charge fiche (mise à jour)
 export const handleTraitement = async (ficheId, user, setFiches) => {
-console.log('👤 Utilisateur courant :', user);
-console.log('🆔 user.id =', user?.id);
+  console.log('👤 Utilisateur courant :', user);
+  console.log('🆔 user.id =', user?.id);
   if (!user) {
     console.error("Utilisateur non connecté.");
     return;
@@ -97,7 +97,7 @@ export const handleCancelFiche = async (ficheId, fetchFiches) => {
 
 // ✅ Clôturer fiche
 export const handleCloture = async (ficheId, data, user, fetchFiches) => {
-   if (!user) {
+  if (!user) {
     console.error('Utilisateur non connecté.');
     return;
   }
@@ -126,12 +126,11 @@ export const handleCloture = async (ficheId, data, user, fetchFiches) => {
   }
 };
 
-// Enregistrer une fiche après un commentaire
-// ✏️ Enregistrer une fiche après un commentaire (sans clôturer)
+// Enregistrer une fiche après un commentaire (sans clôturer)
 export const handleEnregistrerFicheSansCloture = async (ficheId, data, user) => {
   if (!user) {
     console.error('Utilisateur non connecté.');
-throw new Error("Utilisateur non connecté"); // ⚠️ Stoppe ici
+    throw new Error("Utilisateur non connecté"); // ⚠️ Stoppe ici
   }
 
   try {
@@ -158,8 +157,9 @@ throw new Error("Utilisateur non connecté"); // ⚠️ Stoppe ici
   }
 };
 
-// 📅 Programmer RDV + sauvegarde dans la bd
-export const handleProgramRdv = async (ficheId, rdvDate, commentaire, fetchFiches) => {
+
+// 📅 Programmer RDV + sauvegarde dans la BD (avec tag)
+export const handleProgramRdv = async (ficheId, rdvDate, commentaireUtilisateur, tag, fetchFiches) => {
   const user = JSON.parse(localStorage.getItem('user'));
   if (!user) {
     console.error('Utilisateur non connecté.');
@@ -167,26 +167,33 @@ export const handleProgramRdv = async (ficheId, rdvDate, commentaire, fetchFiche
   }
 
   const formattedDate = dayjs(rdvDate).format('DD/MM/YYYY à HH:mm');
-  const fullCommentaire = commentaire
-    ? `(RDV prévu le ${formattedDate}) ${commentaire} `
-    : `Rendez-vous programmé le ${formattedDate}`;
 
   try {
     await axiosInstance.put(`/files/${ficheId}/programmer-rdv`, {
-      statut: 'rendez_vous',
       rendez_vous_date: rdvDate,
-      rendez_vous_commentaire: fullCommentaire,
+      rendez_vous_commentaire: commentaireUtilisateur || '',
+      tag,
     });
+
+    let historiqueCommentaire = `RDV programmé le ${formattedDate}`;
+
+    if (commentaireUtilisateur?.trim()) {
+      historiqueCommentaire += ` – Commentaire : "${commentaireUtilisateur.trim()}"`;
+    }
+
+    if (tag) {
+      historiqueCommentaire += ` – Tag : ${tag}`;
+    }
 
     await logHistorique({
       ficheId,
       action: 'PROGRAMMATION_RDV',
       actorId: user.id,
       actorName: `${user.firstname} ${user.lastname}`,
-      commentaire: `RDV programmé : ${fullCommentaire}` ,
+      commentaire: historiqueCommentaire,
     });
 
-    if (fetchFiches) fetchFiches(); // ✅ rafraîchir uniquement si la fonction est passée
+    if (fetchFiches) fetchFiches();
     toast.success('📅 RDV programmé avec succès');
   } catch (err) {
     console.error('Erreur lors de la programmation du RDV :', err);

@@ -137,17 +137,18 @@ exports.enregistrerFicheSansCloture = async (req, res) => {
 // Export pour prendre un rendez-vous
 exports.programRdv = async (req, res) => {
   const { id } = req.params;
-  const { rendez_vous_date, rendez_vous_commentaire } = req.body;
+  const { rendez_vous_date, rendez_vous_commentaire, tag } = req.body;
 
   try {
     await db.query(
       `UPDATE files 
    SET rendez_vous_date = $1, 
        rendez_vous_commentaire = $2,
+       tag = $3,
        statut = 'rendez_vous',
        date_modification = NOW()
-   WHERE id = $3`,
-      [rendez_vous_date, rendez_vous_commentaire, id]
+   WHERE id = $4`,
+      [rendez_vous_date, rendez_vous_commentaire, tag, id]
     );
     res.sendStatus(200);
   } catch (error) {

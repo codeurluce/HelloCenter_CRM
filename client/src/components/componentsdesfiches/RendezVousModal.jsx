@@ -5,8 +5,8 @@ const RendezVousModal = ({ isOpen, onClose, onConfirm }) => {
   const [commentaire, setCommentaire] = useState('');
 
   const handleSubmit = () => {
-    if (!date || !commentaire.trim()) return;
-    onConfirm({ date, commentaire });
+    if (!date) return;
+    onConfirm({ date, commentaire: commentaire.trim() });
     onClose();
   };
 

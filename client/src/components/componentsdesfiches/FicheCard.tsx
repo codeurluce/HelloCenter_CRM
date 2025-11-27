@@ -20,7 +20,6 @@ interface FicheCardProps {
   currentAgent: string;
   onTreatFiche: (id: number) => void;
   onOpenClotureModal: (id: number) => void;
-  onProgramRdv: (id: number) => void;
   onCancelFiche: (id: number) => void;
   onVoirRdvDetails?: (fiche: Fiche) => void; // Optionnel pour voir les détails du rendez-vous
 }
@@ -30,7 +29,6 @@ const FicheCard: React.FC<FicheCardProps> = ({
   currentAgent,
   onTreatFiche,
   onOpenClotureModal,
-  onProgramRdv,
   onCancelFiche,
   onVoirRdvDetails = () => { }, // Fonction par défaut vide si non fourni
 }) => {
@@ -137,14 +135,14 @@ const FicheCard: React.FC<FicheCardProps> = ({
               <Lightbulb size={16} className="text-gray-400" />
               <span>(pce) {fiche.pce}</span>
             </div>
-          )} 
-          
+          )}
+
           {fiche.pdl && (
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <Flame size={16} className="text-gray-400" />
               <span>(pdl) {fiche.pdl}</span>
             </div>
-          )} 
+          )}
         </div>
 
         <div className="pt-2 border-t border-gray-100">
@@ -238,13 +236,6 @@ const FicheCard: React.FC<FicheCardProps> = ({
                 Clôturer
               </button>
               {/* <button
-                onClick={() => onProgramRdv(fiche.id)}
-                className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors font-medium shadow-sm"
-              >
-                <CalendarPlus size={16} />
-                Rendez-vous
-              </button> */}
-              {/* <button
                 onClick={() => {
                   console.log("🧪 Bouton Annuler cliqué pour la fiche ID :", fiche.id)
                   onCancelFiche(fiche.id);
@@ -300,7 +291,6 @@ export default FicheCard;
 //   currentAgent: string;
 //   onTreatFiche: (id: number) => void;
 //   onOpenClotureModal: (id: number) => void;
-//   onProgramRdv: (id: number) => void;
 //   onCancelFiche: (id: number) => void;
 //   onVoirRdvDetails?: (fiche: Fiche) => void;
 // }
@@ -310,7 +300,6 @@ export default FicheCard;
 //   currentAgent,
 //   onTreatFiche,
 //   onOpenClotureModal,
-//   onProgramRdv,
 //   onCancelFiche,
 //   onVoirRdvDetails = () => {},
 // }) => {
@@ -485,13 +474,6 @@ export default FicheCard;
 //               >
 //                 <Check size={16} />
 //                 Clôturer
-//               </button>
-//               <button
-//                 onClick={() => onProgramRdv(fiche.id)}
-//                 className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition font-medium shadow-sm"
-//               >
-//                 <CalendarPlus size={16} />
-//                 Rendez-vous
 //               </button>
 //             </>
 //           )}

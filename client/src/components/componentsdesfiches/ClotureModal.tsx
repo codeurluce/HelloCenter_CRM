@@ -1,7 +1,7 @@
 // src/componentsdesfiches/ClotureModal.tsx
 import React, { useState, useEffect } from 'react';
 import { X, Check, AlertCircle, CalendarPlus } from 'lucide-react';
-import { ClotureData, PREDEFINED_TAGS, Fiche } from './types/fiche.ts';
+import { ClotureData, PREDEFINED_TAGS, Fiche, SAVE_ONLY_TAGS } from './types/fiche.ts';
 import CreateSaleFromFicheModal from './CreateSaleFromFicheModal.tsx';
 import FormTypeSelector from '../componentsdesventes/FormTypeSelector';
 import { toast } from 'react-toastify';
@@ -14,7 +14,7 @@ interface ClotureModalProps {
   ficheId: number;
   clientName: string;
   fiche: Fiche | null;
-  onProgramRdv: (id: number) => void;
+  onProgramRdv: (id: number, tag: string) => void;
   onSaveNRP: (id: number, data: ClotureData) => void;
 }
 
@@ -76,7 +76,7 @@ const ClotureModal: React.FC<ClotureModalProps> = ({
 
     // Si tag Relance ou Rappel → RDV
     if (formData.tag === 'Relance (RL)' || formData.tag === 'Rappel (R)') {
-      onProgramRdv(fiche.id); // déclenche le bouton RDV
+      onProgramRdv(fiche.id, formData.tag); // déclenche le bouton RDV
       handleClose();
       return;
     }
@@ -105,28 +105,23 @@ const ClotureModal: React.FC<ClotureModalProps> = ({
     handleClose();
   };
 
-const handleSaveNRP = async () => {
-  if (!fiche) return;
+  const handleSaveNRP = async () => {
+    if (!fiche) return;
 
-  if (!formData.commentaire || !formData.commentaire.trim()) {
-    toast.error("Veuillez renseigner un commentaire avant d'enregistrer !");
-    return;
-  }
+    try {
+      await onSaveNRP(fiche.id, {
+        tag: formData.tag,
+        commentaire: formData.commentaire.trim()
+      });
 
-  try {
-    await onSaveNRP(fiche.id, {
-      tag: formData.tag,
-      commentaire: formData.commentaire
-    });
+      toast.success("Commentaire enregistré !");
+      handleClose();
 
-    toast.success("Commentaire enregistré !");
-    handleClose();
-
-  } catch (err) {
-    console.error(err);
-    toast.error("Impossible d'enregistrer le commentaire !");
-  }
-};
+    } catch (err) {
+      console.error(err);
+      toast.error("Impossible d'enregistrer le commentaire !");
+    }
+  };
 
   const handleFormTypeSelect = (type: 'energie' | 'offreMobile') => {
     if (!saleInitialData) return;
@@ -241,18 +236,16 @@ const handleSaveNRP = async () => {
               Annuler
             </button>
 
-              {/* --- Bouton ENREGISTRER pour NRP --- */}
-{formData.tag === "Ne répond pas (NRP)" && (
-  <button
-    type="button"
-    onClick={() => {
-      handleSaveNRP();
-    }}
-    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-white bg-amber-600 hover:bg-amber-700"
-  >
-    <Check size={16} /> Enregistrer
-  </button>
-)}
+            {/* --- Bouton ENREGISTRER pour NRP --- */}
+            {SAVE_ONLY_TAGS.includes(formData.tag) && (
+              <button
+                type="button"
+                onClick={handleSaveNRP}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-white bg-amber-600 hover:bg-amber-700"
+              >
+                <Check size={16} /> Enregistrer
+              </button>
+            )}
 
             {/* ici il faut mettre le bouton rdv supprimer dans fichecard qui saffiche si on clique sur le tag relance ou rappel */}
             <button

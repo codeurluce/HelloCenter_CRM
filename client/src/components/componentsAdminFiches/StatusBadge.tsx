@@ -7,6 +7,19 @@ interface StatusBadgeProps {
   tag?: string;
 }
 
+const tagMap: Record<string, { label: string; colorClass: string }> = {
+  'Ne répond pas (NRP)': { label: 'NRP', colorClass: 'bg-orange-500 text-white' },
+  "Refus d'Entretien (RE)": { label: 'RE', colorClass: 'bg-orange-500 text-white' },
+  'Repondeur (Rep)': { label: 'REPD', colorClass: 'bg-orange-500 text-white' },
+  'Refus Argumenté (RA)': { label: 'RA', colorClass: 'bg-orange-500 text-white' },
+  'Vente': { label: 'Vente', colorClass: 'bg-green-500 text-white' },
+  'Rappel (R)': { label: 'RPL', colorClass: 'bg-orange-500 text-white' },
+  'Relance (RL)': { label: 'RL', colorClass: 'bg-orange-500 text-white' },
+  'Faux Numéro (FN)': { label: 'FN', colorClass: 'bg-orange-500 text-white' },
+  'Hors Cible': { label: 'HC', colorClass: 'bg-orange-500 text-white' },
+};
+
+
 export const StatusBadge: React.FC<StatusBadgeProps> = ({ statut, assigned_to, tag }) => {
   let bgColor, textColor, label;
   if (statut === 'nouvelle' && !assigned_to) { bgColor = 'bg-blue-100'; textColor = 'text-blue-800'; label = 'Nouvelle'; }
@@ -16,16 +29,22 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ statut, assigned_to, t
   else if (statut === 'cloturee') { bgColor = 'bg-green-100'; textColor = 'text-green-800'; label = 'Clôturée'; }
   else { bgColor = 'bg-gray-100'; textColor = 'text-gray-800'; label = statut; }
 
+
+  const tagInfo = tag ? tagMap[tag] : undefined;
+
   return (
     <div className="flex items-center gap-2">
+      {/* Badge principal : statut */}
       <span className={`px-2 py-1 rounded-full text-xs font-semibold ${bgColor} ${textColor}`}>
         {label}
       </span>
-      {statut === 'en_traitement' && tag === 'Ne répond pas (NRP)' && (
-        <span className="px-2 py-1 rounded-full text-xs font-semibold bg-orange-500 text-white">
-          NRP
+
+      {/* Badge secondaire : tag */}
+      {tagInfo && (
+        <span className={`px-2 py-1 rounded-full text-xs font-bold ${tagInfo.colorClass}`}>
+          {tagInfo.label}
         </span>
       )}
     </div>
   );
-}
+};

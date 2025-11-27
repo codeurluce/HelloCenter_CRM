@@ -15,7 +15,7 @@ interface FichesInfoPanelProps {
   onTreatFiche: (id: number) => void;
   onCancelFiche: (id: number) => void;
   onCloseFiche: (id: number, data: ClotureData) => void;
-  onProgramRdv: (id: number, date: Date, commentaire: string) => void;
+  onProgramRdv: (id: number, date: string, commentaire: string, tag: string) => void;
   onEnregistrerFicheSansCloture: (id: number, data: ClotureData) => void;
 }
 
@@ -48,6 +48,7 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
   const [showRdvDetailsModal, setShowRdvDetailsModal] = useState(false);
   const [selectedClotureFiche, setSelectedClotureFiche] = useState<Fiche | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [rdvTag, setRdvTag] = useState<string | null>(null);
 
 
   // Filtrage selon rôle utilisateur
@@ -75,6 +76,15 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
     [fichesFiltreesParRole]
   );
 
+  // Appelée par ClotureModal quand un tag "Relance" ou "Rappel" est choisi
+  const handleRequestRdvWithTag = (ficheId: number, tag: string) => {
+    const fiche = fiches.find(f => f.id === ficheId);
+    if (fiche) {
+      setSelectedFiche(fiche);
+      setRdvTag(tag); // ✅ sauvegarde le tag temporairement
+      setShowRdvModal(true);
+    }
+  };
 
   // Filtrage affichage par filtre actif
   const filteredFiches = useMemo(() => {
@@ -117,9 +127,9 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
     }
   };
 
-const enregistrerFicheSansCloture = async (id: number, payload: any) => {
-  return axiosInstance.put(`/files/${id}/enregistrer`, payload);
-};
+  const enregistrerFicheSansCloture = async (id: number, payload: any) => {
+    return axiosInstance.put(`/files/${id}/enregistrer`, payload);
+  };
 
 
   const handleVoirRdvDetails = (fiche: Fiche) => {
@@ -305,7 +315,6 @@ const enregistrerFicheSansCloture = async (id: number, payload: any) => {
                           onTreatFiche={() => onTreatFiche(fiche.id)}
                           onCancelFiche={() => onCancelFiche(fiche.id)}
                           onOpenClotureModal={() => handleOpenClotureModal(fiche.id)}
-                          onProgramRdv={() => handleOpenRdvModal(fiche.id)}
                           onVoirRdvDetails={() => handleVoirRdvDetails(fiche)}
                         />
                       </div>
@@ -328,17 +337,18 @@ const enregistrerFicheSansCloture = async (id: number, payload: any) => {
         ficheId={clotureModal.ficheId || 0}
         clientName={clotureModal.clientName}
         fiche={selectedClotureFiche}
-        onProgramRdv={handleOpenRdvModal}
+        onProgramRdv={handleRequestRdvWithTag}
         onSaveNRP={onEnregistrerFicheSansCloture}
       />
 
       <RendezVousModal
         isOpen={showRdvModal}
         onClose={() => setShowRdvModal(false)}
-        onConfirm={({ date, commentaire }: { date: Date; commentaire: string }) => {
-          if (selectedFiche) {
-            onProgramRdv(selectedFiche.id, date, commentaire);
+        onConfirm={({ date, commentaire }: { date: string; commentaire: string }) => {
+          if (selectedFiche && rdvTag) {
+            onProgramRdv(selectedFiche.id, date, commentaire, rdvTag);
             setShowRdvModal(false);
+            setRdvTag(null);
           }
         }}
       />
