@@ -6,7 +6,6 @@ const db = require('../db');
 router.post('/', async (req, res) => {
 
   const { fiche_id, action, actor_id, actor_name, commentaire, metadata } = req.body;
-console.log('Route POST /api/historique appelée')
   try {
     await db.query('INSERT INTO historique_files (fiche_id, action, actor_id, actor_name, commentaire, metadata) VALUES ($1, $2, $3, $4, $5, $6)', 
       [fiche_id, action, actor_id, actor_name, commentaire, metadata]);

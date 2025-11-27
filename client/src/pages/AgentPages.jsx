@@ -29,7 +29,7 @@ const AgentDashboard = () => {
   const [timers, setTimers] = useState({});
   const [currentSession, setCurrentSession] = useState(null);
   const [tick, setTick] = useState(0);
-  const { fiches, loadFiches, onTreatFiche, onCancelFiche, onCloseFiche, onProgramRdv } = useFiches(user);
+  const { fiches, loadFiches, onTreatFiche, onCancelFiche, onCloseFiche, onProgramRdv, onEnregistrerFicheSansCloture } = useFiches(user);
   const [loadingFiches, setLoadingFiches] = useState(false);
 
   const refreshSessionData = async () => {
@@ -146,6 +146,7 @@ const AgentDashboard = () => {
               onCancelFiche={onCancelFiche}
               onCloseFiche={onCloseFiche}
               onProgramRdv={onProgramRdv}
+              onEnregistrerFicheSansCloture={onEnregistrerFicheSansCloture}
             />
           )}
           {activeItem === 'settings' && <AdminSettings />}

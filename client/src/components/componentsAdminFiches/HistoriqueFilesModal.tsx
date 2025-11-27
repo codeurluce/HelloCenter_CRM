@@ -6,7 +6,8 @@ import {
   PlayCircle, 
   CalendarClock,
   Import,
-  Redo
+  Redo,
+  Save
 } from "lucide-react";
 import dayjs from "dayjs";
 import axiosInstance from "../../api/axiosInstance";
@@ -51,10 +52,12 @@ if (!isOpen) return null;
         return <CheckCircle className="text-red-500" size={18} />;
       case "PRISE_EN_CHARGE":
         return <PlayCircle className="text-green-500" size={18} />;
-    //   case "ANNULATION":
-    //     return <RotateCcw className="text-orange-500" size={18} />;
       case "PROGRAMMATION_RDV":
         return <CalendarClock className="text-orange-500" size={18} />;
+      case "ENREGISTRER":
+        return <Save className="text-orange-500" size={18} />;
+    //   case "ANNULATION":
+    //     return <RotateCcw className="text-orange-500" size={18} />;
       default:
         return <Clock className="text-gray-400" size={18} />;
     }
@@ -126,6 +129,7 @@ if (!isOpen) return null;
 //   Import,
 //   Redo,
 //   CalendarClock,
+//   Save
 // } from "lucide-react";
 // import dayjs from "dayjs";
 // import axiosInstance from "../../api/axiosInstance";
@@ -176,6 +180,8 @@ if (!isOpen) return null;
 //         return <PlayCircle className="text-green-500" size={18} />;
 //       case "PROGRAMMATION_RDV":
 //         return <CalendarClock className="text-orange-500" size={18} />;
+//       case "ENREGISTRER":
+//         return <Save className="text-orange-500" size={18} />;
 //       default:
 //         return <Clock className="text-gray-400" size={18} />;
 //     }

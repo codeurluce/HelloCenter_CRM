@@ -1,6 +1,6 @@
 // src/api/useAgentFiches.js
 import { useState, useEffect } from 'react';
-import { fetchFichesAssigned, handleTraitement, onCancelFiche, handleCloture, handleProgramRdv } from '../api/filesActions.js';
+import { fetchFichesAssigned, handleTraitement, handleCancelFiche, handleCloture, handleEnregistrerFicheSansCloture, handleProgramRdv } from '../api/filesActions.js';
 
 export default function useFiches(user) {
   const [fiches, setFiches] = useState([]);
@@ -29,6 +29,9 @@ if (Array.isArray(allFiches)) {
     onTreatFiche: (id) => handleTraitement(id, user, setFiches).then(loadFiches),
     onCloseFiche: (id, data) => handleCloture(id, data, user, loadFiches),
     onProgramRdv: (ficheId, rdvDate, commentaire) => handleProgramRdv(ficheId, rdvDate, commentaire, loadFiches),
-    onCancelFiche: (id) => onCancelFiche(id, loadFiches),
-  };
+    onCancelFiche: (id) => handleCancelFiche(id, loadFiches),
+    onEnregistrerFicheSansCloture: async (id, data) => { await handleEnregistrerFicheSansCloture(id, data, user); // Appel API backend
+                                                         await loadFiches(); // Rafraîchit la liste
+  },
+};
 }

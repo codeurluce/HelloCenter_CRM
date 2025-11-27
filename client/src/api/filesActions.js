@@ -67,9 +67,8 @@ console.log('🆔 user.id =', user?.id);
   }
 };
 
-
 // 🔄 Annuler la fiche prise en charge
-export const onCancelFiche = async (ficheId, fetchFiches) => {
+export const handleCancelFiche = async (ficheId, fetchFiches) => {
   const user = JSON.parse(localStorage.getItem('user'));
   if (!user) {
     console.error('Utilisateur non connecté.');
@@ -124,6 +123,38 @@ export const handleCloture = async (ficheId, data, user, fetchFiches) => {
     fetchFiches();
   } catch (err) {
     console.error('Erreur lors de la clôture de la fiche :', err);
+  }
+};
+
+// Enregistrer une fiche après un commentaire
+// ✏️ Enregistrer une fiche après un commentaire (sans clôturer)
+export const handleEnregistrerFicheSansCloture = async (ficheId, data, user) => {
+  if (!user) {
+    console.error('Utilisateur non connecté.');
+throw new Error("Utilisateur non connecté"); // ⚠️ Stoppe ici
+  }
+
+  try {
+    const response = await axiosInstance.put(`/files/${ficheId}/enregistrer`, {
+      ...data,
+      date_modification: new Date().toISOString(),
+    });
+
+    // 📝 Logging de l'action "ENREGISTREMENT"
+    await logHistorique({
+      ficheId,
+      action: 'ENREGISTRER',
+      actorId: user.id,
+      actorName: `${user.firstname} ${user.lastname}`,
+      commentaire: `Fiche enregistrée${data.tag ? ` avec le tag : "${data.tag}"` : ''}${data.commentaire ? ` et commentaire : "${data.commentaire}"` : ''}`,
+      metadata: data,
+    });
+
+    return response.data;
+
+  } catch (err) {
+    console.error('Erreur lors de l’enregistrement de la fiche :', err);
+    throw err;
   }
 };
 

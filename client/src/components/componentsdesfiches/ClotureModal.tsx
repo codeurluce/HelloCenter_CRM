@@ -15,6 +15,7 @@ interface ClotureModalProps {
   clientName: string;
   fiche: Fiche | null;
   onProgramRdv: (id: number) => void;
+  onSaveNRP: (id: number, data: ClotureData) => void;
 }
 
 const ClotureModal: React.FC<ClotureModalProps> = ({
@@ -25,6 +26,7 @@ const ClotureModal: React.FC<ClotureModalProps> = ({
   clientName,
   fiche,
   onProgramRdv,
+  onSaveNRP,
 }) => {
 
   const [formData, setFormData] = useState<ClotureData>({
@@ -103,7 +105,28 @@ const ClotureModal: React.FC<ClotureModalProps> = ({
     handleClose();
   };
 
+const handleSaveNRP = async () => {
+  if (!fiche) return;
 
+  if (!formData.commentaire || !formData.commentaire.trim()) {
+    toast.error("Veuillez renseigner un commentaire avant d'enregistrer !");
+    return;
+  }
+
+  try {
+    await onSaveNRP(fiche.id, {
+      tag: formData.tag,
+      commentaire: formData.commentaire
+    });
+
+    toast.success("Commentaire enregistré !");
+    handleClose();
+
+  } catch (err) {
+    console.error(err);
+    toast.error("Impossible d'enregistrer le commentaire !");
+  }
+};
 
   const handleFormTypeSelect = (type: 'energie' | 'offreMobile') => {
     if (!saleInitialData) return;
@@ -217,6 +240,19 @@ const ClotureModal: React.FC<ClotureModalProps> = ({
             >
               Annuler
             </button>
+
+              {/* --- Bouton ENREGISTRER pour NRP --- */}
+{formData.tag === "Ne répond pas (NRP)" && (
+  <button
+    type="button"
+    onClick={() => {
+      handleSaveNRP();
+    }}
+    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-white bg-amber-600 hover:bg-amber-700"
+  >
+    <Check size={16} /> Enregistrer
+  </button>
+)}
 
             {/* ici il faut mettre le bouton rdv supprimer dans fichecard qui saffiche si on clique sur le tag relance ou rappel */}
             <button

@@ -30,6 +30,7 @@ router.get('/export_files', filesControllers.exportFichesToXLSX);// Exporte les 
 router.put('/:id/traiter', filesControllers.traiterFiche); // Met à jour le statut d'une fiche à "traitée" selon l'ID fourni               // Méthode : PUT /api/files/:id/traiter
 router.put('/:id/annuler', filesControllers.annulerFiche); // Annule une fiche identifiée par son ID, modifiant son statut en conséquence  // Méthode : PUT /api/files/:id/annuler
 router.put('/:id/cloturer', filesControllers.cloturerFiche); // Clôture une fiche spécifique via son ID, finalisant son traitementMéthode  // Methode : PUT /api/files/:id/cloturer
+router.put('/:id/enregistrer', filesControllers.enregistrerFicheSansCloture); // Enregistrer un commentaire pour un tag NRP // Methode : PUT /api/files/:id/enregistrer
 router.put('/:id/programmer-rdv', filesControllers.programRdv, filesControllers.getFilesToRDV); // Programme un rendez-vous pour une fiche donnée puis récupère les fiches associées au rendez-vous // Méthode : PUT /api/files/:id/programmer-rdv
 router.put('/assigned_To', auth, filesControllers.getAssignedFichesTo); // Récupère les fiches assignées à l'agent connecté (ou autre selon le corps de requête) // Méthode : PUT /api/files/assigned_To
 router.put('/import_files', auth, filesControllers.importFiles); // Importe des fiches dans la base de données à partir d'une source externe ou fichier // Méthode : PUT /api/files/import_files

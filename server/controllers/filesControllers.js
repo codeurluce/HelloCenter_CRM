@@ -112,6 +112,28 @@ exports.cloturerFiche = async (req, res) => {
   }
 };
 
+// Enregistrer tag + commentaire SANS modifier le statut
+exports.enregistrerFicheSansCloture = async (req, res) => {
+  const { id } = req.params;
+  const { tag, commentaire, date_modification } = req.body;
+
+  try {
+    await db.query(
+      `UPDATE files
+       SET tag = $1,
+           commentaire = $2,
+           date_modification = $3
+       WHERE id = $4`,
+      [tag, commentaire, date_modification, id]
+    );
+
+    res.status(200).json({ message: "Fiche mise à jour avec succès" });
+  } catch (err) {
+    console.error("Erreur mise à jour fiche :", err);
+    res.sendStatus(500);
+  }
+};
+
 // Export pour prendre un rendez-vous
 exports.programRdv = async (req, res) => {
   const { id } = req.params;

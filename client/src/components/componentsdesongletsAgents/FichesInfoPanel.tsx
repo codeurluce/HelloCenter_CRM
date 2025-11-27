@@ -6,6 +6,7 @@ import ClotureModal from '../componentsdesfiches/ClotureModal.tsx';
 import { AuthContext } from '../../pages/AuthContext.jsx';
 import RendezVousModal from '../componentsdesfiches/RendezVousModal.jsx';
 import FichesSearchBar from '../componentsAdminFiches/FichesSearchBar.tsx';
+import axiosInstance from '../../api/axiosInstance.js';
 
 interface FichesInfoPanelProps {
   fiches: Fiche[];
@@ -15,6 +16,7 @@ interface FichesInfoPanelProps {
   onCancelFiche: (id: number) => void;
   onCloseFiche: (id: number, data: ClotureData) => void;
   onProgramRdv: (id: number, date: Date, commentaire: string) => void;
+  onEnregistrerFicheSansCloture: (id: number, data: ClotureData) => void;
 }
 
 type FilterType = 'nouvelle' | 'en_traitement' | 'rendez_vous' | 'cloturee' | 'toutes';
@@ -27,6 +29,7 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
   onCancelFiche,
   onCloseFiche,
   onProgramRdv,
+  onEnregistrerFicheSansCloture,
 }) => {
   const { user } = useContext(AuthContext);
   const [activeFilter, setActiveFilter] = useState<FilterType>('nouvelle');
@@ -113,6 +116,10 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
       });
     }
   };
+
+const enregistrerFicheSansCloture = async (id: number, payload: any) => {
+  return axiosInstance.put(`/files/${id}/enregistrer`, payload);
+};
 
 
   const handleVoirRdvDetails = (fiche: Fiche) => {
@@ -321,9 +328,8 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
         ficheId={clotureModal.ficheId || 0}
         clientName={clotureModal.clientName}
         fiche={selectedClotureFiche}
-        onProgramRdv={(ficheId: number) => {
-          handleOpenRdvModal(ficheId);
-        }}
+        onProgramRdv={handleOpenRdvModal}
+        onSaveNRP={onEnregistrerFicheSansCloture}
       />
 
       <RendezVousModal

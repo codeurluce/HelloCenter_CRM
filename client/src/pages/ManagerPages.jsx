@@ -25,7 +25,7 @@ import useFiches from '../api/useAgentFiches.js';
 
 const ManagerDashboard = () => {
   const { user, setUser } = useContext(AuthContext);
-  const { fiches, loadFiches, onTreatFiche, onCancelFiche, onCloseFiche, onProgramRdv } = useFiches(user);
+  const { fiches, loadFiches, onTreatFiche, onCancelFiche, onCloseFiche, onProgramRdv, onEnregistrerFicheSansCloture } = useFiches(user);
   const [loadingFiches, setLoadingFiches] = useState(false);
 
   const [activeItem, setActiveItem] = useState(() => { return localStorage.getItem("activeSidebarItem") || "dashboard"; });
@@ -180,6 +180,7 @@ const ManagerDashboard = () => {
               onCancelFiche={onCancelFiche}
               onCloseFiche={onCloseFiche}
               onProgramRdv={onProgramRdv}
+              onEnregistrerFicheSansCloture={onEnregistrerFicheSansCloture}
             />
           )}
             {activeItem === 'sessions' && <AdminSessionsUsers />}
