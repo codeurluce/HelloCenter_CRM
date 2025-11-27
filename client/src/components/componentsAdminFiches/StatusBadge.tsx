@@ -4,9 +4,10 @@ import React from 'react';
 interface StatusBadgeProps {
   statut: string;
   assigned_to?: number | null;
+  tag?: string;
 }
 
-export const StatusBadge: React.FC<StatusBadgeProps> = ({ statut, assigned_to }) => {
+export const StatusBadge: React.FC<StatusBadgeProps> = ({ statut, assigned_to, tag }) => {
   let bgColor, textColor, label;
   if (statut === 'nouvelle' && !assigned_to) { bgColor = 'bg-blue-100'; textColor = 'text-blue-800'; label = 'Nouvelle'; }
   else if (statut === 'nouvelle' && assigned_to) { bgColor = 'bg-purple-100'; textColor = 'text-purple-800'; label = 'Assignée'; }
@@ -15,5 +16,16 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ statut, assigned_to })
   else if (statut === 'cloturee') { bgColor = 'bg-green-100'; textColor = 'text-green-800'; label = 'Clôturée'; }
   else { bgColor = 'bg-gray-100'; textColor = 'text-gray-800'; label = statut; }
 
-  return <span className={`px-2 py-1 rounded-full text-xs font-semibold ${bgColor} ${textColor}`}>{label}</span>;
-};
+  return (
+    <div className="flex items-center gap-2">
+      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${bgColor} ${textColor}`}>
+        {label}
+      </span>
+      {statut === 'en_traitement' && tag === 'Ne répond pas (NRP)' && (
+        <span className="px-2 py-1 rounded-full text-xs font-semibold bg-orange-500 text-white">
+          NRP
+        </span>
+      )}
+    </div>
+  );
+}

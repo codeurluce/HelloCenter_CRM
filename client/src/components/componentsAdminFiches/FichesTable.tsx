@@ -44,7 +44,7 @@ export const FichesTable: React.FC<FichesTableProps> = ({
       </td>
       <td className="px-6 py-3 text-gray-800 whitespace-nowrap">{fiche.numero_mobile}</td>
       <td className="px-6 py-3 text-gray-800">
-        <StatusBadge statut={fiche.statut} assigned_to={fiche.assigned_to} />
+        <StatusBadge statut={fiche.statut} assigned_to={fiche.assigned_to} tag={fiche.tag} />
       </td>
       <td className="px-6 py-3 text-gray-800 whitespace-nowrap">
         {fiche.assigned_to_name || 'Non Assignée'}
