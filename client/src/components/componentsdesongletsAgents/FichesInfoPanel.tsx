@@ -5,6 +5,7 @@ import FicheCard from '../componentsdesfiches/FicheCard.tsx';
 import ClotureModal from '../componentsdesfiches/ClotureModal.tsx';
 import { AuthContext } from '../../pages/AuthContext.jsx';
 import RendezVousModal from '../componentsdesfiches/RendezVousModal.jsx';
+import FichesSearchBar from '../componentsAdminFiches/FichesSearchBar.tsx';
 
 interface FichesInfoPanelProps {
   fiches: Fiche[];
@@ -43,6 +44,8 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
   const [selectedFiche, setSelectedFiche] = useState<Fiche | null>(null);
   const [showRdvDetailsModal, setShowRdvDetailsModal] = useState(false);
   const [selectedClotureFiche, setSelectedClotureFiche] = useState<Fiche | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+
 
   // Filtrage selon rôle utilisateur
   const fichesFiltreesParRole = useMemo(() => {
@@ -71,10 +74,23 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
 
 
   // Filtrage affichage par filtre actif
-  const filteredFiches = useMemo(() => {
-    if (activeFilter === 'toutes') return fichesFiltreesParRole;
-    return fichesFiltreesParRole.filter((f) => f.statut === activeFilter);
-  }, [fichesFiltreesParRole, activeFilter]);
+const filteredFiches = useMemo(() => {
+  const base = activeFilter === 'toutes'
+    ? fichesFiltreesParRole
+    : fichesFiltreesParRole.filter((f) => f.statut === activeFilter);
+
+  if (!searchTerm.trim()) return base;
+
+  return base.filter((f) => {
+    const term = searchTerm.toLowerCase();
+    return (
+      f.nom_client?.toLowerCase().includes(term) ||
+      f.prenom_client?.toLowerCase().includes(term) ||
+      f.numero_mobile?.toLowerCase().includes(term) ||
+      f.id?.toString().includes(term)
+    );
+  });
+}, [fichesFiltreesParRole, activeFilter, searchTerm]);
 
   // Ouvre la modal RDV pour programmer un rendez-vous
   const handleOpenRdvModal = (ficheId: number) => {
@@ -206,10 +222,10 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        <h1 className="text-2xl font-bold text-gray-900">
-          Gestion des Fiches
-        </h1>
+      <div className="space-y-6">
+        <h2 className="text-2xl font-bold text-gray-900">Gestion des Fiches</h2>
+        <p className="text-gray-600">Gestion complète de mes fiches</p>
+
         <div className="bg-white rounded-xl shadow-sm p-6">
 
           {/* <p className="text-gray-600">Suivez vos fiches clients</p> */}
@@ -237,10 +253,16 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
 
                 )
               )}
-              <button onClick={onRefresh} 
-                      className="flex items-center ml-6 gap-2 py-1 px-3 rounded-md border border-blue-500 text-blue-600 hover:bg-blue-100 transition" 
-                      disabled={loading} 
-                      aria-label="Rafraîchir les fiches">
+
+              <FichesSearchBar
+                searchTerm={searchTerm}
+                onSearchChange={setSearchTerm}
+              />
+
+              <button onClick={onRefresh}
+                className="flex items-center ml-auto gap-2 py-1 px-3 rounded-md border border-blue-500 text-blue-600 hover:bg-blue-100 transition"
+                disabled={loading}
+                aria-label="Rafraîchir les fiches">
                 <RefreshCw size={16} />
                 {loading ? 'Chargement...' : 'Rafraîchir'}
               </button>
@@ -293,13 +315,15 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
         isOpen={clotureModal.isOpen}
         onClose={() => {
           setClotureModal({ isOpen: false, ficheId: null, clientName: '' });
-          setSelectedClotureFiche(null);}}
+          setSelectedClotureFiche(null);
+        }}
         onSubmit={handleClotureSubmit}
         ficheId={clotureModal.ficheId || 0}
         clientName={clotureModal.clientName}
         fiche={selectedClotureFiche}
-        onProgramRdv={(ficheId: number) => {handleOpenRdvModal(ficheId);
-  }}
+        onProgramRdv={(ficheId: number) => {
+          handleOpenRdvModal(ficheId);
+        }}
       />
 
       <RendezVousModal
