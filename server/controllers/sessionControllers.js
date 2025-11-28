@@ -175,6 +175,7 @@ exports.getLiveSessionAgents = async (req, res) => {
       LEFT JOIN last_status ls ON u.id = ls.user_id
       LEFT JOIN cumul_total ct ON u.id = ct.user_id
       LEFT JOIN cumul_json cj ON u.id = cj.user_id
+      WHERE u.is_active = true
       ORDER BY u.lastname, u.firstname;
     `;
 
