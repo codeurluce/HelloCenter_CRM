@@ -97,10 +97,11 @@ const SidebarAdmin = ({ activeItem, setActiveItem, onLogout }) => {
             //<h1 className="text-white text-xl font-bold" translate="no">Hello Center</h1>
             <h1 className="flex justify-center py-4">
               <img
-                src="/logo_helloCenter.png"
-                alt="Hello Center logo"
-                className="h-32 w-auto object-contain"
-              />
+  src="/HC.png"
+  alt="Hello Center logo"
+  className="h-32 w-auto object-contain"
+  // style={{ filter: 'invert(1)' }}  // Inverse les couleurs
+/>
             </h1>
           )}
           <button
