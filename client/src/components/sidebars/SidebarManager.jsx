@@ -90,7 +90,7 @@ const SidebarAdmin = ({ activeItem, setActiveItem, onLogout }) => {
             //<h1 className="text-white text-xl font-bold" translate="no">Hello Center</h1>
             <h1 className="flex justify-center py-4">
               <img
-                src="/logo_helloCenter.png"
+                src="/HC.png"
                 alt="Hello Center logo"
                 className="h-32 w-auto object-contain"
               />
