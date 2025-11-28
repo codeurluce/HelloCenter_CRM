@@ -87,23 +87,50 @@ const FichesInfoPanel: React.FC<FichesInfoPanelProps> = ({
   };
 
   // Filtrage affichage par filtre actif
+  // const filteredFiches = useMemo(() => {
+  //   const base = activeFilter === 'toutes'
+  //     ? fichesFiltreesParRole
+  //     : fichesFiltreesParRole.filter((f) => f.statut === activeFilter);
+
+  //   if (!searchTerm.trim()) return base;
+
+  //   return base.filter((f) => {
+  //     const term = searchTerm.toLowerCase();
+  //     return (
+  //       f.nom_client?.toLowerCase().includes(term) ||
+  //       f.prenom_client?.toLowerCase().includes(term) ||
+  //       f.numero_mobile?.toLowerCase().includes(term) ||
+  //       f.id?.toString().includes(term)
+  //     );
+  //   });
+  // }, [fichesFiltreesParRole, activeFilter, searchTerm]);
+
   const filteredFiches = useMemo(() => {
-    const base = activeFilter === 'toutes'
-      ? fichesFiltreesParRole
-      : fichesFiltreesParRole.filter((f) => f.statut === activeFilter);
+  const base = activeFilter === 'toutes'
+    ? fichesFiltreesParRole
+    : fichesFiltreesParRole.filter((f) => f.statut === activeFilter);
 
-    if (!searchTerm.trim()) return base;
+  // 🔍 Filtre search
+  const searched = !searchTerm.trim()
+    ? base
+    : base.filter((f) => {
+        const term = searchTerm.toLowerCase();
+        return (
+          f.nom_client?.toLowerCase().includes(term) ||
+          f.prenom_client?.toLowerCase().includes(term) ||
+          f.numero_mobile?.toLowerCase().includes(term) ||
+          f.id?.toString().includes(term)
+        );
+      });
 
-    return base.filter((f) => {
-      const term = searchTerm.toLowerCase();
-      return (
-        f.nom_client?.toLowerCase().includes(term) ||
-        f.prenom_client?.toLowerCase().includes(term) ||
-        f.numero_mobile?.toLowerCase().includes(term) ||
-        f.id?.toString().includes(term)
-      );
-    });
-  }, [fichesFiltreesParRole, activeFilter, searchTerm]);
+  // 📌 TRI : les fiches sans tag d’abord, ensuite celles avec tags (NRP, Relance…)
+  return searched.sort((a, b) => {
+    const hasTagA = a.tag ? 1 : 0;
+    const hasTagB = b.tag ? 1 : 0;
+    return hasTagA - hasTagB; 
+  });
+}, [fichesFiltreesParRole, activeFilter, searchTerm]);
+
 
   // Ouvre la modal RDV pour programmer un rendez-vous
   const handleOpenRdvModal = (ficheId: number) => {
