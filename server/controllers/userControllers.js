@@ -423,7 +423,7 @@ const getAllUsers = async (req, res) => {
     const result = await db.query(
       `SELECT id, lastname, firstname, email, role, profil, is_active, created_at 
        FROM users
-       ORDER BY lastname ASC`
+       ORDER BY is_active DESC, lastname ASC`
     );
 
     const users = result.rows.map(u => ({
@@ -449,7 +449,7 @@ const getAllUsersBd = async (req, res) => {
       `SELECT id, firstname, lastname, email, role, is_active, created_at
        FROM users
        WHERE is_active = true
-       ORDER BY lastname ASC`
+       ORDER BY is_active DESC, lastname ASC`
     );
 
     const agents = result.rows.map(u => ({
