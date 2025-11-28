@@ -79,12 +79,14 @@ const SidebarAgent = ({ activeItem, setActiveItem, onLogout }) => {
                 <div className="flex items-center justify-between">
                     {!isCollapsed && (
                         //<h1 className="text-white text-xl font-bold" translate="no">Hello Center</h1>
-                        <h1 className="flex justify-center py-4">
-                            <img
-                                src="/HC.png"
-                                alt="Hello Center logo"
-                                className="h-32 w-auto object-contain"
-                            />
+                        <h1 className="flex justify-center">
+                            <div className="rounded-[40px] border- border-black w-[200px] h-[200px] flex items-center justify-center">
+                                <img
+                                    src="/helocen.png"
+                                    alt="Hello Center logo"
+                                    className="w-full h-full object-contain rounded-[40px]"
+                                />
+                            </div>
                         </h1>
                     )}
                     <button
