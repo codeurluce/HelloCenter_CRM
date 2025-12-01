@@ -22,22 +22,24 @@ const ExportModal = ({ isOpen, onClose, agents = [] }) => {
   const agentDropdownRef = useRef(null);
   const statusDropdownRef = useRef(null);
 
-const additionalStatusOptions = [
-  { key: 'heureConnexion', label: 'Heure de connexion', icon: ClockArrowUp },
-  { key: 'heureDeconnexion', label: 'Heure de déconnexion', icon: ClockArrowDown },
-  { key: 'TotalPause', label: 'Total des pauses', icon: ClockAlert },
-  { key: 'TotalIndispo', label: 'Total des indisponibilités', icon: X },
-];
+  const additionalStatusOptions = [
+    { key: 'heureConnexion', label: 'Heure de connexion', icon: ClockArrowUp },
+    { key: 'heureDeconnexion', label: 'Heure de déconnexion', icon: ClockArrowDown },
+    { key: 'presenceTotale', label: 'Présence totale', icon: ClockAlert },
+    { key: 'heureDeTravail', label: 'Heure de travail', icon: ClockArrowUp },
+    { key: 'TotalPause', label: 'Total des pauses', icon: ClockAlert },
+    { key: 'TotalIndispo', label: 'Total des indisponibilités', icon: X },
+  ];
 
-// Fusionner les deux listes
-const statusOptions = [
-  ...additionalStatusOptions, 
-  ...statuses.map(({ key, statusFr, icon }) => ({
-    key,
-    label: statusFr,
-    icon
-  }))
-];
+  // Fusionner les deux listes
+  const statusOptions = [
+    ...additionalStatusOptions,
+    ...statuses.map(({ key, statusFr, icon }) => ({
+      key,
+      label: statusFr,
+      icon
+    }))
+  ];
   // Filtre agents en fonction recherche
   const filteredAgents = agents.filter(agent => {
     const fullName = `${agent.firstname || ''} ${agent.lastname || ''}`.trim();
@@ -90,7 +92,7 @@ const statusOptions = [
   };
 
   // Formatage seconde => HH:mm:ss
- function formatSeconds(sec) {
+  function formatSeconds(sec) {
     if (!sec || sec <= 0) return "00:00:00";
     const h = Math.floor(sec / 3600);
     const m = Math.floor((sec % 3600) / 60);
@@ -130,9 +132,9 @@ const statusOptions = [
               exportRow['Présence totale'] = formatSeconds(row.presence_totale_sec);
               break;
             case 'disponible':
-              exportRow['Temps de travail'] = formatSeconds(row.cumul_statuts?.['Disponible'] || 0);
+              exportRow['Disponible'] = formatSeconds(row.cumul_statuts?.['Disponible'] || 0);
               break;
-             case 'pause_cafe_1':
+            case 'pause_cafe_1':
               exportRow['Pausette 1'] = formatSeconds(row.cumul_statuts?.['Pausette 1'] || 0);
               break;
             case 'pause_dejeuner':
@@ -144,7 +146,7 @@ const statusOptions = [
             case 'TotalPause':
               exportRow['Total des pauses'] = formatSeconds(
                 (row.cumul_statuts?.['Pausette 1'] || 0) +
-                (row.cumul_statuts?.['Déjeuner'] || 0) +
+                (row.cumul_statuts?.['Déjeuner']   || 0) +
                 (row.cumul_statuts?.['Pausette 2'] || 0)
               );
               break;
@@ -157,6 +159,14 @@ const statusOptions = [
             case 'pause_formation':
               exportRow['Formation'] = formatSeconds(row.cumul_statuts?.['Formation'] || 0);
               break;
+            case 'heureDeTravail': {
+              const totalIndispo =
+                (row.cumul_statuts?.['Réunion'] || 0) +
+                (row.cumul_statuts?.['Brief'] || 0) +
+                (row.cumul_statuts?.['Formation'] || 0);
+              exportRow['Heure de travail'] = formatSeconds((row.cumul_statuts?.['Disponible'] || 0) + totalIndispo);
+              break;
+            }
             case 'TotalIndispo':
               exportRow['Total des indisponibilités'] = formatSeconds(
                 (row.cumul_statuts?.['Réunion'] || 0) +
@@ -186,15 +196,15 @@ const statusOptions = [
       onClose();
     } catch (error) {
       console.error('Erreur lors de l’export:', error);
-    Swal.fire({
-      icon: 'error',
-      title: 'Erreur export',
-      text: error?.response?.data?.error || 'Erreur lors de l’export des données.',
-      confirmButtonColor: "#dc2626"
-    });
-  }
-};
- 
+      Swal.fire({
+        icon: 'error',
+        title: 'Erreur export',
+        text: error?.response?.data?.error || 'Erreur lors de l’export des données.',
+        confirmButtonColor: "#dc2626"
+      });
+    }
+  };
+
   const isExportDisabled = () => {
     const hasAgents = selectedAgents.length > 0;
     const hasDate = dateType === 'single' ? singleDate : (startDate && endDate);
