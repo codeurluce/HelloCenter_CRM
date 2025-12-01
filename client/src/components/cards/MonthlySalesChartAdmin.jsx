@@ -106,12 +106,7 @@ const MonthlySalesChartAdmin = () => {
 
         // Si résultat vide → fallback
         if (!result || Object.keys(result).length === 0) {
-          setData([
-            {
-              agent_name: "Aucun agent",
-              ...Object.fromEntries(currentMonthWeeks.map((w) => [w, 0])),
-            },
-          ]);
+          setData([]);
           setWeeks(currentMonthWeeks);
           return;
         }
@@ -171,7 +166,14 @@ const MonthlySalesChartAdmin = () => {
   }, []);
 
   if (loading) return <p>Chargement des ventes mensuelles...</p>;
-  if (!data.length) return <p>Aucune donnée disponible.</p>;
+  if (!data.length) return <div className="bg-white p-6 rounded-2xl shadow w-full h-[300px] flex flex-col items-center justify-center text-center">
+      <div className="text-gray-400 text-5xl mb-4">📊</div>
+      <h3 className="text-lg font-semibold text-gray-700">Aucune donnée disponible</h3>
+      <p className="text-gray-500 text-sm mt-2 max-w-sm">
+        Aucun enregistrement n’a été trouvé pour ce mois.
+        Les semaines s’afficheront automatiquement dès qu’une vente sera enregistrée.
+      </p>
+    </div>
 
   return (
     <div className="bg-white p-6 rounded-2xl shadow w-full h-[400px]">
