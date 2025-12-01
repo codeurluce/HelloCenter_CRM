@@ -31,10 +31,11 @@ const SidebarAdmin = ({ activeItem, setActiveItem, onLogout }) => {
     { id: 'sessions', label: 'Sessions', icon: Clock },
     { id: 'rh', label: 'RH', icon: Users },
     // { id: 'comptable', label: 'Comptable', icon: Calculator },
-    { id: 'administration', label: 'Administration', icon: UserSearch },
+    
   ];
 
   const bottomItems = [
+    { id: 'administration', label: 'Administration', icon: UserSearch },
     { id: 'settings', label: 'Paramètres', icon: Settings },
     {
       id: 'logout',
