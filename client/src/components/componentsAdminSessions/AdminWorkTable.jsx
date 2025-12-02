@@ -78,53 +78,35 @@ export default function AdminWorkTable() {
         setSortConfig({ key, direction });
     };
 
-    const processedData = useMemo(() => {
-        let filtered = [...data];
+const processedData = useMemo(() => {
+    let filtered = [...data];
 
-        // Recherche live sur agent
-        if (searchAgent.trim()) {
-            filtered = filtered.filter((d) =>
-                `${d.firstname} ${d.lastname}`.toLowerCase().includes(searchAgent.toLowerCase())
-            );
-        }
+    // Recherche live sur agent
+    if (searchAgent.trim()) {
+        filtered = filtered.filter((d) =>
+            `${d.firstname} ${d.lastname}`.toLowerCase().includes(searchAgent.toLowerCase())
+        );
+    }
 
-        // Tri
-        filtered.sort((a, b) => {
-            let valA = a[sortConfig.key];
-            let valB = b[sortConfig.key];
-
-            if (sortConfig.key === "session_date") {
-                valA = dayjs(valA);
-                valB = dayjs(valB);
-                if (valA.isAfter(valB)) return sortConfig.direction === "asc" ? 1 : -1;
-                if (valA.isBefore(valB)) return sortConfig.direction === "asc" ? -1 : 1;
-                return 0;
-            }
-
-            if (typeof valA === "string") {
-                return sortConfig.direction === "asc"
-                    ? valA.localeCompare(valB)
-                    : valB.localeCompare(valA);
-            }
-
-            if (typeof valA === "number") {
-                return sortConfig.direction === "asc" ? valA - valB : valB - valA;
-            }
-
-            return 0;
-        });
-
-        // Cumul par agent (en heures)
-        const cumulMap = {};
-        filtered.forEach((d) => {
+    // 🔥 Trier d'abord par date ASC pour le calcul du cumul
+    const cumulMap = {};
+    const cumulData = [...filtered]
+        .sort((a, b) => dayjs(a.session_date).isAfter(dayjs(b.session_date)) ? 1 : -1)
+        .map(d => {
             const key = `${d.firstname} ${d.lastname}`;
+            const travailHeures = secondsToDecimal(d.travail);
+
             if (!cumulMap[key]) cumulMap[key] = 0;
-            cumulMap[key] += secondsToDecimal(d.travail);
-            d.cumul = cumulMap[key];
+            cumulMap[key] += travailHeures;
+
+            return { ...d, cumul: cumulMap[key] };
         });
 
-        return filtered;
-    }, [data, searchAgent, sortConfig]);
+    // 🔥 Ensuite, appliquer l'ordre d'affichage (asc/desc)
+    return sortConfig.direction === "asc" ? cumulData : [...cumulData].reverse();
+
+}, [data, searchAgent, sortConfig]);
+
 
     return (
         <div className="p-6 bg-white rounded-xl shadow mt-10">
