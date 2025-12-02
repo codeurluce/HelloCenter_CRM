@@ -284,18 +284,20 @@ exports.getSessionAgentsForRH = async (req, res) => {
         ${userFilter}
       ),
       mapped AS (
-        SELECT
-          s.user_id,
-          s.session_date,
-          s.connexion,
-          s.deconnexion,
-          CASE
-            WHEN status ILIKE 'Disponible' THEN 'travail'
-            WHEN status ILIKE ANY(ARRAY['Déjeuner','Pausette 1','Pausette 2']) THEN 'pause'
-            ELSE 'autre'
-          END AS category,
-          duree_sec
-        FROM sessions s
+  SELECT
+    s.user_id,
+    s.session_date,
+    s.connexion,
+    s.deconnexion,
+    CASE
+      WHEN status ILIKE ANY(ARRAY['Disponible', 'Réunion', 'Formation', 'Brief']) 
+           THEN 'travail'
+      WHEN status ILIKE ANY(ARRAY['Déjeuner','Pausette 1','Pausette 2']) 
+           THEN 'pause'
+      ELSE 'autre'
+    END AS category,
+    duree_sec
+  FROM sessions s
       ),
       cumuls AS (
         SELECT
@@ -560,7 +562,7 @@ exports.getMonthlySessions = async (req, res) => {
       ? dayjs(req.query.startDate).format("YYYY-MM-DD") // prend la date fournie.
       : dayjs().startOf("month").format("YYYY-MM-DD"); // Sinon par defaut le mois en cours.
 
-        const endDate = req.query.endDate
+    const endDate = req.query.endDate
       ? dayjs(req.query.endDate).format("YYYY-MM-DD") // prend la date fournie.
       : dayjs().format("YYYY-MM-DD"); // Sinon par defaut le mois en cours.
 
@@ -1196,72 +1198,72 @@ exports.getAllHistorySessions = async (req, res) => {
 
 // controllers/sessionControllers.js
 exports.correctSession = async (req, res) => {
-    try {
-        const { userId, sessionDate, updates } = req.body;
+  try {
+    const { userId, sessionDate, updates } = req.body;
 
-        if (!userId || !sessionDate || !updates) {
-            return res.status(400).json({ error: "Paramètres manquants" });
-        }
+    if (!userId || !sessionDate || !updates) {
+      return res.status(400).json({ error: "Paramètres manquants" });
+    }
 
-        const statusesInOrder = [
-            "Disponible",
-            "Pausette 1",
-            "Déjeuner",
-            "Pausette 2",
-            "Réunion",
-            "Formation",
-            "Brief"
-        ];
+    const statusesInOrder = [
+      "Disponible",
+      "Pausette 1",
+      "Déjeuner",
+      "Pausette 2",
+      "Réunion",
+      "Formation",
+      "Brief"
+    ];
 
-        // 1) Supprimer toutes les sessions du jour
-        await db.query(
-            "DELETE FROM session_agents WHERE user_id = $1 AND DATE(start_time) = $2",
-            [userId, sessionDate]
-        );
+    // 1) Supprimer toutes les sessions du jour
+    await db.query(
+      "DELETE FROM session_agents WHERE user_id = $1 AND DATE(start_time) = $2",
+      [userId, sessionDate]
+    );
 
-        // 2) Reconstruction propre de la journée
-        let cursor = `${sessionDate} 00:00:00`;
+    // 2) Reconstruction propre de la journée
+    let cursor = `${sessionDate} 00:00:00`;
 
-        for (const st of statusesInOrder) {
-            const hours = updates[st] || 0;
-            const seconds = hours;
+    for (const st of statusesInOrder) {
+      const hours = updates[st] || 0;
+      const seconds = hours;
 
-            if (seconds <= 0) continue;
+      if (seconds <= 0) continue;
 
-            const start = cursor;
-            const endTime = new Date(new Date(cursor).getTime() + seconds * 1000);
+      const start = cursor;
+      const endTime = new Date(new Date(cursor).getTime() + seconds * 1000);
 
-            const pause_type = ["Pausette 1", "Pausette 2", "Déjeuner"].includes(st)
-                ? st
-                : null;
+      const pause_type = ["Pausette 1", "Pausette 2", "Déjeuner"].includes(st)
+        ? st
+        : null;
 
-            await db.query(
-                `INSERT INTO session_agents 
+      await db.query(
+        `INSERT INTO session_agents 
                 (user_id, status, start_time, end_time, duration, pause_type, created_at)
                 VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
-                [
-                    userId,
-                    st,
-                    start,
-                    endTime,
-                    seconds,
-                    pause_type
-                ]
-            );
+        [
+          userId,
+          st,
+          start,
+          endTime,
+          seconds,
+          pause_type
+        ]
+      );
 
-            cursor = endTime;
-        }
-
-        return res.json({ message: "Correction appliquée avec succès" });
-
-    } catch (err) {
-        console.error(err);
-        return res.status(500).json({ error: "Erreur serveur" });
+      cursor = endTime;
     }
+
+    return res.json({ message: "Correction appliquée avec succès" });
+
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Erreur serveur" });
+  }
 };
 
 
-exports.getSessionforCorrect = async (req, res) => { 
+exports.getSessionforCorrect = async (req, res) => {
   const { userId, date } = req.params;
 
   if (!userId || !date) return res.status(400).json({ error: "Paramètres manquants" });
