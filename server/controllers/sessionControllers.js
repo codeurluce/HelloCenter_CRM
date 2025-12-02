@@ -258,6 +258,84 @@ exports.getSessionAgent = async (req, res) => {
   }
 };
 
+// GET /api/sessions/admin - Récupérer les sessions des agents pour l'admin avec filtres
+exports.getSessionAgentsForRH = async (req, res) => {
+  try {
+    const { startDate, endDate, userIds = [] } = req.query;
+
+    if (!startDate || !endDate) {
+      return res.status(400).json({ error: "startDate et endDate sont obligatoires" });
+    }
+
+    // Clause pour filtrer par users si fournie
+    const userFilter = userIds.length ? `AND sa.user_id = ANY($3)` : '';
+
+    const query = `
+      WITH sessions AS (
+        SELECT
+          sa.user_id,
+          sa.status,
+          DATE(sa.start_time) AS session_date,
+          sa.start_time AS connexion,
+          COALESCE(sa.end_time, NOW()) AS deconnexion,
+          EXTRACT(EPOCH FROM (COALESCE(sa.end_time, NOW()) - sa.start_time))::INT AS duree_sec
+        FROM session_agents sa
+        WHERE DATE(sa.start_time) BETWEEN $1 AND $2
+        ${userFilter}
+      ),
+      mapped AS (
+        SELECT
+          s.user_id,
+          s.session_date,
+          s.connexion,
+          s.deconnexion,
+          CASE
+            WHEN status ILIKE 'Disponible' THEN 'travail'
+            WHEN status ILIKE ANY(ARRAY['Déjeuner','Pausette 1','Pausette 2']) THEN 'pause'
+            ELSE 'autre'
+          END AS category,
+          duree_sec
+        FROM sessions s
+      ),
+      cumuls AS (
+        SELECT
+          user_id,
+          session_date,
+          SUM(CASE WHEN category = 'travail' THEN duree_sec ELSE 0 END) AS travail,
+          SUM(CASE WHEN category = 'pause' THEN duree_sec ELSE 0 END) AS pauses,
+          MIN(connexion) AS first_connection,
+          MAX(deconnexion) AS last_disconnection
+        FROM mapped
+        GROUP BY user_id, session_date
+      )
+      SELECT 
+        u.id AS user_id,
+        u.firstname,
+        u.lastname,
+        c.session_date,
+        c.first_connection AS start_time,
+        c.last_disconnection AS end_time,
+        c.travail,
+        c.pauses
+      FROM cumuls c
+      JOIN users u ON u.id = c.user_id
+      ORDER BY u.lastname, u.firstname, c.session_date;
+    `;
+
+    const params = [startDate, endDate];
+    if (userIds.length) params.push(userIds);
+
+    const { rows } = await db.query(query, params);
+
+    res.json(rows);
+
+  } catch (err) {
+    console.error("Erreur getAdminSessions:", err);
+    res.status(500).json({ error: "Erreur récupération sessions admin" });
+  }
+};
+
+
 exports.getDailyConnectionTimes = async (req, res) => {
   try {
     const query = `
@@ -380,6 +458,7 @@ ORDER BY u.lastname, u.firstname, session_date;
   }
 };
 
+
 // controllers/sessionAgentsController.js l'export pour un agent
 exports.exportSessionsAgent = async (req, res) => {
   console.log("🔥 Requête reçue sur /export-sessions-agent");
@@ -467,99 +546,9 @@ exports.exportSessionsAgent = async (req, res) => {
     console.error("Erreur exportAgentSessions:", err);
     res.status(500).json({ error: "Erreur export agent sessions" });
   }
-};
+}; // a supprimer 
 
 
-// exports.getMonthlySessions = async (req, res) => {
-//   try {
-//     const userId = req.user?.id || req.query.userId;
-//     if (!userId) {
-//       return res.status(400).json({ error: "User ID manquant" });
-//     }
-
-//     const startDate = dayjs().startOf("month").format("YYYY-MM-DD");
-//     const endDate = dayjs().format("YYYY-MM-DD");
-
-//     const query = `
-//       WITH sessions AS (
-//         SELECT 
-//           sa.user_id,
-//           sa.status,
-//           DATE(sa.start_time) AS session_date,
-//           EXTRACT(EPOCH FROM (COALESCE(sa.end_time, NOW()) - sa.start_time))::INT AS duree_sec
-//         FROM session_agents sa
-//         WHERE sa.user_id = $1
-//           AND DATE(sa.start_time) BETWEEN $2 AND $3
-//       ),
-
-//       mapped AS (
-//         SELECT
-//           session_date,
-//           duree_sec,
-//           CASE
-//             WHEN status ILIKE 'Disponible' THEN 'dispo'
-
-//             WHEN status ILIKE ANY(ARRAY[
-//               'Déjeuner',
-//               'Pausette 1',
-//               'Pausette 2'
-//             ]) THEN 'pause'
-
-//             WHEN status ILIKE ANY(ARRAY[
-//               'Réunion',
-//               'Formation',
-//               'Brief'
-//             ]) THEN 'indispo'
-
-//             ELSE 'autre'
-//           END AS category
-//         FROM sessions
-//       ),
-
-//       cumuls AS (
-//         SELECT 
-//             session_date,
-//             SUM(CASE WHEN category = 'dispo'  THEN duree_sec ELSE 0 END) AS dispo,
-//             SUM(CASE WHEN category = 'pause'  THEN duree_sec ELSE 0 END) AS pauses,
-//             SUM(CASE WHEN category = 'indispo' THEN duree_sec ELSE 0 END) AS indispo,
-//             SUM(CASE WHEN category IN ('dispo','indispo') THEN duree_sec ELSE 0 END) AS travail
-//         FROM mapped
-//         GROUP BY session_date
-//         ORDER BY session_date DESC
-//       )
-
-//       SELECT *
-//       FROM cumuls;
-//     `;
-
-//     const { rows } = await db.query(query, [userId, startDate, endDate]);
-
-
-// // Calcul du cumul de travail sur le mois et présence
-// let cumul = 0;
-// const result = rows.map(row => {
-//   const travail = Number(row.travail) || 0;
-//   const pauses = Number(row.pauses) || 0;
-
-//   cumul += travail;
-
-//   return {
-//     ...row,
-//     travail,
-//     presence: travail + pauses,   // <-- calcul présence ici
-//     cumul_travail: cumul,
-//   };
-// });
-
-// res.json(result);
-
-//   } catch (err) {
-//     console.error("Erreur getMonthlySessions:", err);
-//     res.status(500).json({ error: "Erreur récupération sessions mensuelles" });
-//   }
-// };
-
-// test 
 exports.getMonthlySessions = async (req, res) => {
   try {
     const userId = req.user?.id || req.query.userId;
@@ -636,7 +625,6 @@ exports.getMonthlySessions = async (req, res) => {
     res.status(500).json({ error: "Erreur récupération sessions mensuelles" });
   }
 };
-
 
 
 exports.getUserStatusToday = async (req, res) => {
@@ -1115,5 +1103,133 @@ exports.getAllHistorySessions = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Erreur serveur" });
+  }
+};
+
+// controllers/sessionControllers.js
+exports.correctSession = async (req, res) => {
+    try {
+        const { userId, sessionDate, updates } = req.body;
+
+        if (!userId || !sessionDate || !updates) {
+            return res.status(400).json({ error: "Paramètres manquants" });
+        }
+
+        const statusesInOrder = [
+            "Disponible",
+            "Pausette 1",
+            "Déjeuner",
+            "Pausette 2",
+            "Réunion",
+            "Formation",
+            "Brief"
+        ];
+
+        // 1) Supprimer toutes les sessions du jour
+        await db.query(
+            "DELETE FROM session_agents WHERE user_id = $1 AND DATE(start_time) = $2",
+            [userId, sessionDate]
+        );
+
+        // 2) Reconstruction propre de la journée
+        let cursor = `${sessionDate} 00:00:00`;
+
+        for (const st of statusesInOrder) {
+            const hours = updates[st] || 0;
+            const seconds = hours;
+
+            if (seconds <= 0) continue;
+
+            const start = cursor;
+            const endTime = new Date(new Date(cursor).getTime() + seconds * 1000);
+
+            const pause_type = ["Pausette 1", "Pausette 2", "Déjeuner"].includes(st)
+                ? st
+                : null;
+
+            await db.query(
+                `INSERT INTO session_agents 
+                (user_id, status, start_time, end_time, duration, pause_type, created_at)
+                VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
+                [
+                    userId,
+                    st,
+                    start,
+                    endTime,
+                    seconds,
+                    pause_type
+                ]
+            );
+
+            cursor = endTime;
+        }
+
+        return res.json({ message: "Correction appliquée avec succès" });
+
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ error: "Erreur serveur" });
+    }
+};
+
+
+exports.getSessionforCorrect = async (req, res) => { 
+  const { userId, date } = req.params;
+
+  if (!userId || !date) return res.status(400).json({ error: "Paramètres manquants" });
+
+  try {
+    const query = `
+      SELECT status, EXTRACT(EPOCH FROM (end_time - start_time))::int AS duree_sec
+      FROM session_agents
+      WHERE user_id = $1
+        AND DATE(start_time) = $2
+    `;
+    const { rows } = await db.query(query, [userId, date]);
+
+    // Transformer en objet { Disponible: xx, 'Pausette 1': yy, ... }
+    const cumul_statuts = {};
+    rows.forEach(r => {
+      cumul_statuts[r.status] = (cumul_statuts[r.status] || 0) + r.duree_sec;
+    });
+
+    res.json({ userId, date, cumul_statuts });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Erreur récupération session brute" });
+  }
+};
+
+
+exports.getSessionDetailsForCorrection = async (req, res) => {
+  try {
+    const { userId, date } = req.params;
+
+    if (!userId || !date) {
+      return res.status(400).json({ error: "userId ou date manquant" });
+    }
+
+    const query = `
+      SELECT 
+        status,
+        EXTRACT(EPOCH FROM (end_time - start_time))::int AS sec
+      FROM session_agents
+      WHERE user_id = $1
+        AND DATE(start_time) = $2
+    `;
+
+    const { rows } = await db.query(query, [userId, date]);
+
+    // Construire un objet cumul
+    const cumul_statuts = {};
+    rows.forEach(r => {
+      cumul_statuts[r.status] = (cumul_statuts[r.status] || 0) + r.sec;
+    });
+
+    res.json({ userId, date, cumul_statuts });
+
+  } catch (err) {
+    console.error("Erreur getSessionDetailsForCorrection:", err);
+    res.status(500).json({ error: "Erreur interne du serveur" });
   }
 };

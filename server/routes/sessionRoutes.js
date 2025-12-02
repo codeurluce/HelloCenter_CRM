@@ -12,12 +12,15 @@ router.get('/', sessionControllers.getSessions); // 📌 Récupère toutes les s
 router.get('/check', sessionControllers.checkSessionActive);  // 📌 Vérifie si une session est active // Méthode : GET /api/sessions/check
 router.get('/last-status/:userId', sessionControllers.getLastAgentStatus); // 📌 Récupère le dernier statut d’un agent par son userId (utile pour restauration après reconnexion) // Méthode : GET /api/sessions/last-status/:userId
 router.get('/user/live', sessionControllers.getLiveSessionAgents); // 📌 Récupère toutes les sessions en ligne des agents actifs // Méthode : GET /api/sessions/user/live
+router.get('/agents-session-rh', sessionControllers.getSessionAgentsForRH);
 router.get('/user/live/:userId', sessionControllers.getSessionAgent); // 📌 Récupère la session active d’un agent spécifique par userId // Méthode : GET /api/sessions/user/live/:userId
 router.get('/user/agent-connection-details', sessionControllers.getDailyConnectionTimes); // 📌 Récupère le détail des connexions journalières des agents // Méthode : GET /api/sessions/user/agent_connection_details
 router.get('/user/:id/status-today', sessionControllers.getUserStatusToday); // 📌 Récupère le statut et présence totale d’un utilisateur pour la journée en cours // Méthode : GET /api/sessions/user/:id/status-today
 router.get('/user/:id/all-history', sessionControllers.getAllHistorySessions)
 router.get('/monthly', verifyToken, sessionControllers.getMonthlySessions);
-
+router.patch('/correct-session', sessionControllers.correctSession)
+router.get('/for-correct', sessionControllers.getSessionforCorrect);
+router.get("/agent-session-details/:userId/:date", sessionControllers.getSessionDetailsForCorrection);
 
 // Route POST : création de données
 

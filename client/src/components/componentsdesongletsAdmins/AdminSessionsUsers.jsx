@@ -8,6 +8,7 @@ import SessionFilters from "../componentsAdminSessions/SessionFilters";
 import ExportModal from "../componentsAdminSessions/ExportModalSessions.jsx";
 import { statuses } from '../../shared/StatusSelector';
 import { useAgentStatus } from "../../api/AgentStatusContext.jsx";
+import AdminWorkTable from "../componentsAdminSessions/AdminWorkTable.jsx";
 
 export default function AdminLiveSessions() {
   const { user } = useAgentStatus();
@@ -276,7 +277,10 @@ useEffect(() => {
           onExport={handleExport}
           onClose={() => setShowExport(false)}
         />
-      )}
+      )}<AdminWorkTable />
     </div>
+
+    
+
   );
 }
