@@ -556,8 +556,13 @@ exports.getMonthlySessions = async (req, res) => {
       return res.status(400).json({ error: "User ID manquant" });
     }
 
-    const startDate = dayjs().startOf("month").format("YYYY-MM-DD");
-    const endDate = dayjs().format("YYYY-MM-DD");
+    const startDate = req.query.startDate
+      ? dayjs(req.query.startDate).format("YYYY-MM-DD") // prend la date fournie.
+      : dayjs().startOf("month").format("YYYY-MM-DD"); // Sinon par defaut le mois en cours.
+
+        const endDate = req.query.endDate
+      ? dayjs(req.query.endDate).format("YYYY-MM-DD") // prend la date fournie.
+      : dayjs().format("YYYY-MM-DD"); // Sinon par defaut le mois en cours.
 
     const query = `
       WITH sessions AS (
@@ -625,6 +630,89 @@ exports.getMonthlySessions = async (req, res) => {
     res.status(500).json({ error: "Erreur récupération sessions mensuelles" });
   }
 };
+
+
+exports.getMonthlySessionsFiltre = async (req, res) => {
+  try {
+    const userId = req.user?.id || req.query.userId;
+    const { startDate, endDate } = req.query;
+
+    if (!userId) {
+      return res.status(400).json({ error: "User ID manquant" });
+    }
+    if (!startDate) {
+      return res.status(400).json({ error: "startDate est obligatoire" });
+    }
+
+    const start = dayjs(startDate).format("YYYY-MM-DD");
+    const end = endDate ? dayjs(endDate).format("YYYY-MM-DD") : start;
+
+    const query = `
+      WITH sessions AS (
+        SELECT 
+          sa.user_id,
+          sa.status,
+          DATE(sa.start_time) AS session_date,
+          EXTRACT(EPOCH FROM (COALESCE(sa.end_time, NOW()) - sa.start_time))::INT AS duree_sec
+        FROM session_agents sa
+        WHERE sa.user_id = $1
+          AND DATE(sa.start_time) BETWEEN $2 AND $3
+      ),
+
+      mapped AS (
+        SELECT
+          session_date,
+          duree_sec,
+          CASE
+            WHEN status ILIKE 'Disponible' THEN 'dispo'
+            WHEN status ILIKE ANY(ARRAY[
+              'Déjeuner',
+              'Pausette 1',
+              'Pausette 2'
+            ]) THEN 'pause'
+            WHEN status ILIKE ANY(ARRAY[
+              'Réunion',
+              'Formation',
+              'Brief'
+            ]) THEN 'indispo'
+            ELSE 'autre'
+          END AS category
+        FROM sessions
+      ),
+
+      cumuls AS (
+        SELECT 
+            session_date,
+            SUM(CASE WHEN category = 'dispo'  THEN duree_sec ELSE 0 END) AS dispo,
+            SUM(CASE WHEN category = 'pause'  THEN duree_sec ELSE 0 END) AS pauses,
+            SUM(CASE WHEN category = 'indispo' THEN duree_sec ELSE 0 END) AS indispo,
+            SUM(CASE WHEN category IN ('dispo','indispo') THEN duree_sec ELSE 0 END) AS travail
+        FROM mapped
+        GROUP BY session_date
+      )
+
+      SELECT
+        session_date,
+        dispo,
+        pauses,
+        indispo,
+        travail,
+        (travail + pauses) AS presence,
+        SUM(travail) OVER (ORDER BY session_date ASC) AS cumul_travail
+      FROM cumuls
+      ORDER BY session_date DESC;
+    `;
+
+    const { rows } = await db.query(query, [userId, start, end]);
+
+    res.json(rows);
+
+  } catch (err) {
+    console.error("Erreur getSessionsByRange:", err);
+    res.status(500).json({ error: "Erreur récupération sessions filtrées" });
+  }
+};
+
 
 
 exports.getUserStatusToday = async (req, res) => {

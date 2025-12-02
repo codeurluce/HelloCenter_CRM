@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import dayjs from "dayjs";
 import axiosInstance from "../../api/axiosInstance";
+import { RefreshCw } from "lucide-react";
 
 // format HH:mm:ss (inchangé)
 const formatTime = (seconds) => {
@@ -51,6 +52,7 @@ export default function AgentWorkSummary({ userId }) {
     const [filterEnd, setFilterEnd] = useState("");
     const [historique, setHistorique] = useState([]);
     const [totalPeriode, setTotalPeriode] = useState(0);
+    const [loading, setLoading] = useState(false);
 
     const resetFilters = () => {
         setFilterStart("");
@@ -68,7 +70,7 @@ export default function AgentWorkSummary({ userId }) {
         const fetchSessions = async () => {
             try {
                 const { data } = await axiosInstance.get("/session_agents/monthly", {
-                  params: { userId },
+                    params: { userId },
                 });
 
                 // data est un array d'objets contenant :
@@ -104,31 +106,34 @@ export default function AgentWorkSummary({ userId }) {
         setSortOrder(prev => prev === "desc" ? "asc" : "desc");
     };
 
-    const fetchHistorique = () => {
+    const fetchHistorique = async () => {
         if (!filterStart) return;
 
-        const start = dayjs(filterStart);
-        const end = filterEnd ? dayjs(filterEnd) : start;
+        setLoading(true);
 
-        const result = autoHistory.filter((d) => {
-            const dDate = dayjs(d.session_date);
-            return dDate.isAfter(start.subtract(1, "day")) && dDate.isBefore(end.add(1, "day"));
-        });
+        try {
+            const { data } = await axiosInstance.get("/session_agents/monthly-filtre", {
+                params: {
+                    userId,
+                    startDate: filterStart,
+                    endDate: filterEnd || filterStart,
+                },
+            });
 
-        // on retourne le résultat trié selon sortOrder aussi
-        const sorted = result.sort((a, b) => {
-            const da = dayjs(a.session_date);
-            const db = dayjs(b.session_date);
-            if (sortOrder === "desc") return db.isAfter(da) ? 1 : (db.isBefore(da) ? -1 : 0);
-            return da.isAfter(db) ? 1 : (da.isBefore(db) ? -1 : 0);
-        });
+            setHistorique(data);
 
-        setHistorique(sorted);
+            // total periode
+            let tot = 0;
+            data.forEach((d) => (tot += Number(d.travail || 0)));
+            setTotalPeriode(tot);
 
-        let tot = 0;
-        result.forEach((d) => (tot += Number(d.travail || 0)));
-        setTotalPeriode(tot);
+        } catch (err) {
+            console.error("Erreur filtre :", err);
+        }
+
+        setLoading(false);
     };
+
 
     return (
         <div className="mt-10 p-5 bg-white rounded-xl shadow">
@@ -156,26 +161,43 @@ export default function AgentWorkSummary({ userId }) {
                 <thead>
                     <tr className="bg-gray-100">
                         <th
-                          className="p-2 border cursor-pointer"
-                          onClick={toggleSort}
-                          title="Cliquer pour inverser l'ordre (asc/desc)"
+                            className="p-2 border cursor-pointer"
+                            onClick={toggleSort}
+                            title="Cliquer pour inverser l'ordre (asc/desc)"
                         >
-                          Date {sortOrder === "desc" ? "↓" : "↑"}
+                            Date {sortOrder === "desc" ? "↓" : "↑"}
                         </th>
                         <th className="p-2 border">Travail</th>
                         <th className="p-2 border">Cumul jusque là</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {sortedAutoHistory.map((h) => (
-                        <tr key={h.session_date}>
-                            <td className="p-2 border">{formatDate(h.session_date)}</td>
-                            <td className="p-2 border font-mono">{formatTime(Number(h.travail || 0))}</td>
-                            <td className="p-2 border font-mono font-bold">
-                                {formatHoursWithRoundedMinutes(Number(h.cumul_travail || 0))}
+                    {loading ? (
+                        <tr>
+                            <td colSpan="9">
+                                <div className="text-center py-12">
+                                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                                    <span className="text-blue-700 font-medium">Chargement des jours précedents...</span>
+                                </div>
                             </td>
                         </tr>
-                    ))}
+                    ) : sortedAutoHistory.length === 0 ? (
+                        <tr>
+                            <td colSpan="9" className="text-center py-6 text-gray-500 italic">
+                                Aucune donnée pour cette période
+                            </td>
+                        </tr>
+                    ) : (
+                        sortedAutoHistory.map((h) => (
+                            <tr key={h.session_date}>
+                                <td className="p-2 border">{formatDate(h.session_date)}</td>
+                                <td className="p-2 border font-mono">{formatTime(Number(h.travail || 0))}</td>
+                                <td className="p-2 border font-mono font-bold">
+                                    {formatHoursWithRoundedMinutes(Number(h.cumul_travail || 0))}
+                                </td>
+                            </tr>
+                        ))
+                    )}
                 </tbody>
             </table>
 
@@ -205,6 +227,12 @@ export default function AgentWorkSummary({ userId }) {
                 >
                     Réinitialiser
                 </button>
+                <button
+                    onClick={fetchHistorique}
+                    className="flex ml-auto items-center gap-2 py-2 px-4 rounded-md border border-blue-500 text-blue-600 hover:bg-blue-100 transition"
+                >
+                    <RefreshCw size={16} /> Rafraîchir
+                </button>
             </div>
 
             {/* Tableau filtré */}
@@ -221,15 +249,32 @@ export default function AgentWorkSummary({ userId }) {
                             </tr>
                         </thead>
                         <tbody>
-                            {historique.map((h) => (
-                                <tr key={h.session_date}>
-                                    <td className="p-2 border">{formatDate(h.session_date)}</td>
-                                    <td className="p-2 border font-mono font-bold">{formatTime(Number(h.travail || 0))}</td>
-                                    <td className="p-2 border font-mono">{formatTime(Number(h.pauses || 0))}</td>
-                                    <td className="p-2 border font-mono">{formatTime(Number(h.presence || 0))}</td>
-                                    <td className="p-2 border font-mono font-bold">{formatHoursWithRoundedMinutes(Number(h.cumul_travail || 0))}</td>
+                            {loading ? (
+                                <tr>
+                                    <td colSpan="9">
+                                        <div className="text-center py-12">
+                                            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                                            <span className="text-blue-700 font-medium">Chargement des sessions...</span>
+                                        </div>
+                                    </td>
                                 </tr>
-                            ))}
+                            ) : historique.length === 0 ? (
+                                <tr>
+                                    <td colSpan="9" className="text-center py-6 text-gray-500 italic">
+                                        Aucune donnée pour cette période
+                                    </td>
+                                </tr>
+                            ) : (
+                                historique.map((h) => (
+                                    <tr key={h.session_date}>
+                                        <td className="p-2 border">{formatDate(h.session_date)}</td>
+                                        <td className="p-2 border font-mono font-bold">{formatTime(Number(h.travail || 0))}</td>
+                                        <td className="p-2 border font-mono">{formatTime(Number(h.pauses || 0))}</td>
+                                        <td className="p-2 border font-mono">{formatTime(Number(h.presence || 0))}</td>
+                                        <td className="p-2 border font-mono font-bold">{formatHoursWithRoundedMinutes(Number(h.cumul_travail || 0))}</td>
+                                    </tr>
+                                ))
+                            )}
                         </tbody>
                     </table>
                 </>

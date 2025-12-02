@@ -18,7 +18,8 @@ router.get('/user/agent-connection-details', sessionControllers.getDailyConnecti
 router.get('/user/:id/status-today', sessionControllers.getUserStatusToday); // 📌 Récupère le statut et présence totale d’un utilisateur pour la journée en cours // Méthode : GET /api/sessions/user/:id/status-today
 router.get('/user/:id/all-history', sessionControllers.getAllHistorySessions)
 router.get('/monthly', verifyToken, sessionControllers.getMonthlySessions);
-router.patch('/correct-session', sessionControllers.correctSession)
+router.get('/monthly-filtre', verifyToken, sessionControllers.getMonthlySessionsFiltre);
+router.patch('/correct-session', sessionControllers.correctSession);
 router.get('/for-correct', sessionControllers.getSessionforCorrect);
 router.get("/agent-session-details/:userId/:date", sessionControllers.getSessionDetailsForCorrection);
 
