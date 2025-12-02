@@ -497,56 +497,41 @@ exports.updateSale = async (req, res) => {
       partenaire,
       fournisseur,
       etatContrat: etat_contrat,
+      provenanceFichier: provenance_fichier,
       created_at,
       fichier
     } = req.body;
 
-    const result = await db.query(
-      `UPDATE sales 
-       SET 
-         civilite = $1,        client_name = $2,          client_firstname = $3,         client_email = $4,
-         client_phone = $5,         client_phone_fix = $6,         ville_client = $7,
-         adresse_client = $8,         code_postal_client = $9,         ref_client = $10,
-         ref_contrat = $11,         energie = $12,         pdl = $13,
-         pce = $14,         nature_offre = $15,         puissance_compteur = $16,
-         partenaire = $17,  fournisseur = $18,      etat_contrat = $19,   
-          created_at = $20,     fichier = $21,    updated_at = NOW()
-       WHERE id = $22
-       RETURNING *`,
-      [
-        civilite,
-        client_name,
-        client_firstname,
-        client_email,
-        client_phone,
-        client_phone_fix,
-        ville_client,
-        adresse_client,
-        code_postal_client,
-        ref_client,
-        ref_contrat,
-        energie,
-        pdl,
-        pce,
-        nature_offre,
-        puissance_compteur,
-        partenaire,
-        fournisseur,
-        etat_contrat,
-        created_at,
-        fichier,
-        saleId
-      ]
-    );
+const result = await db.query(
+  `UPDATE sales 
+   SET 
+     civilite = $1, client_name = $2, client_firstname = $3, client_email = $4,
+     client_phone = $5, client_phone_fix = $6, ville_client = $7,
+     adresse_client = $8, code_postal_client = $9, ref_client = $10,
+     ref_contrat = $11, energie = $12, pdl = $13,
+     pce = $14, nature_offre = $15, puissance_compteur = $16,
+     partenaire = $17, fournisseur = $18, etat_contrat = $19, 
+     created_at = $20, fichier = $21, provenance_fichier = $22, updated_at = NOW()
+   WHERE id = $23
+   RETURNING *`,
+  [
+    civilite, client_name, client_firstname, client_email,
+    client_phone, client_phone_fix, ville_client,
+    adresse_client, code_postal_client, ref_client,
+    ref_contrat, energie, pdl,
+    pce, nature_offre, puissance_compteur,
+    partenaire, fournisseur, etat_contrat,
+    created_at, fichier, provenance_fichier, saleId
+  ]
+);
 
     const newSale = result.rows[0];
-
 
     // Champs à vérifier pour le log
     const fieldsToCheck = [
       'civilite', 'nomClient', 'prenomClient', 'emailClient', 'numMobile', 'numFixe',
       'villeClient', 'adresseClient', 'codePostal', 'refClient', 'refContrat',
-      'energie', 'pdl', 'pce', 'natureOffre', 'puissanceCompteur', 'partenaire', 'fournisseur', 'etatContrat', 'created_at', 'fichier'
+      'energie', 'pdl', 'pce', 'natureOffre', 'puissanceCompteur', 'partenaire', 'fournisseur', 'etatContrat', 'created_at', 'fichier', 'provenanceFichier'
     ];
 
     const keyMap = {
@@ -563,7 +548,8 @@ exports.updateSale = async (req, res) => {
       natureOffre: 'nature_offre',
       puissanceCompteur: 'puissance_compteur',
       etatContrat: 'etat_contrat',
-      created_at: 'created_at'
+      created_at: 'created_at',
+      provenanceFichier: 'provenance_fichier',
     };
 
     // Calculer les champs modifiés

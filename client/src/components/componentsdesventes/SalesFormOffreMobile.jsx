@@ -361,8 +361,8 @@ const SalesFormOffreMobile = ({ formData, setFormData, onSubmit, onClose }) => {
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="">Sélectionner</option>
-            <option value="Lead">Lead</option>
-            <option value="Conquête">Conquête</option>
+            <option value="Assignée">Assignée</option>
+            <option value="Hors fichier">Hors fichier</option>
           </select>
         </div>
 

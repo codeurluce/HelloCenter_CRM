@@ -46,7 +46,8 @@ const SalesFormEnergie = ({ formData, setFormData, onSubmit, onClose }) => {
       (formData.energie === 'Gaz' && !formData.pce) ||
       !formData.natureOffre ||
       !formData.puissanceCompteur ||
-      !formData.etatContrat
+      !formData.etatContrat ||
+      !formData.provenanceFichier
     ) {
       alert('Veuillez remplir tous les champs obligatoires.');
       return;
@@ -322,6 +323,22 @@ const SalesFormEnergie = ({ formData, setFormData, onSubmit, onClose }) => {
             <option value="">Sélectionner état</option>
             <option value="CHF">CHF</option>
             <option value="MES">MES</option>
+          </select>
+        </div>
+
+                {/* Provenance fichier */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Provenance fichier *</label>
+          <select
+            name="provenanceFichier"
+            value={formData.provenanceFichier || ''}
+            onChange={handleChange}
+            required
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="">Sélectionner</option>
+            <option value="Assignée">Assignée</option>
+            <option value="Hors fichier">Hors fichier</option>
           </select>
         </div>
 

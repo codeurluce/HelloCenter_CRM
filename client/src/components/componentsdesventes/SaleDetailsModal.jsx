@@ -136,6 +136,8 @@ const SaleDetailsModal = ({ sale, onClose, onEdit, getStatusText, isAdmin }) => 
                                         : "-"
                                 }
                             />
+                            <Detail label="Provenance Fichier" value={sale.provenance_fichier || "-"} />
+                        
                             {/* <Detail label="ID Vente" value={sale.id} /> */}
                             <Detail
                                 label="Statut"

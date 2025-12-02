@@ -94,7 +94,7 @@ const SaleDetailsModalOffreMobile = ({ sale, onClose, onEdit, getStatusText, isA
               <Detail label="Ancien Opérateur" value={sale.ancien_operateur || "-"} />
               <Detail label="Type Technologie" value={sale.type_technologie || "-"} />
               <Detail label="Prix Offre" value={sale.prix_offre || "-"} />
-              <Detail label="Prvenance Fichier" value={sale.provenance_fichier || "-"} />
+              <Detail label="Provenance Fichier" value={sale.provenance_fichier || "-"} />
               <Detail label="IBAN" value={sale.iban || "-"} />
               <Detail label="RIO" value={sale.rio || "-"} />
               <Detail label="Date" value={sale.created_at ? new Date(sale.created_at).toLocaleString("fr-FR") : "-"} />
