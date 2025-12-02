@@ -716,7 +716,6 @@ exports.getMonthlySessionsFiltre = async (req, res) => {
 };
 
 
-
 exports.getUserStatusToday = async (req, res) => {
   const { id } = req.params;
 

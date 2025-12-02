@@ -13,29 +13,12 @@ const formatTime = (seconds) => {
 };
 
 // Convertit secondes -> format H,MM (ex: 5h30 => "5,30")
-// Règle : arrondir les secondes en minutes (si fraction de minute >= 0.5 on arrondit vers le haut)
-const formatHoursWithRoundedMinutes = (totalSeconds) => {
-    if (!totalSeconds || totalSeconds <= 0) return "0,00";
-    let hours = Math.floor(totalSeconds / 3600);
-    // minutes fraction before rounding
-    const remainingSeconds = totalSeconds % 3600;
-    const minutesFloat = remainingSeconds / 60; // ex 30.333...
-    const minutesRounded = Math.round(minutesFloat); // arrondi normal (.5 -> up)
-
-    // si minutesRounded === 60, on incrémente l'heure
-    if (minutesRounded === 60) {
-        hours += 1;
-        return `${hours},00`;
-    }
-    // format minutes with two digits
-    return `${hours},${String(minutesRounded).padStart(2, "0")}`;
-};
-
-// Pour l'affichage du cumul en table (on garde cumul_travail en secondes côté back)
-const secondsToDecimalHours = (sec) => {
-    if (!sec || sec <= 0) return 0;
-    const hours = sec / 3600;
-    return Number(hours.toFixed(2)); // si tu veux garder le cumul du mois sous forme décimale
+const formatHoursDecimal = (totalSeconds) => {
+    if (!totalSeconds || totalSeconds <= 0) return 0;
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = (totalSeconds % 3600) / 60; // fraction d'heure en minutes
+    const decimalHours = hours + minutes / 60;  // convertit les minutes en fraction d'heure
+    return Number(decimalHours.toFixed(2));     // arrondi à 2 décimales
 };
 
 export default function AgentWorkSummary({ userId }) {
@@ -129,11 +112,10 @@ export default function AgentWorkSummary({ userId }) {
 
         } catch (err) {
             console.error("Erreur filtre :", err);
+        } finally {
+            setLoading(false)
         }
-
-        setLoading(false);
     };
-
 
     return (
         <div className="mt-10 p-5 bg-white rounded-xl shadow">
@@ -150,7 +132,7 @@ export default function AgentWorkSummary({ userId }) {
 
                 <div className="p-4 bg-green-50 rounded-lg text-center">
                     <div className="text-sm text-green-700">Cumul du mois</div>
-                    <div className="text-xl font-mono">{secondsToDecimalHours(monthWork)}</div>
+                    <div className="text-xl font-mono">{formatHoursDecimal(monthWork)}</div>
                 </div>
             </div>
 
@@ -193,7 +175,7 @@ export default function AgentWorkSummary({ userId }) {
                                 <td className="p-2 border">{formatDate(h.session_date)}</td>
                                 <td className="p-2 border font-mono">{formatTime(Number(h.travail || 0))}</td>
                                 <td className="p-2 border font-mono font-bold">
-                                    {formatHoursWithRoundedMinutes(Number(h.cumul_travail || 0))}
+                                    {formatHoursDecimal(Number(h.cumul_travail || 0))}
                                 </td>
                             </tr>
                         ))
@@ -271,7 +253,7 @@ export default function AgentWorkSummary({ userId }) {
                                         <td className="p-2 border font-mono font-bold">{formatTime(Number(h.travail || 0))}</td>
                                         <td className="p-2 border font-mono">{formatTime(Number(h.pauses || 0))}</td>
                                         <td className="p-2 border font-mono">{formatTime(Number(h.presence || 0))}</td>
-                                        <td className="p-2 border font-mono font-bold">{formatHoursWithRoundedMinutes(Number(h.cumul_travail || 0))}</td>
+                                        <td className="p-2 border font-mono font-bold">{formatHoursDecimal(Number(h.cumul_travail || 0))}</td>
                                     </tr>
                                 ))
                             )}
