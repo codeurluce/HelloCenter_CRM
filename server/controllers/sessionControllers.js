@@ -3,6 +3,285 @@ const db = require('../db');
 const dayjs = require("dayjs");
 const { getIo } = require("../socketInstance");
 
+// ----------------------------- NOUVELLE GESTION DU TIMER VIA BACKEND -------------------
+
+// ⚡ Limites horaires pour la journée
+const CLAMP_START = "16:18:00"; // Début max de la session
+const CLAMP_END = "16:20:00";   // Fin max pour le stockage des statuts
+
+// Ajuste startTime pour qu’il ne soit jamais avant CLAMP_START
+const clampStartTime = (dt) => {
+  const today = dt.toISOString().split("T")[0]; // YYYY-MM-DD
+  const clamp = new Date(`${today}T${CLAMP_START}`);
+  return dt < clamp ? clamp : dt;
+};
+
+// Ajuste endTime pour qu’il ne soit jamais après CLAMP_END
+const clampEndTime = (dt) => {
+  const today = dt.toISOString().split("T")[0]; // YYYY-MM-DD
+  const clamp = new Date(`${today}T${CLAMP_END}`);
+  return dt > clamp ? clamp : dt;
+};
+
+exports.clampStartTime = clampStartTime;
+exports.clampEndTime = clampEndTime;
+
+exports.startSession = async (req, res) => {
+  const { user_id, status = "Disponible", pause_type = null } = req.body;
+  if (!user_id) return res.status(400).json({ error: "user_id requis" });
+
+  try {
+    const now = new Date();
+
+    // Vérifier si une session est active → on NE CLAMP PAS
+    const existing = await db.query(
+      `SELECT id FROM session_agents 
+       WHERE user_id = $1 AND end_time IS NULL 
+       LIMIT 1`,
+      [user_id]
+    );
+
+    if (existing.rowCount > 0) {
+      // Notifier les admins du changement de statut
+      const io = getIo();
+      io.to("admins").emit("agent_status_changed", {
+        userId: user_id,
+        newStatus: status
+      });
+
+      return res.json({
+        success: true,
+        reused: true,
+        session_id: existing.rows[0].id
+      });
+    }
+
+    // ----------------------------------------
+    // 🎯 Première session → clamp strict
+    // ----------------------------------------
+    const cStart = clampStartTime(now);
+    const cEnd = clampEndTime(now);
+
+    // impossible de commencer après la fin
+    let startTime = now;
+
+    if (now < cStart) startTime = cStart;
+    if (now > cEnd) startTime = cEnd;
+
+    // ======================================
+    // INSERT nouvelle session
+    // ======================================
+    const result = await db.query(
+      `INSERT INTO session_agents 
+        (user_id, status, pause_type, start_time, last_ping)
+       VALUES ($1, $2, $3, $4, $4)
+       RETURNING id, start_time`,
+      [user_id, status, pause_type, startTime.toISOString()]
+    );
+
+    // Notify admins
+    const io = getIo();
+    io.to("admins").emit("agent_status_changed", {
+      userId: user_id,
+      newStatus: status
+    });
+
+    res.json({
+      success: true,
+      session_id: result.rows[0].id,
+      start_time: result.rows[0].start_time
+    });
+
+  } catch (err) {
+    console.error("startSession error", err);
+    res.status(500).json({ error: "server error" });
+  }
+};
+
+
+// =========================================================
+// 🛑 STOP SESSION
+// =========================================================
+exports.stopSession = async (req, res) => {
+  const { user_id } = req.body;
+  if (!user_id) return res.status(400).json({ error: "user_id requis" });
+
+  try {
+    const now = new Date();
+    const cEnd = clampEndTime(now);
+
+    // Récupérer session active
+    const active = await db.query(
+      `SELECT id, start_time 
+         FROM session_agents 
+        WHERE user_id = $1 AND end_time IS NULL
+        LIMIT 1`,
+      [user_id]
+    );
+
+    if (active.rowCount === 0) {
+      return res.json({ success: true, message: "no active session" });
+    }
+
+    const session = active.rows[0];
+    let startTime = new Date(session.start_time);
+
+    // sécurité : ne jamais laisser start > end
+    if (startTime > cEnd) startTime = cEnd;
+
+    // ======================================
+    // UPDATE duration + end_time
+    // ======================================
+    const result = await db.query(
+      `UPDATE session_agents
+          SET end_time = $1,
+              duration = EXTRACT(EPOCH FROM ($1::timestamp - $2::timestamp))::INT
+        WHERE id = $3
+        RETURNING *`,
+      [cEnd.toISOString(), startTime.toISOString(), session.id]
+    );
+
+    // notify
+    const io = getIo();
+    io.to("admins").emit("agent_status_changed", {
+      userId: user_id,
+      newStatus: "Hors Ligne"
+    });
+
+    res.json({
+      success: true,
+      session: result.rows[0]
+    });
+
+  } catch (err) {
+    console.error("stopSession error", err);
+    res.status(500).json({ error: "server error" });
+  }
+};
+
+exports.pingSession = async (req, res) => {
+  const { user_id } = req.body;
+  if (!user_id) return res.status(400).json({ error: 'user_id requis' });
+
+  try {
+    const result = await db.query(
+      `UPDATE session_agents SET last_ping = NOW() 
+       WHERE user_id = $1 AND end_time IS NULL
+       RETURNING id, start_time`,
+      [user_id]
+    );
+    if (result.rowCount === 0) {
+      return res.json({ success: false, message: 'no active session' });
+    }
+    res.json({ success: true, session_id: result.rows[0].id });
+  } catch (err) {
+    console.error('pingSession error', err);
+    res.status(500).json({ error: 'server error' });
+  }
+};
+
+exports.closeSessionForce = async (userId, userSockets, adminId) => {
+  try {
+    console.log(`[SERVER] closeSessionForce called for user ${userId}`);
+
+    const io = getIo();
+
+    // 1️⃣ Vérifier session active
+    const check = await db.query(
+      `SELECT id FROM session_agents
+       WHERE user_id = $1 AND end_time IS NULL
+       ORDER BY start_time DESC LIMIT 1`,
+      [userId]
+    );
+
+    let session = null;
+
+    if (check.rowCount > 0) {
+      session = await db.query(
+        `UPDATE session_agents
+   SET end_time = $2,
+       duration = EXTRACT(EPOCH FROM ($2 - start_time))::INT
+   WHERE id = $1
+   RETURNING id, start_time, end_time, duration`,
+        [check.rows[0].id, clampEndTime(new Date())] // ⚡ clamp
+      );
+      session = session.rows[0];
+
+      console.log(`[SERVER] Session clôturée pour ${userId}`);
+    } else {
+      console.log(`[SERVER] Aucune session active → statut null, on déconnecte quand même.`);
+    }
+
+    // 2️⃣ Déconnecter l'agent
+    await db.query("UPDATE users SET is_connected = FALSE WHERE id = $1", [userId]);
+
+    // 3️⃣ Historique
+    await db.query(
+      `INSERT INTO agent_connections_history (user_id, event_type, admin_id) VALUES ($1, 'disconnectByAdmin', $2)`,
+      [userId, adminId]
+    );
+
+    // 4️⃣ Notifier admins
+    io.to("admins").emit("agent_status_changed", {
+      userId,
+      newStatus: "Hors ligne"
+    });
+
+    io.to("admins").emit("agent_disconnected_for_admin", {
+      userId,
+      newStatus: "Hors ligne"
+    });
+
+    // 5️⃣ Notifier l’agent
+    io.to(`agent_${userId}`).emit("force_disconnect_by_admin", {
+      userId,
+      reason: "Déconnecté par l’administrateur",
+      forced: true
+    });
+
+    // 6️⃣ Déconnecter sockets physiquement
+    const sockets = userSockets.get(userId);
+    if (sockets) {
+      sockets.forEach(socketId => {
+        const s = io.sockets.sockets.get(socketId);
+        if (s) {
+          setTimeout(() => {
+            s.disconnect(true);
+          }, 100);
+        }
+      });
+      userSockets.delete(userId);
+    }
+
+    return session;
+
+  } catch (err) {
+    console.error('[SERVER] closeSessionForce error', err);
+    throw err;
+  }
+};
+
+exports.heartbeat = async (req, res) => {
+  const user_id = req.user?.id; // car tu utilises authenticateToken
+
+  if (!user_id) {
+    return res.status(401).json({ error: 'Non authentifié' });
+  }
+
+  try {
+    await db.query(
+      `UPDATE session_agents 
+       SET last_ping = NOW() 
+       WHERE user_id = $1 AND end_time IS NULL`,
+      [user_id]
+    );
+    return res.json({ success: true });
+  } catch (err) {
+    console.error("Heartbeat error", err);
+    return res.status(500).json({ error: "server error" });
+  }
+};
+
 // POST /agent/:id/forcePause - Mettre un agent en pause déjeuner forcée par l'admin
 exports.forcePauseByAdmin = async (req, res) => {
   try {
@@ -83,7 +362,7 @@ exports.forcePauseByAdmin = async (req, res) => {
       });
     }
 
-    const now = new Date();
+    const now = clampEndTime(new Date());
 
     // Fermer la session actuelle (Disponible)
     await db.query(
@@ -94,7 +373,6 @@ exports.forcePauseByAdmin = async (req, res) => {
       [now, currentSession.id]
     );
 
-    console.log(`[BACK] 🔄 Création nouvelle session "Déjeuner" forcée pour ${userId}`);
     // Créer une nouvelle session "Déjeuner" forcée
     await db.query(
       `INSERT INTO session_agents (user_id, status, start_time, pause_type)
@@ -800,206 +1078,6 @@ exports.splitSessionsAtMidnight = async () => {
     }
   } catch (err) {
     console.error("❌ Erreur splitSessionsAtMidnight:", err);
-  }
-};
-
-// ----------------------------- NOUVELLE GESTION DU TIMER VIA BACKEND -------------------
-
-exports.startSession = async (req, res) => {
-  const { user_id, status = 'Disponible' } = req.body;
-  if (!user_id) return res.status(400).json({ error: 'user_id requis' });
-
-  try {
-    // Si session active existante -> retourne son id (idempotence)
-    const active = await db.query(
-      `SELECT id FROM session_agents WHERE user_id = $1 AND end_time IS NULL LIMIT 1`,
-      [user_id]
-    );
-    if (active.rowCount > 0) {
-      // ⚡ Émettre l'événement Socket.IO pour que l'admin voit le statut
-      const io = getIo();
-      io.to("admins").emit("agent_status_changed", {
-        userId: user_id,
-        newStatus: status
-      });
-
-      return res.json({ success: true, session_id: active.rows[0].id, reused: true });
-    }
-
-    const result = await db.query(
-      `INSERT INTO session_agents (user_id, status, start_time, last_ping)
-       VALUES ($1, $2, NOW(), NOW())
-       RETURNING id, start_time`,
-      [user_id, status]
-    );
-
-    // ⚡ Émettre l'événement Socket.IO pour que l'admin voie le statut
-    const io = getIo();
-    io.to("admins").emit("agent_status_changed", {
-      userId: user_id,
-      newStatus: status
-    });
-
-    res.json({ success: true, session_id: result.rows[0].id, start_time: result.rows[0].start_time });
-  } catch (err) {
-    console.error('startSession error', err);
-    res.status(500).json({ error: 'server error' });
-  }
-};
-
-exports.stopSession = async (req, res) => {
-  const { user_id } = req.body;
-  if (!user_id) return res.status(400).json({ error: 'user_id requis' });
-
-  try {
-    const now = new Date();
-    const result = await db.query(
-      `UPDATE session_agents
-       SET end_time = $1,
-           duration = EXTRACT(EPOCH FROM ($1 - start_time))::INT
-       WHERE user_id = $2 AND end_time IS NULL
-       RETURNING *`,
-      [now, user_id]
-    );
-
-    if (result.rowCount === 0) {
-      return res.json({ success: true, message: 'no active session to stop' });
-    }
-
-    // ⚡ Émettre l'événement Socket.IO pour que l'admin voie le statut "Hors Ligne"
-    const io = getIo();
-    io.to("admins").emit("agent_status_changed", {
-      userId: user_id,
-      newStatus: "Hors Ligne"
-    });
-
-    res.json({ success: true, session: result.rows[0] });
-  } catch (err) {
-    console.error('stopSession error', err);
-    res.status(500).json({ error: 'server error' });
-  }
-};
-
-exports.pingSession = async (req, res) => {
-  const { user_id } = req.body;
-  if (!user_id) return res.status(400).json({ error: 'user_id requis' });
-
-  try {
-    const result = await db.query(
-      `UPDATE session_agents SET last_ping = NOW() 
-       WHERE user_id = $1 AND end_time IS NULL
-       RETURNING id, start_time`,
-      [user_id]
-    );
-    if (result.rowCount === 0) {
-      return res.json({ success: false, message: 'no active session' });
-    }
-    res.json({ success: true, session_id: result.rows[0].id });
-  } catch (err) {
-    console.error('pingSession error', err);
-    res.status(500).json({ error: 'server error' });
-  }
-};
-
-exports.closeSessionForce = async (userId, userSockets, adminId) => {
-  try {
-    console.log(`[SERVER] closeSessionForce called for user ${userId}`);
-
-    const io = getIo();
-
-    // 1️⃣ Vérifier session active
-    const check = await db.query(
-      `SELECT id FROM session_agents
-       WHERE user_id = $1 AND end_time IS NULL
-       ORDER BY start_time DESC LIMIT 1`,
-      [userId]
-    );
-
-    let session = null;
-
-    if (check.rowCount > 0) {
-      session = await db.query(
-        `UPDATE session_agents
-         SET end_time = NOW(),
-             duration = EXTRACT(EPOCH FROM (NOW() - start_time))::INT
-         WHERE id = $1
-         RETURNING id, start_time, end_time, duration`,
-        [check.rows[0].id]
-      );
-      session = session.rows[0];
-
-      console.log(`[SERVER] Session clôturée pour ${userId}`);
-    } else {
-      console.log(`[SERVER] Aucune session active → statut null, on déconnecte quand même.`);
-    }
-
-    // 2️⃣ Déconnecter l'agent
-    await db.query("UPDATE users SET is_connected = FALSE WHERE id = $1", [userId]);
-
-    // 3️⃣ Historique
-    await db.query(
-      `INSERT INTO agent_connections_history (user_id, event_type, admin_id) VALUES ($1, 'disconnectByAdmin', $2)`,
-      [userId, adminId]
-    );
-
-    // 4️⃣ Notifier admins
-    io.to("admins").emit("agent_status_changed", {
-      userId,
-      newStatus: "Hors ligne"
-    });
-
-    io.to("admins").emit("agent_disconnected_for_admin", {
-      userId,
-      newStatus: "Hors ligne"
-    });
-
-    // 5️⃣ Notifier l’agent
-    io.to(`agent_${userId}`).emit("force_disconnect_by_admin", {
-      userId,
-      reason: "Déconnecté par l’administrateur",
-      forced: true
-    });
-
-    // 6️⃣ Déconnecter sockets physiquement
-    const sockets = userSockets.get(userId);
-    if (sockets) {
-      sockets.forEach(socketId => {
-        const s = io.sockets.sockets.get(socketId);
-        if (s) {
-          setTimeout(() => {
-            s.disconnect(true);
-          }, 100);
-        }
-      });
-      userSockets.delete(userId);
-    }
-
-    return session;
-
-  } catch (err) {
-    console.error('[SERVER] closeSessionForce error', err);
-    throw err;
-  }
-};
-
-exports.heartbeat = async (req, res) => {
-  const user_id = req.user?.id; // car tu utilises authenticateToken
-
-  if (!user_id) {
-    return res.status(401).json({ error: 'Non authentifié' });
-  }
-
-  try {
-    await db.query(
-      `UPDATE session_agents 
-       SET last_ping = NOW() 
-       WHERE user_id = $1 AND end_time IS NULL`,
-      [user_id]
-    );
-    return res.json({ success: true });
-  } catch (err) {
-    console.error("Heartbeat error", err);
-    return res.status(500).json({ error: "server error" });
   }
 };
 
