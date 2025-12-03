@@ -353,7 +353,6 @@ exports.getSessionAgentsForRH = async (req, res) => {
 };
 
 
-
 exports.getDailyConnectionTimes = async (req, res) => {
   try {
     const query = `
