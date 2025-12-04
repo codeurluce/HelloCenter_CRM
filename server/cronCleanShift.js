@@ -6,8 +6,8 @@
 const db = require("./db");
 
 // Paramètres du shift
-const SHIFT_START = "15:51:00";
-const SHIFT_END   = "15:56:00";
+const SHIFT_START = "09:00:00";
+const SHIFT_END   = "18:00:00";
 
 /**
  * Nettoyage quotidien des sessions d'agents

@@ -88,8 +88,8 @@ app.locals.userSockets = userSockets;
 const { setIo } = require("./socketInstance");
 setIo(io);
 
-// Cron pour nettoyage après fin de shift, ex: 18h10 chaque jour
-cron.schedule('* * * * *', async () => {
+// Cron pour nettoyage après fin de shift, ex: 00H00 chaque jour
+cron.schedule('59 23 * * *', async () => {
   console.log("⏰ Cron → Nettoyage des surplus de shift...");
   await cleanDailyShift();
 });
