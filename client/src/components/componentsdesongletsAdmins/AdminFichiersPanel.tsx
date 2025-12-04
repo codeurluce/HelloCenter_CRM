@@ -48,17 +48,15 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
     const [selectedFiches, setSelectedFiches] = useState<number[]>([]);
     const [selectedFiche, setSelectedFiche] = useState<Fiche | null>(null);
     const [batchSize, setBatchSize] = useState<number | ''>('');
-    const [assignModal, setAssignModal] = useState<{
-        isOpen: boolean;
-        ficheId: number | null;
-        currentAgentId: number | null;
-    }>({ isOpen: false, ficheId: null, currentAgentId: null });
+    const [assignModal, setAssignModal] = useState<{ isOpen: boolean; ficheId: number | null; currentAgentId: number | null; }>({ isOpen: false, ficheId: null, currentAgentId: null });
     const [showExportModal, setShowExportModal] = useState(false);
-    const [historiqueModal, setHistoriqueModal] = useState({
-        isOpen: false,
-        ficheId: null as number | null,
-    });
+    const [historiqueModal, setHistoriqueModal] = useState({isOpen: false, ficheId: null as number | null, });
     const [modalOpen, setModalOpen] = useState(false);
+
+  const role = localStorage.getItem("role");
+  const isAdmin = role === "Admin";
+  const isManager = role === "Manager";
+
 
     const tabs = [
         { key: 'Energie', label: 'Énergie' },
@@ -70,6 +68,7 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
         OffreMobile: 'nouvelles',
     });
     const activeFilter = tabFilters[activeTab];
+
 
     const fetchFiches = async () => {
         setLoading(true);
@@ -389,6 +388,8 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
                         onAssignBatch={() => setAssignModal({ isOpen: true, ficheId: null, currentAgentId: null })}
                         onBatchUnassign={handleBatchUnassign}
                         onBatchDelete={handleBatchDelete}
+                        isAdmin={isAdmin}
+                        isManager={isManager}
                     />
 
                     <div className="overflow-x-auto">
@@ -439,6 +440,8 @@ const AdminFichiersPanel: React.FC<AdminFichiersPanelProps> = ({
                                                     if (checked) setSelectedFiches(prev => [...prev, id]);
                                                     else setSelectedFiches(prev => prev.filter(i => i !== id));
                                                 }}
+                                                isAdmin={isAdmin}
+                                                isManager={isManager}
                                             />
                                         ))}
                                     </tbody>

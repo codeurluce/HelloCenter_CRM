@@ -277,10 +277,11 @@ useEffect(() => {
           onExport={handleExport}
           onClose={() => setShowExport(false)}
         />
-      )}<AdminWorkTable />
+      )}
+      
+      {isAdmin && (
+        <AdminWorkTable />
+      )}
     </div>
-
-    
-
   );
 }

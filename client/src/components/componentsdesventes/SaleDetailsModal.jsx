@@ -1,7 +1,10 @@
 import React, { useEffect, useCallback } from "react";
 import { X, Edit3, FileText } from "lucide-react";
 
-const SaleDetailsModal = ({ sale, onClose, onEdit, getStatusText, isAdmin }) => {
+const SaleDetailsModal = ({ sale, onClose, onEdit, getStatusText, isAdmin, isManager }) => {
+
+    const isAdminOrManager = isAdmin || isManager;
+
     // Hooks en premier
     useEffect(() => {
         const handleKeyDown = (e) => {
@@ -77,9 +80,12 @@ const SaleDetailsModal = ({ sale, onClose, onEdit, getStatusText, isAdmin }) => 
                                 label="Client"
                                 value={`${sale.civilite || ""} ${sale.client_name || ""} ${sale.client_firstname || ""}`.trim()}
                             />
-                            <Detail label="Téléphone" value={sale.client_phone || "-"} />
-                            <Detail label="Num Fixe" value={sale.client_phone_fix || "-"} />
-                            <Detail label="Email" value={sale.client_email || "-"} />
+                            {isAdminOrManager && (
+                                <>
+                                    <Detail label="Téléphone" value={sale.client_phone || "-"} />
+                                    <Detail label="Num Fixe" value={sale.client_phone_fix || "-"} />
+                                    <Detail label="Email" value={sale.client_email || "-"} />
+                                </>)}
                             <Detail label="Ville" value={sale.ville_client || "-"} />
                             <Detail label="Adresse" value={sale.adresse_client || "-"} />
                             <Detail label="Code Postal" value={sale.code_postal_client || "-"} />
@@ -94,13 +100,13 @@ const SaleDetailsModal = ({ sale, onClose, onEdit, getStatusText, isAdmin }) => 
                             {/* <Detail label="Type de vente" value={sale.product_type || "-"} /> */}
                             <Detail label="Partenaire" value={
                                 sale.partenaire ? (
-                                <>
-                                    {sale.partenaire} 
-                                    {sale.fournisseur && (<strong> ({sale.fournisseur })</strong>)}
-                                </>
-                            ) : (
-                                "-"
-                            )
+                                    <>
+                                        {sale.partenaire}
+                                        {sale.fournisseur && (<strong> ({sale.fournisseur})</strong>)}
+                                    </>
+                                ) : (
+                                    "-"
+                                )
                             } />
                             <Detail label="Nature Offre" value={sale.nature_offre || "-"} />
 
@@ -117,10 +123,10 @@ const SaleDetailsModal = ({ sale, onClose, onEdit, getStatusText, isAdmin }) => 
                                                     : sale.energie
                                         }
                                     />
-                                    {sale.energie.toLowerCase() === "gaz" && (
+                                    {sale.energie.toLowerCase() === "gaz" && isAdminOrManager && (
                                         <Detail label="PCE" value={sale.pce || "-"} />
                                     )}
-                                    {sale.energie.toLowerCase() === "electricite" && (
+                                    {sale.energie.toLowerCase() === "electricite" && isAdminOrManager && (
                                         <Detail label="PDL" value={sale.pdl || "-"} />
                                     )}
                                 </>
@@ -137,7 +143,7 @@ const SaleDetailsModal = ({ sale, onClose, onEdit, getStatusText, isAdmin }) => 
                                 }
                             />
                             <Detail label="Provenance Fichier" value={sale.provenance_fichier || "-"} />
-                        
+
                             {/* <Detail label="ID Vente" value={sale.id} /> */}
                             <Detail
                                 label="Statut"

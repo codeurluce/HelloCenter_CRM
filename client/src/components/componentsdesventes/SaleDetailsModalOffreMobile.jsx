@@ -1,7 +1,9 @@
 import React, { useEffect, useCallback } from "react";
 import { X, Edit3, FileText } from "lucide-react";
 
-const SaleDetailsModalOffreMobile = ({ sale, onClose, onEdit, getStatusText, isAdmin }) => {
+const SaleDetailsModalOffreMobile = ({ sale, onClose, onEdit, getStatusText, isAdmin, isManager }) => {
+
+  const isAdminOrManager = isAdmin || isManager;
   // Gestion touche Escape
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -72,9 +74,12 @@ const SaleDetailsModalOffreMobile = ({ sale, onClose, onEdit, getStatusText, isA
                 value={`${sale.civilite || ""} ${sale.client_name || ""} ${sale.client_firstname || ""}`.trim()}
               />
               <Detail label="Compte Agent" value={sale.free_agent_account || "-"} />
-              <Detail label="Téléphone" value={sale.client_phone || "-"} />
-              <Detail label="Num Fixe" value={sale.client_phone_fix || "-"} />
-              <Detail label="Email" value={sale.client_email || "-"} />
+              {isAdminOrManager && (
+                <>
+                  <Detail label="Téléphone" value={sale.client_phone || "-"} />
+                  <Detail label="Num Fixe" value={sale.client_phone_fix || "-"} />
+                  <Detail label="Email" value={sale.client_email || "-"} />
+                </>)}
               <Detail label="Ville" value={sale.ville_client || "-"} />
               <Detail label="Adresse" value={sale.adresse_client || "-"} />
               <Detail label="Code Postal" value={sale.code_postal_client || "-"} />

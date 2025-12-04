@@ -2,7 +2,7 @@
 import React from 'react';
 import { Fiche } from './fiche.ts';
 import { StatusBadge } from './StatusBadge.tsx';
-import { ActionButton,  } from './ActionButton.tsx';
+import { ActionButton, } from './ActionButton.tsx';
 import { Eye, FileUp, Trash2Icon, Repeat, FileText } from 'lucide-react';
 import type { AdminFilterType } from '../componentsdesongletsAdmins/AdminFichiersPanel'; // ⬅️ chemin à ajuster si nécessaire
 
@@ -16,6 +16,8 @@ interface FichesTableProps {
   onOpenDetail: (fiche: Fiche) => void;
   onOpenHistorique: (ficheId: number) => void;
   toggleSelect: (id: number, checked: boolean) => void;
+  isAdmin: boolean;
+  isManager: boolean;
 }
 
 export const FichesTable: React.FC<FichesTableProps> = ({
@@ -28,15 +30,16 @@ export const FichesTable: React.FC<FichesTableProps> = ({
   onOpenDetail,
   onOpenHistorique,
   toggleSelect,
+  isAdmin,
+  isManager,
 }) => {
   // On détermine si on est dans le cas "nouvelles non assignées"
   const isNouvellesView = activeFilter === 'nouvelles';
 
   return (
     <tr
-      className={`border-t border-gray-200 transition-colors ${
-        selectedFiches.includes(fiche.id) ? 'bg-blue-50' : 'hover:bg-blue-50'
-      }`}
+      className={`border-t border-gray-200 transition-colors ${selectedFiches.includes(fiche.id) ? 'bg-blue-50' : 'hover:bg-blue-50'
+        }`}
     >
       <td className="px-6 py-3 text-gray-800">{fiche.id}</td>
       <td className="px-6 py-3 text-gray-800 whitespace-nowrap">
@@ -53,53 +56,81 @@ export const FichesTable: React.FC<FichesTableProps> = ({
         {new Date(fiche.date_import).toLocaleDateString('fr-FR')}
       </td>
       <td className="px-6 py-3 text-gray-800 flex justify-end gap-2">
-        {isNouvellesView ? (
+        {isManager && !isAdmin && (
           <>
-            <ActionButton
-              onClick={() => onAssign(fiche.id, fiche.assigned_to ?? undefined)}
-              icon={<FileUp className="w-4 h-4" />}
-              tooltip="Assigner"
-              color="blue"
-            />
             <ActionButton
               onClick={() => onOpenDetail(fiche)}
               icon={<Eye className="w-4 h-4" />}
               tooltip="Détails"
               color="green"
             />
-            <ActionButton
-              onClick={() => onDelete(fiche.id)}
-              icon={<Trash2Icon className="w-4 h-4" />}
-              tooltip="Supprimer"
-              color="orange"
-            />
-          </>
-        ) : (
-          <>
-            <ActionButton
-              onClick={() => onOpenDetail(fiche)}
-              icon={<Eye className="w-4 h-4" />}
-              tooltip="Détails fiches"
-              color="green"
-            />
-            <ActionButton
-              onClick={() => onDelete(fiche.id)}
-              icon={<Trash2Icon className="w-4 h-4" />}
-              tooltip="Supprimer"
-              color="orange"
-            />
-            <ActionButton
-              onClick={() => onUnassign(fiche)}
-              icon={<Repeat className="w-4 h-4" />}
-              tooltip="Retirer"
-              color="purple"
-            />
+
             <ActionButton
               onClick={() => onOpenHistorique(fiche.id)}
               icon={<FileText className="w-4 h-4" />}
               tooltip="Voir l'historique"
               color="blue"
             />
+          </>
+        )}
+
+        {/* 🟦 ADMIN : tous les boutons */}
+        {isAdmin && (
+          <>
+            {isNouvellesView ? (
+              <>
+                <ActionButton
+                  onClick={() => onAssign(fiche.id, fiche.assigned_to ?? undefined)}
+                  icon={<FileUp className="w-4 h-4" />}
+                  tooltip="Assigner"
+                  color="blue"
+                />
+
+                <ActionButton
+                  onClick={() => onOpenDetail(fiche)}
+                  icon={<Eye className="w-4 h-4" />}
+                  tooltip="Détails"
+                  color="green"
+                />
+
+                <ActionButton
+                  onClick={() => onDelete(fiche.id)}
+                  icon={<Trash2Icon className="w-4 h-4" />}
+                  tooltip="Supprimer"
+                  color="orange"
+                />
+              </>
+            ) : (
+              <>
+                <ActionButton
+                  onClick={() => onOpenDetail(fiche)}
+                  icon={<Eye className="w-4 h-4" />}
+                  tooltip="Détails fiches"
+                  color="green"
+                />
+
+                <ActionButton
+                  onClick={() => onDelete(fiche.id)}
+                  icon={<Trash2Icon className="w-4 h-4" />}
+                  tooltip="Supprimer"
+                  color="orange"
+                />
+
+                <ActionButton
+                  onClick={() => onUnassign(fiche)}
+                  icon={<Repeat className="w-4 h-4" />}
+                  tooltip="Retirer"
+                  color="purple"
+                />
+
+                <ActionButton
+                  onClick={() => onOpenHistorique(fiche.id)}
+                  icon={<FileText className="w-4 h-4" />}
+                  tooltip="Voir l'historique"
+                  color="blue"
+                />
+              </>
+            )}
           </>
         )}
       </td>
