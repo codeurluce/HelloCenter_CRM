@@ -15,6 +15,7 @@ const http = require('http');
 const cron = require('node-cron');
 const { checkContrats } = require("./controllers/rhControllers");
 const { initSockets } = require('./socket');
+const { cleanDailyShift } = require('./cronCleanShift')
 
 require('./inactivityChecker')
 const sessionRoutes = require('./routes/sessionRoutes');
@@ -86,6 +87,12 @@ app.locals.userSockets = userSockets;
 
 const { setIo } = require("./socketInstance");
 setIo(io);
+
+// Cron pour nettoyage après fin de shift, ex: 18h10 chaque jour
+cron.schedule('* * * * *', async () => {
+  console.log("⏰ Cron → Nettoyage des surplus de shift...");
+  await cleanDailyShift();
+});
 
 // Tâche cron pour minuit
 cron.schedule('0 0 * * *', async () => {

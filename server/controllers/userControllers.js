@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const { findUserByEmail, createUserWithGeneratedEmail } = require('../models/userModels');
 const { getIo } = require("../socketInstance");
-const { closeSessionForce, clampStartTime, clampEndTime } = require('./sessionControllers');
+const { closeSessionForce } = require('./sessionControllers');
 
 // Vérifier que JWT_SECRET est défini
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -238,14 +238,13 @@ const loginUser = async (req, res) => {
 const connectAgent = async (req, res) => {
   const { userId } = req.body;
   try {
-    const startTime = clampStartTime(new Date());
     // 🔒 Fermer toute session orpheline
     await db.query(`
-  UPDATE session_agents 
-  SET end_time = $2, 
-      duration = EXTRACT(EPOCH FROM ($2 - start_time))::INT
-  WHERE user_id = $1 AND end_time IS NULL
-`, [userId, startTime]);
+      UPDATE session_agents 
+      SET end_time = NOW(), 
+          duration = EXTRACT(EPOCH FROM (NOW() - start_time))::INT
+      WHERE user_id = $1 AND end_time IS NULL
+    `, [userId]);
 
     // Marquer agent connecté
     await db.query("UPDATE users SET is_connected = TRUE, session_closed = FALSE WHERE id = $1", [userId]);
@@ -276,15 +275,13 @@ const disconnectAgent = async (req, res) => {
   }
 
   try {
-    const endTime = clampEndTime(new Date());
     // Fermer la session active
-    const result = await db.query(
+    await db.query(
       `UPDATE session_agents
-       SET end_time = $2,
-           duration = EXTRACT(EPOCH FROM ($2 - start_time))::INT
-       WHERE user_id = $1 AND end_time IS NULL
-       RETURNING id, start_time, end_time, duration`,
-      [userId, endTime]
+       SET end_time = NOW(),
+           duration = EXTRACT(EPOCH FROM (NOW() - start_time))
+       WHERE user_id = $1 AND end_time IS NULL`,
+      [userId]
     );
 
     // Marquer l’agent comme déconnecté
@@ -316,15 +313,14 @@ const disconnectAgentForce = async (req, res) => {
   }
 
   try {
-    const clampedNow = clampEndTime(new Date());
     // Fermer la session en cours s’il y en a une ouverte
     const sessionResult = await db.query(
       `UPDATE session_agents
-   SET end_time = $2,
-       duration = EXTRACT(EPOCH FROM ($2 - start_time))
-   WHERE user_id = $1 AND end_time IS NULL
-   RETURNING id, start_time, end_time, duration`,
-      [userId, clampedNow]
+       SET end_time = NOW(),
+           duration = EXTRACT(EPOCH FROM (NOW() - start_time))
+       WHERE user_id = $1 AND end_time IS NULL
+       RETURNING id, start_time, end_time, duration`,
+      [userId]
     );
 
     if (sessionResult.rows.length > 0) {
