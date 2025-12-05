@@ -5,114 +5,77 @@ const { getIo } = require("../socketInstance");
 
 // ----------------------------- NOUVELLE GESTION DU TIMER VIA BACKEND -------------------
 
-// ⚡ Limites horaires pour la journée
-const CLAMP_START = "09:10:00"; // Début max de la session
-const CLAMP_END = "10:25:00";   // Fin max pour le stockage des statuts
-
-// Ajuste startTime pour qu’il ne soit jamais avant CLAMP_START
-const clampStartTime = (dt) => {
-  const today = dt.toISOString().split("T")[0]; // YYYY-MM-DD
-  const clamp = new Date(`${today}T${CLAMP_START}`);
-  return dt < clamp ? clamp : dt;
-};
-
-// Ajuste endTime pour qu’il ne soit jamais après CLAMP_END
-const clampEndTime = (dt) => {
-  const today = dt.toISOString().split("T")[0]; // YYYY-MM-DD
-  const clamp = new Date(`${today}T${CLAMP_END}`);
-  return dt > clamp ? clamp : dt;
-};
-
-exports.clampStartTime = clampStartTime;
-exports.clampEndTime = clampEndTime;
-
 exports.startSession = async (req, res) => {
-  const { user_id, status = "Disponible", pause_type = null } = req.body;
-
-  if (!user_id) return res.status(400).json({ error: "user_id required" });
+  const { user_id, status = 'Disponible' } = req.body;
+  if (!user_id) return res.status(400).json({ error: 'user_id requis' });
 
   try {
-    const now = new Date();
-
-    // Reuse if active
+    // Si session active existante -> retourne son id (idempotence)
     const active = await db.query(
       `SELECT id FROM session_agents WHERE user_id = $1 AND end_time IS NULL LIMIT 1`,
       [user_id]
     );
-
     if (active.rowCount > 0) {
-      return res.json({ success: true, reused: true, session_id: active.rows[0].id });
+      // ⚡ Émettre l'événement Socket.IO pour que l'admin voit le statut
+      const io = getIo();
+      io.to("admins").emit("agent_status_changed", {
+        userId: user_id,
+        newStatus: status
+      });
+
+      return res.json({ success: true, session_id: active.rows[0].id, reused: true });
     }
 
-    // Insert raw start_time
     const result = await db.query(
-      `INSERT INTO session_agents (user_id, status, pause_type, start_time, last_ping)
-       VALUES ($1, $2, $3, $4, $4)
+      `INSERT INTO session_agents (user_id, status, start_time, last_ping)
+       VALUES ($1, $2, NOW(), NOW())
        RETURNING id, start_time`,
-      [user_id, status, pause_type, now.toISOString()]
+      [user_id, status]
     );
 
-    res.json({ success: true, session_id: result.rows[0].id });
+    // ⚡ Émettre l'événement Socket.IO pour que l'admin voie le statut
+    const io = getIo();
+    io.to("admins").emit("agent_status_changed", {
+      userId: user_id,
+      newStatus: status
+    });
 
+    res.json({ success: true, session_id: result.rows[0].id, start_time: result.rows[0].start_time });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "server error" });
+    console.error('startSession error', err);
+    res.status(500).json({ error: 'server error' });
   }
 };
 
-
 exports.stopSession = async (req, res) => {
   const { user_id } = req.body;
-
-  if (!user_id) return res.status(400).json({ error: "user_id required" });
+  if (!user_id) return res.status(400).json({ error: 'user_id requis' });
 
   try {
     const now = new Date();
-
-    const active = await db.query(
-      `SELECT id, start_time FROM session_agents 
-       WHERE user_id = $1 AND end_time IS NULL LIMIT 1`,
-      [user_id]
-    );
-
-    if (active.rowCount === 0) {
-      return res.json({ success: true, message: "no active session" });
-    }
-
-    const session = active.rows[0];
-
-    const startRaw = new Date(session.start_time);
-    const endRaw = now;
-
-    // clamp pour le calcul seulement
-    const workStart = new Date(startRaw);
-    const workEnd = new Date(endRaw);
-
-    const day = startRaw.toISOString().split("T")[0];
-
-    const clampStart = new Date(`${day}T09:10:00`);
-    const clampEnd = new Date(`${day}T18:00:00`);
-
-    const effectiveStart = startRaw < clampStart ? clampStart : startRaw;
-    const effectiveEnd = endRaw > clampEnd ? clampEnd : endRaw;
-
-    let duration = (effectiveEnd - effectiveStart) / 1000;
-    if (duration < 0) duration = 0;
-
-    // Update
     const result = await db.query(
       `UPDATE session_agents
-       SET end_time = $1, duration = $2
-       WHERE id = $3
+       SET end_time = $1
+       WHERE user_id = $2 AND end_time IS NULL
        RETURNING *`,
-      [endRaw.toISOString(), Math.floor(duration), session.id]
+      [now, user_id]
     );
 
-    res.json({ success: true, session: result.rows[0] });
+    if (result.rowCount === 0) {
+      return res.json({ success: true, message: 'no active session to stop' });
+    }
 
+    // ⚡ Émettre l'événement Socket.IO pour que l'admin voie le statut "Hors Ligne"
+    const io = getIo();
+    io.to("admins").emit("agent_status_changed", {
+      userId: user_id,
+      newStatus: "Hors Ligne"
+    });
+
+    res.json({ success: true, session: result.rows[0] });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "server error" });
+    console.error('stopSession error', err);
+    res.status(500).json({ error: 'server error' });
   }
 };
 
@@ -156,11 +119,10 @@ exports.closeSessionForce = async (userId, userSockets, adminId) => {
     if (check.rowCount > 0) {
       session = await db.query(
         `UPDATE session_agents
-   SET end_time = $2,
-       duration = EXTRACT(EPOCH FROM ($2 - start_time))::INT
-   WHERE id = $1
-   RETURNING id, start_time, end_time, duration`,
-        [check.rows[0].id, clampEndTime(new Date())] // ⚡ clamp
+         SET end_time = NOW(),
+         WHERE id = $1
+         RETURNING id, start_time, end_time`,
+        [check.rows[0].id]
       );
       session = session.rows[0];
 
@@ -217,6 +179,7 @@ exports.closeSessionForce = async (userId, userSockets, adminId) => {
     throw err;
   }
 };
+
 
 exports.heartbeat = async (req, res) => {
   const user_id = req.user?.id; // car tu utilises authenticateToken
@@ -319,17 +282,17 @@ exports.forcePauseByAdmin = async (req, res) => {
       });
     }
 
-    const now = clampEndTime(new Date());
+    const now = new Date();
 
     // Fermer la session actuelle (Disponible)
     await db.query(
       `UPDATE session_agents
        SET end_time = $1,
-           duration = EXTRACT(EPOCH FROM ($1 - start_time))
        WHERE id = $2`,
       [now, currentSession.id]
     );
 
+    console.log(`[BACK] 🔄 Création nouvelle session "Déjeuner" forcée pour ${userId}`);
     // Créer une nouvelle session "Déjeuner" forcée
     await db.query(
       `INSERT INTO session_agents (user_id, status, start_time, pause_type)
@@ -596,7 +559,17 @@ exports.exportSessionAgentsForRH = async (req, res) => {
       return res.status(400).json({ error: "startDate et endDate sont obligatoires" });
     }
 
-    const userFilter = userIds.length ? `AND sa.user_id = ANY($3)` : "";
+    // 🔹 Normaliser userIds en array d'entiers
+    let userIdsArray = [];
+    if (userIds) {
+      if (Array.isArray(userIds)) {
+        userIdsArray = userIds.map((id) => parseInt(id, 10));
+      } else {
+        userIdsArray = [parseInt(userIds, 10)];
+      }
+    }
+
+    const userFilter = userIdsArray.length ? `AND sa.user_id = ANY($3)` : "";
 
     const query = `
       WITH sessions AS (
@@ -666,7 +639,7 @@ exports.exportSessionAgentsForRH = async (req, res) => {
     `;
 
     const params = [startDate, endDate];
-    if (userIds.length) params.push(userIds);
+    if (userIdsArray.length) params.push(userIdsArray); // 🔹 toujours un array
 
     const { rows } = await db.query(query, params);
 
@@ -1110,7 +1083,6 @@ exports.splitSessionsAtMidnight = async () => {
         await db.query(`
           UPDATE session_agents
           SET end_time = (DATE_TRUNC('day', NOW()) - INTERVAL '1 second'),
-              duration = EXTRACT(EPOCH FROM ((DATE_TRUNC('day', NOW()) - INTERVAL '1 second') - start_time))
           WHERE user_id = $1 AND end_time IS NULL
         `, [user_id]);
 
@@ -1394,14 +1366,13 @@ exports.correctSession = async (req, res) => {
 
       await db.query(
         `INSERT INTO session_agents 
-            (user_id, status, start_time, end_time, duration, pause_type, created_at)
-         VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
+            (user_id, status, start_time, end_time, pause_type, created_at)
+         VALUES ($1, $2, $3, $4, $5, NOW())`,
         [
           userId,
           st,
           start,
           end,
-          seconds,
           pause_type
         ]
       );

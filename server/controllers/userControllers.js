@@ -242,7 +242,6 @@ const connectAgent = async (req, res) => {
     await db.query(`
       UPDATE session_agents 
       SET end_time = NOW(), 
-          duration = EXTRACT(EPOCH FROM (NOW() - start_time))::INT
       WHERE user_id = $1 AND end_time IS NULL
     `, [userId]);
 
@@ -279,7 +278,6 @@ const disconnectAgent = async (req, res) => {
     await db.query(
       `UPDATE session_agents
        SET end_time = NOW(),
-           duration = EXTRACT(EPOCH FROM (NOW() - start_time))
        WHERE user_id = $1 AND end_time IS NULL`,
       [userId]
     );
@@ -317,15 +315,14 @@ const disconnectAgentForce = async (req, res) => {
     const sessionResult = await db.query(
       `UPDATE session_agents
        SET end_time = NOW(),
-           duration = EXTRACT(EPOCH FROM (NOW() - start_time))
        WHERE user_id = $1 AND end_time IS NULL
-       RETURNING id, start_time, end_time, duration`,
+       RETURNING id, start_time, end_time`,
       [userId]
     );
 
     if (sessionResult.rows.length > 0) {
       const session = sessionResult.rows[0];
-      console.log(`✅ Session #${session.id} fermée → duration: ${session.duration}s`);
+      console.log(`✅ Session #${session.id} fermée → start: ${session.start_time}, end: ${session.end_time}`);
     } else {
       console.log(`ℹ️ Aucune session active à fermer pour userId: ${userId}`);
     }
