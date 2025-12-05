@@ -91,10 +91,10 @@ exports.stopSession = async (req, res) => {
     const day = startRaw.toISOString().split("T")[0];
 
     const clampStart = new Date(`${day}T09:10:00`);
-    const clampEnd   = new Date(`${day}T18:00:00`);
+    const clampEnd = new Date(`${day}T18:00:00`);
 
     const effectiveStart = startRaw < clampStart ? clampStart : startRaw;
-    const effectiveEnd   = endRaw > clampEnd ? clampEnd : endRaw;
+    const effectiveEnd = endRaw > clampEnd ? clampEnd : endRaw;
 
     let duration = (effectiveEnd - effectiveStart) / 1000;
     if (duration < 0) duration = 0;
@@ -584,6 +584,96 @@ exports.getSessionAgentsForRH = async (req, res) => {
   } catch (err) {
     console.error("Erreur getSessionAgentsForRH:", err);
     res.status(500).json({ error: "Erreur récupération sessions admin" });
+  }
+};
+
+
+exports.exportSessionAgentsForRH = async (req, res) => {
+  try {
+    const { startDate, endDate, userIds = [] } = req.query;
+
+    if (!startDate || !endDate) {
+      return res.status(400).json({ error: "startDate et endDate sont obligatoires" });
+    }
+
+    const userFilter = userIds.length ? `AND sa.user_id = ANY($3)` : "";
+
+    const query = `
+      WITH sessions AS (
+        SELECT
+          sa.user_id,
+          DATE(sa.start_time) AS session_date,
+          sa.status,
+          EXTRACT(EPOCH FROM (COALESCE(sa.end_time, NOW()) - sa.start_time))::INT AS duree_sec
+        FROM session_agents sa
+        WHERE DATE(sa.start_time) BETWEEN $1 AND $2
+        ${userFilter}
+      ),
+
+      mapped AS (
+        SELECT
+          user_id,
+          session_date,
+          CASE
+            WHEN status ILIKE ANY(ARRAY['Disponible','Réunion','Formation','Brief'])
+              THEN 'travail'
+            WHEN status ILIKE ANY(ARRAY['Déjeuner','Pausette 1','Pausette 2'])
+              THEN 'pause'
+            ELSE 'autre'
+          END AS category,
+          duree_sec
+        FROM sessions
+      ),
+
+      cumuls AS (
+        SELECT
+          user_id,
+          session_date,
+          SUM(CASE WHEN category='travail' THEN duree_sec ELSE 0 END) AS travail,
+          SUM(CASE WHEN category='pause' THEN duree_sec ELSE 0 END) AS pauses
+        FROM mapped
+        GROUP BY user_id, session_date
+      ),
+
+      connexions AS (
+        SELECT
+          user_id,
+          DATE(event_time) AS session_date,
+          MIN(event_time) FILTER (WHERE event_type='connect') AS first_connection,
+          MAX(event_time) FILTER (
+              WHERE event_type IN ('disconnect','disconnectByAdmin','auto_disconnect')
+          ) AS last_disconnection
+        FROM agent_connections_history
+        WHERE DATE(event_time) BETWEEN $1 AND $2
+        GROUP BY user_id, DATE(event_time)
+      )
+
+      SELECT 
+        u.id AS user_id,
+        u.firstname,
+        u.lastname,
+        c.session_date,
+        cx.first_connection AS start_time,
+        cx.last_disconnection AS end_time,
+        c.travail,
+        c.pauses
+      FROM cumuls c
+      JOIN connexions cx
+        ON cx.user_id = c.user_id
+       AND cx.session_date = c.session_date
+      JOIN users u ON u.id = c.user_id
+      ORDER BY u.lastname, u.firstname, c.session_date;
+    `;
+
+    const params = [startDate, endDate];
+    if (userIds.length) params.push(userIds);
+
+    const { rows } = await db.query(query, params);
+
+    res.json(rows);
+  } catch (err) {
+    console.error("Erreur exportSessionAgentsForRH:", err);
+    res.status(500).json({ error: "Erreur export sessions" });
   }
 };
 
@@ -1246,7 +1336,7 @@ exports.getAllHistorySessions = async (req, res) => {
 };
 
 // controllers/sessionControllers.js
-exports.correctSession = async (req, res) => { 
+exports.correctSession = async (req, res) => {
   try {
     const { userId, sessionDate, updates } = req.body;
 

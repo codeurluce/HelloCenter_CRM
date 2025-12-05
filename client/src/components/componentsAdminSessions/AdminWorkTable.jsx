@@ -2,33 +2,13 @@ import React, { useEffect, useState, useMemo } from "react";
 import dayjs from "dayjs";
 import axiosInstance from "../../api/axiosInstance";
 import CorrectionModal from "./CorrectionModal";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Upload } from "lucide-react";
+import ExportAdminWorkTable from "./ExportAdminWorkTable";
 
 // Convertir secondes en heures décimales
 const secondsToDecimal = (seconds) => {
     if (!seconds || seconds <= 0) return 0;
     return +(seconds / 3600).toFixed(2);
-};
-
-// Badge couleur selon seuil 7h30 (7.5h)
-const WorkBadge = ({ travailSeconds }) => {
-    const seuil = 7.5 * 3600;
-    let color = "bg-green-100 text-green-700 border-green-300";
-    let label = "Normal";
-
-    if (travailSeconds > seuil + 60) {
-        color = "bg-red-100 text-red-700 border-red-300";
-        label = "Incohérence (+)";
-    } else if (travailSeconds < seuil - 300) {
-        color = "bg-yellow-100 text-yellow-700 border-yellow-300";
-        label = "Manque (-)";
-    }
-
-    return (
-        <span className={`px-2 py-1 rounded border text-xs font-semibold ${color}`}>
-            {label}
-        </span>
-    );
 };
 
 export default function AdminWorkTable() {
@@ -40,6 +20,7 @@ export default function AdminWorkTable() {
     const [sortConfig, setSortConfig] = useState({ key: "session_date", direction: "desc" });
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedRow, setSelectedRow] = useState(null);
+    const [exportModalOpen, setExportModalOpen] = useState(false);
 
     const today = dayjs().format("YYYY-MM-DD");
     const firstDay = dayjs().startOf("month").format("YYYY-MM-DD");
@@ -78,34 +59,34 @@ export default function AdminWorkTable() {
         setSortConfig({ key, direction });
     };
 
-const processedData = useMemo(() => {
-    let filtered = [...data];
+    const processedData = useMemo(() => {
+        let filtered = [...data];
 
-    // Recherche live sur agent
-    if (searchAgent.trim()) {
-        filtered = filtered.filter((d) =>
-            `${d.firstname} ${d.lastname}`.toLowerCase().includes(searchAgent.toLowerCase())
-        );
-    }
+        // Recherche live sur agent
+        if (searchAgent.trim()) {
+            filtered = filtered.filter((d) =>
+                `${d.firstname} ${d.lastname}`.toLowerCase().includes(searchAgent.toLowerCase())
+            );
+        }
 
-    // 🔥 Trier d'abord par date ASC pour le calcul du cumul
-    const cumulMap = {};
-    const cumulData = [...filtered]
-        .sort((a, b) => dayjs(a.session_date).isAfter(dayjs(b.session_date)) ? 1 : -1)
-        .map(d => {
-            const key = `${d.firstname} ${d.lastname}`;
-            const travailHeures = secondsToDecimal(d.travail);
+        // 🔥 Trier d'abord par date ASC pour le calcul du cumul
+        const cumulMap = {};
+        const cumulData = [...filtered]
+            .sort((a, b) => dayjs(a.session_date).isAfter(dayjs(b.session_date)) ? 1 : -1)
+            .map(d => {
+                const key = `${d.firstname} ${d.lastname}`;
+                const travailHeures = secondsToDecimal(d.travail);
 
-            if (!cumulMap[key]) cumulMap[key] = 0;
-            cumulMap[key] += travailHeures;
+                if (!cumulMap[key]) cumulMap[key] = 0;
+                cumulMap[key] += travailHeures;
 
-            return { ...d, cumul: cumulMap[key] };
-        });
+                return { ...d, cumul: cumulMap[key] };
+            });
 
-    // 🔥 Ensuite, appliquer l'ordre d'affichage (asc/desc)
-    return sortConfig.direction === "asc" ? cumulData : [...cumulData].reverse();
+        // 🔥 Ensuite, appliquer l'ordre d'affichage (asc/desc)
+        return sortConfig.direction === "asc" ? cumulData : [...cumulData].reverse();
 
-}, [data, searchAgent, sortConfig]);
+    }, [data, searchAgent, sortConfig]);
 
 
     return (
@@ -162,6 +143,12 @@ const processedData = useMemo(() => {
                 >
                     <RefreshCw size={16} /> Rafraîchir
                 </button>
+                <button
+                    onClick={() => setExportModalOpen(true)}
+                    className="flex items-center bg-green-600 hover:bg-green-700 text-white px-4 py-2 gap-2 rounded-lg transition-colors font-medium shadow-sm"
+                >
+                    <Upload size={16} /> Exporter
+                </button>
             </div>
 
             {/* Tableau */}
@@ -178,7 +165,6 @@ const processedData = useMemo(() => {
                             <th className="p-2 border cursor-pointer" onClick={() => requestSort("travail")}>Travail (h)</th>
                             <th className="p-2 border cursor-pointer" onClick={() => requestSort("pauses")}>Pauses (h)</th>
                             <th className="p-2 border cursor-pointer" onClick={() => requestSort("cumul")}>Cumul (h)</th>
-                            <th className="p-2 border">Badge</th>
                             <th className="p-2 border">Action</th>
                         </tr>
                     </thead>
@@ -202,8 +188,8 @@ const processedData = useMemo(() => {
                             </tr>
                         ) : (
 
-                            processedData.map((row) => (
-                                <tr key={row.id} className="hover:bg-gray-50">
+                            processedData.map((row, index) => (
+                                <tr key={row.id ?? `${row.user_id}-${index}`} className="hover:bg-gray-50">
                                     <td className="p-2 border">{String(row.session_date).split("T")[0]}</td>
                                     <td className="p-2 border font-semibold">{row.lastname} {row.firstname}</td>
                                     <td className="p-2 border font-mono">{row.start_time ? dayjs(row.start_time).format("YYYY-MM-DD HH:mm:ss") : "--"}</td>
@@ -211,7 +197,6 @@ const processedData = useMemo(() => {
                                     <td className="p-2 border font-mono">{secondsToDecimal(row.travail)}</td>
                                     <td className="p-2 border font-mono">{secondsToDecimal(row.pauses)}</td>
                                     <td className="p-2 border font-mono">{row.cumul.toFixed(2)}</td>
-                                    <td className="p-2 border"><WorkBadge travailSeconds={row.travail} /></td>
                                     <td className="p-2 border text-center">
                                         <button
                                             className="bg-orange-500 text-white px-3 py-1 rounded hover:bg-orange-600 text-xs"
@@ -235,6 +220,12 @@ const processedData = useMemo(() => {
                 onClose={() => setModalOpen(false)}
                 row={selectedRow}
                 onSaved={fetchData}
+            />
+            <ExportAdminWorkTable
+                isOpen={exportModalOpen}
+                onClose={() => setExportModalOpen(false)}
+                sessions={data}        // ici tu passes les sessions déjà chargées
+                agents={Array.from(new Map(data.map(d => [d.user_id, { id: d.user_id, name: `${d.firstname} ${d.lastname}` }])).values())} // déduplique les agents
             />
         </div>
     );

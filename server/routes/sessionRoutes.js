@@ -3,7 +3,7 @@ const express = require('express');
 const router = express.Router();
 
 const sessionControllers = require('../controllers/sessionControllers');
-const { verifyToken } = require ('../controllers/userControllers');
+const { verifyToken } = require('../controllers/userControllers');
 
 
 // Routes GET : récupération des données
@@ -12,16 +12,17 @@ router.get('/', sessionControllers.getSessions); // 📌 Récupère toutes les s
 router.get('/check', sessionControllers.checkSessionActive);  // 📌 Vérifie si une session est active // Méthode : GET /api/sessions/check
 router.get('/last-status/:userId', sessionControllers.getLastAgentStatus); // 📌 Récupère le dernier statut d’un agent par son userId (utile pour restauration après reconnexion) // Méthode : GET /api/sessions/last-status/:userId
 router.get('/user/live', sessionControllers.getLiveSessionAgents); // 📌 Récupère toutes les sessions en ligne des agents actifs // Méthode : GET /api/sessions/user/live
-router.get('/agents-session-rh', sessionControllers.getSessionAgentsForRH);
+router.get('/agents-session-rh', sessionControllers.getSessionAgentsForRH); // 📌 Récupère les sessions des agents pour le RH // Méthode : GET /api/sessions/agents-session-rh
+router.get('/export-session-rh', sessionControllers.exportSessionAgentsForRH); // 📌 Exporte les sessions des agents pour le RH // Méthode : GET /api/sessions/export-session-rh
 router.get('/user/live/:userId', sessionControllers.getSessionAgent); // 📌 Récupère la session active d’un agent spécifique par userId // Méthode : GET /api/sessions/user/live/:userId
 router.get('/user/agent-connection-details', sessionControllers.getDailyConnectionTimes); // 📌 Récupère le détail des connexions journalières des agents // Méthode : GET /api/sessions/user/agent_connection_details
 router.get('/user/:id/status-today', sessionControllers.getUserStatusToday); // 📌 Récupère le statut et présence totale d’un utilisateur pour la journée en cours // Méthode : GET /api/sessions/user/:id/status-today
-router.get('/user/:id/all-history', sessionControllers.getAllHistorySessions)
-router.get('/monthly', verifyToken, sessionControllers.getMonthlySessions);
-router.get('/monthly-filtre', verifyToken, sessionControllers.getMonthlySessionsFiltre);
-router.patch('/correct-session', sessionControllers.correctSession);
-router.get('/for-correct', sessionControllers.getSessionforCorrect);
-router.get("/agent-session-details/:userId/:date", sessionControllers.getSessionDetailsForCorrection);
+router.get('/user/:id/all-history', sessionControllers.getAllHistorySessions) // 📌 Récupère tout l’historique des sessions d’un utilisateur donné // Méthode : GET /api/sessions/user/:id/all-history
+router.get('/monthly', verifyToken, sessionControllers.getMonthlySessions); // 📌 Récupère les sessions du mois en cours pour tous les agents (filtrage et pagination possibles) // Méthode : GET /api/sessions/monthly
+router.get('/monthly-filtre', verifyToken, sessionControllers.getMonthlySessionsFiltre); // 📌 Récupère les sessions du mois en cours pour tous les agents avec filtres avancés // Méthode : GET /api/sessions/monthly-filtre
+router.patch('/correct-session', sessionControllers.correctSession); // 📌 Corrige une session existante avec de nouvelles durées pour chaque statut // Méthode : PATCH /api/sessions/correct-session
+router.get('/for-correct', sessionControllers.getSessionforCorrect);  // 📌 Récupère les sessions pouvant être corrigées par l’admin (avec info si déjà corrigée) // Méthode : GET /api/sessions/for-correct
+router.get("/agent-session-details/:userId/:date", sessionControllers.getSessionDetailsForCorrection); // 📌 Récupère les détails d’une session agent pour correction par l’admin (statuts et durées en secondes) // Méthode : GET /api/sessions/agent-session-details/:userId/:date
 
 // Route POST : création de données
 
@@ -37,7 +38,7 @@ router.post('/close-force', async (req, res) => {
       return res.status(400).json({ message: "❌ user_id est requis" });
     }
 
-const sessionResult = await db.query(
+    const sessionResult = await db.query(
       `UPDATE session_agents
        SET end_time = NOW(),
            duration = EXTRACT(EPOCH FROM (NOW() - start_time))
@@ -55,9 +56,9 @@ const sessionResult = await db.query(
       "INSERT INTO agent_connections_history (user_id, event_type) VALUES ($1, 'disconnect_force')",
       [user_id]
     );
-        res.json({ 
-      message: "✅ Session fermée avec succès", 
-      session: sessionResult.rows[0] 
+    res.json({
+      message: "✅ Session fermée avec succès",
+      session: sessionResult.rows[0]
     });
 
   } catch (err) {

@@ -102,8 +102,11 @@ export default function NotificationsFinContrat() {
 
             {/* Modal notification */}
             {showModal && selectedNotif && (
-                <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-xl shadow-xl w-[400px] p-6 relative animate-fadeIn">
+                <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
+                     onClick={() => setShowModal(false)}
+                    >
+                    <div className="bg-white rounded-xl shadow-xl w-[400px] p-6 relative animate-fadeIn"
+                         onClick={(e) => e.stopPropagation()}>
                         <button
                             onClick={() => setShowModal(false)}
                             className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
