@@ -49,30 +49,33 @@ export default function AgentWorkSummary({ userId }) {
         return isoString.split("T")[0];
     };
 
+
+    const fetchSessions = async () => {
+        setLoading(true);
+        try {
+            const { data } = await axiosInstance.get("/session_agents/monthly", {
+                params: { userId },
+            });
+
+            // data est un array d'objets contenant :
+            // session_date, dispo, pauses, indispo, travail, presence, cumul_travail (secs)
+            setAutoHistory(data);
+
+            // Trouver aujourd'hui dans les données
+            const today = data.find(h => dayjs(h.session_date).isSame(dayjs(), "day"));
+            setTodayWork(today ? Number(today.travail) : 0);
+
+            // Calcul cumul du mois (total seconds)
+            const cumul = data.reduce((acc, d) => acc + (Number(d.travail) || 0), 0);
+            setMonthWork(cumul);
+
+        } catch (err) {
+            console.error("Erreur récupération sessions :", err);
+        } finally {
+            setLoading(false);
+        }
+    };
     useEffect(() => {
-        const fetchSessions = async () => {
-            try {
-                const { data } = await axiosInstance.get("/session_agents/monthly", {
-                    params: { userId },
-                });
-
-                // data est un array d'objets contenant :
-                // session_date, dispo, pauses, indispo, travail, presence, cumul_travail (secs)
-                setAutoHistory(data);
-
-                // Trouver aujourd'hui dans les données
-                const today = data.find(h => dayjs(h.session_date).isSame(dayjs(), "day"));
-                setTodayWork(today ? Number(today.travail) : 0);
-
-                // Calcul cumul du mois (total seconds)
-                const cumul = data.reduce((acc, d) => acc + (Number(d.travail) || 0), 0);
-                setMonthWork(cumul);
-
-            } catch (err) {
-                console.error("Erreur récupération sessions :", err);
-            }
-        };
-
         fetchSessions();
     }, [userId]);
 
@@ -122,6 +125,14 @@ export default function AgentWorkSummary({ userId }) {
             <h2 className="text-lg font-semibold mb-4 text-center">
                 📅 Heures de travail – Aujourd’hui / Mois / Historique / Filtres
             </h2>
+
+            <button
+                onClick={fetchSessions}
+                className="flex ml-auto mb-4 items-center gap-2 py-2 px-4 rounded-md border border-blue-500 text-blue-600 hover:bg-blue-100 transition"
+            >
+                <RefreshCw size={16} /> Rafraîchir
+            </button>
+
 
             {/* Résumé */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
@@ -209,12 +220,14 @@ export default function AgentWorkSummary({ userId }) {
                 >
                     Réinitialiser
                 </button>
-                <button
-                    onClick={fetchHistorique}
-                    className="flex ml-auto items-center gap-2 py-2 px-4 rounded-md border border-blue-500 text-blue-600 hover:bg-blue-100 transition"
-                >
-                    <RefreshCw size={16} /> Rafraîchir
-                </button>
+                {historique.length > 0 && (
+                    <button
+                        onClick={fetchHistorique}
+                        className="flex ml-auto items-center gap-2 py-2 px-4 rounded-md border border-blue-500 text-blue-600 hover:bg-blue-100 transition"
+                    >
+                        <RefreshCw size={16} /> Rafraîchir
+                    </button>
+                )}
             </div>
 
             {/* Tableau filtré */}
