@@ -241,7 +241,7 @@ const connectAgent = async (req, res) => {
     // 🔒 Fermer toute session orpheline
     await db.query(`
       UPDATE session_agents 
-      SET end_time = NOW(), 
+      SET end_time = NOW()
       WHERE user_id = $1 AND end_time IS NULL
     `, [userId]);
 
@@ -277,7 +277,7 @@ const disconnectAgent = async (req, res) => {
     // Fermer la session active
     await db.query(
       `UPDATE session_agents
-       SET end_time = NOW(),
+       SET end_time = NOW()
        WHERE user_id = $1 AND end_time IS NULL`,
       [userId]
     );

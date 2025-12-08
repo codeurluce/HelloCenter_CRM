@@ -10,22 +10,20 @@ exports.startSession = async (req, res) => {
   if (!user_id) return res.status(400).json({ error: 'user_id requis' });
 
   try {
-    // Si session active existante -> retourne son id (idempotence)
-    const active = await db.query(
-      `SELECT id FROM session_agents WHERE user_id = $1 AND end_time IS NULL LIMIT 1`,
-      [user_id]
+    const now = new Date();
+
+    // ⚡ Démarrer une transaction pour éviter les doublons en cas de requêtes concurrentes
+    await db.query('BEGIN');
+
+    // 1️⃣ Fermer toute session active existante pour cet utilisateur
+    await db.query(
+      `UPDATE session_agents
+       SET end_time = $1
+       WHERE user_id = $2 AND end_time IS NULL`,
+      [now, user_id]
     );
-    if (active.rowCount > 0) {
-      // ⚡ Émettre l'événement Socket.IO pour que l'admin voit le statut
-      const io = getIo();
-      io.to("admins").emit("agent_status_changed", {
-        userId: user_id,
-        newStatus: status
-      });
 
-      return res.json({ success: true, session_id: active.rows[0].id, reused: true });
-    }
-
+    // 2️⃣ Créer la nouvelle session
     const result = await db.query(
       `INSERT INTO session_agents (user_id, status, start_time, last_ping)
        VALUES ($1, $2, NOW(), NOW())
@@ -33,19 +31,29 @@ exports.startSession = async (req, res) => {
       [user_id, status]
     );
 
-    // ⚡ Émettre l'événement Socket.IO pour que l'admin voie le statut
+    // Commit de la transaction
+    await db.query('COMMIT');
+
+    // 3️⃣ Notifier l'admin via Socket.IO
     const io = getIo();
     io.to("admins").emit("agent_status_changed", {
       userId: user_id,
       newStatus: status
     });
 
-    res.json({ success: true, session_id: result.rows[0].id, start_time: result.rows[0].start_time });
+    res.json({
+      success: true,
+      session_id: result.rows[0].id,
+      start_time: result.rows[0].start_time
+    });
   } catch (err) {
+    // Rollback en cas d'erreur
+    await db.query('ROLLBACK');
     console.error('startSession error', err);
     res.status(500).json({ error: 'server error' });
   }
 };
+
 
 exports.stopSession = async (req, res) => {
   const { user_id } = req.body;
@@ -329,12 +337,14 @@ exports.getLiveSessionAgents = async (req, res) => {
   try {
     const query = `
       WITH sessions_today AS (
-        SELECT user_id, status, start_time, COALESCE(end_time, NOW()) AS end_time
+        SELECT user_id, status, start_time,
+               COALESCE(end_time, NOW()) AS end_time
         FROM session_agents
         WHERE DATE(start_time) = CURRENT_DATE
       ),
       cumuls AS (
-        SELECT user_id, status, SUM(EXTRACT(EPOCH FROM (end_time - start_time)))::INT AS sec
+        SELECT user_id, status,
+               SUM(EXTRACT(EPOCH FROM (end_time - start_time))::INT) AS sec
         FROM sessions_today
         GROUP BY user_id, status
       ),
@@ -396,18 +406,15 @@ exports.getSessionAgent = async (req, res) => {
   try {
     const query = `
       WITH sessions_today AS (
-        SELECT user_id, status, start_time, COALESCE(end_time, NOW()) AS end_time
+        SELECT user_id, status, start_time, end_time
         FROM session_agents
         WHERE DATE(start_time) = CURRENT_DATE
           AND user_id = $1
+          AND end_time IS NOT NULL  -- Exclure sessions actives
       ),
-      -- ✅ Exclure les sessions actives (end_time IS NULL) du cumul
       cumuls AS (
-        SELECT user_id, status, SUM(EXTRACT(EPOCH FROM (end_time - start_time)))::INT AS sec
-        FROM session_agents
-        WHERE DATE(start_time) = CURRENT_DATE
-          AND user_id = $1
-          AND end_time IS NOT NULL  -- ← SEULE MODIFICATION
+        SELECT user_id, status, SUM(EXTRACT(EPOCH FROM (end_time - start_time))::INT) AS sec
+        FROM sessions_today
         GROUP BY user_id, status
       ),
       cumul_total AS (
@@ -451,10 +458,11 @@ exports.getSessionAgent = async (req, res) => {
     const result = await db.query(query, [userId]);
     res.json(result.rows[0] || null);
   } catch (err) {
-    console.error("Erreur getLiveSessionAgent:", err);
+    console.error("Erreur getSessionAgent:", err);
     res.status(500).json({ error: "Erreur récupération session live" });
   }
 };
+
 
 // GET /api/sessions/admin - Récupérer les sessions des agents pour l'admin avec filtres
 exports.getSessionAgentsForRH = async (req, res) => {
@@ -474,9 +482,10 @@ exports.getSessionAgentsForRH = async (req, res) => {
           sa.user_id,
           DATE(sa.start_time) AS session_date,
           sa.status,
-          EXTRACT(EPOCH FROM (COALESCE(sa.end_time, NOW()) - sa.start_time))::INT AS duree_sec
+          COALESCE(sa.duration, 0) AS duree_sec
         FROM session_agents sa
         WHERE DATE(sa.start_time) BETWEEN $1 AND $2
+        AND sa.end_time IS NOT NULL
         ${userFilter}
       ),
 
@@ -550,7 +559,6 @@ exports.getSessionAgentsForRH = async (req, res) => {
   }
 };
 
-
 exports.exportSessionAgentsForRH = async (req, res) => {
   try {
     const { startDate, endDate, userIds = [] } = req.query;
@@ -577,9 +585,10 @@ exports.exportSessionAgentsForRH = async (req, res) => {
           sa.user_id,
           DATE(sa.start_time) AS session_date,
           sa.status,
-          EXTRACT(EPOCH FROM (COALESCE(sa.end_time, NOW()) - sa.start_time))::INT AS duree_sec
+          COALESCE(sa.duration, 0) AS duree_sec
         FROM session_agents sa
         WHERE DATE(sa.start_time) BETWEEN $1 AND $2
+        AND sa.end_time IS NOT NULL
         ${userFilter}
       ),
 
@@ -692,9 +701,10 @@ exports.exportSessions = async (req, res) => {
           DATE(sa.start_time) AS session_date,
           sa.start_time,
           COALESCE(sa.end_time, NOW()) AS end_time,
-          EXTRACT(EPOCH FROM (COALESCE(sa.end_time, NOW()) - sa.start_time))::INT AS duree_sec
+          COALESCE(sa.duration, 0) AS duree_sec
         FROM session_agents sa
         WHERE DATE(sa.start_time) BETWEEN $1 AND $2
+        AND sa.end_time IS NOT NULL
         ${userFilter}
       ),
       cumuls AS (
@@ -775,93 +785,93 @@ ORDER BY u.lastname, u.firstname, session_date;
 
 
 // controllers/sessionAgentsController.js l'export pour un agent
-exports.exportSessionsAgent = async (req, res) => {
-  console.log("🔥 Requête reçue sur /export-sessions-agent");
-  console.log("Body:", req.body);
-  console.log("User:", req.user);
-  try {
-    const { startDate, endDate } = req.body;
-    const userId = req.user?.id || req.body.userId; // selon ton système d’auth
+// exports.exportSessionsAgent = async (req, res) => {
+//   console.log("🔥 Requête reçue sur /export-sessions-agent");
+//   console.log("Body:", req.body);
+//   console.log("User:", req.user);
+//   try {
+//     const { startDate, endDate } = req.body;
+//     const userId = req.user?.id || req.body.userId; // selon ton système d’auth
 
-    if (!userId) {
-      console.log("❌ User ID manquant");
-      return res.status(400).json({ error: "Utilisateur non identifié" });
-    }
-    if (!startDate || !endDate) {
-      console.log("❌ Dates manquantes");
-      return res.status(400).json({ error: "startDate et endDate sont obligatoires" });
-    }
-    console.log("✅ Paramètres OK:", { userId, startDate, endDate });
-    const query = `
-      WITH sessions AS (
-        SELECT 
-          sa.user_id,
-          sa.status,
-          DATE(sa.start_time) AS session_date,
-          sa.start_time,
-          COALESCE(sa.end_time, NOW()) AS end_time,
-          EXTRACT(EPOCH FROM (COALESCE(sa.end_time, NOW()) - sa.start_time))::INT AS duree_sec
-        FROM session_agents sa
-        WHERE DATE(sa.start_time) BETWEEN $1 AND $2
-          AND sa.user_id = $3
-      ),
-      cumuls AS (
-        SELECT user_id, session_date, status, SUM(duree_sec)::INT AS sec
-        FROM sessions
-        GROUP BY user_id, session_date, status
-      ),
-      cumul_total AS (
-        SELECT user_id, session_date, SUM(sec)::INT AS presence_totale_sec
-        FROM cumuls
-        GROUP BY user_id, session_date
-      ),
-      cumul_json AS (
-        SELECT user_id, session_date, json_object_agg(status, sec) AS cumul_statuts
-        FROM cumuls
-        GROUP BY user_id, session_date
-      ),
-      connections AS (
-        SELECT 
-          ach.user_id,
-          DATE(ach.event_time) AS session_date,
-          MIN(ach.event_time) FILTER (WHERE event_type = 'connect') AS first_connection,
-          MAX(ach.event_time) FILTER (WHERE event_type = 'disconnect') AS last_disconnection
-        FROM agent_connections_history ach
-        WHERE DATE(ach.event_time) BETWEEN $1 AND $2
-          AND ach.user_id = $3
-        GROUP BY ach.user_id, DATE(ach.event_time)
-      )
-      SELECT 
-        u.id AS user_id,
-        u.firstname,
-        u.lastname,
-        COALESCE(ct.presence_totale_sec, 0) AS presence_totale_sec,
-        COALESCE(cj.cumul_statuts, '{}'::json) AS cumul_statuts,
-        co.first_connection,
-        co.last_disconnection,
-        COALESCE(ct.session_date, cj.session_date, co.session_date) AS session_date
-      FROM users u
-      LEFT JOIN cumul_total ct ON ct.user_id = u.id
-      LEFT JOIN cumul_json cj ON cj.user_id = u.id AND cj.session_date = ct.session_date
-      LEFT JOIN connections co ON co.user_id = u.id AND co.session_date = ct.session_date
-      WHERE u.id = $3
-        AND (
-          (ct.session_date BETWEEN $1 AND $2)
-          OR (cj.session_date BETWEEN $1 AND $2)
-          OR (co.session_date BETWEEN $1 AND $2)
-        )
-      ORDER BY session_date;
-    `;
+//     if (!userId) {
+//       console.log("❌ User ID manquant");
+//       return res.status(400).json({ error: "Utilisateur non identifié" });
+//     }
+//     if (!startDate || !endDate) {
+//       console.log("❌ Dates manquantes");
+//       return res.status(400).json({ error: "startDate et endDate sont obligatoires" });
+//     }
+//     console.log("✅ Paramètres OK:", { userId, startDate, endDate });
+//     const query = `
+//       WITH sessions AS (
+//         SELECT 
+//           sa.user_id,
+//           sa.status,
+//           DATE(sa.start_time) AS session_date,
+//           sa.start_time,
+//           COALESCE(sa.end_time, NOW()) AS end_time,
+//           COALESCE(sa.duration, 0) AS duree_sec
+//         FROM session_agents sa
+//         WHERE DATE(sa.start_time) BETWEEN $1 AND $2
+//           AND sa.user_id = $3
+//       ),
+//       cumuls AS (
+//         SELECT user_id, session_date, status, SUM(duree_sec)::INT AS sec
+//         FROM sessions
+//         GROUP BY user_id, session_date, status
+//       ),
+//       cumul_total AS (
+//         SELECT user_id, session_date, SUM(sec)::INT AS presence_totale_sec
+//         FROM cumuls
+//         GROUP BY user_id, session_date
+//       ),
+//       cumul_json AS (
+//         SELECT user_id, session_date, json_object_agg(status, sec) AS cumul_statuts
+//         FROM cumuls
+//         GROUP BY user_id, session_date
+//       ),
+//       connections AS (
+//         SELECT 
+//           ach.user_id,
+//           DATE(ach.event_time) AS session_date,
+//           MIN(ach.event_time) FILTER (WHERE event_type = 'connect') AS first_connection,
+//           MAX(ach.event_time) FILTER (WHERE event_type = 'disconnect') AS last_disconnection
+//         FROM agent_connections_history ach
+//         WHERE DATE(ach.event_time) BETWEEN $1 AND $2
+//           AND ach.user_id = $3
+//         GROUP BY ach.user_id, DATE(ach.event_time)
+//       )
+//       SELECT 
+//         u.id AS user_id,
+//         u.firstname,
+//         u.lastname,
+//         COALESCE(ct.presence_totale_sec, 0) AS presence_totale_sec,
+//         COALESCE(cj.cumul_statuts, '{}'::json) AS cumul_statuts,
+//         co.first_connection,
+//         co.last_disconnection,
+//         COALESCE(ct.session_date, cj.session_date, co.session_date) AS session_date
+//       FROM users u
+//       LEFT JOIN cumul_total ct ON ct.user_id = u.id
+//       LEFT JOIN cumul_json cj ON cj.user_id = u.id AND cj.session_date = ct.session_date
+//       LEFT JOIN connections co ON co.user_id = u.id AND co.session_date = ct.session_date
+//       WHERE u.id = $3
+//         AND (
+//           (ct.session_date BETWEEN $1 AND $2)
+//           OR (cj.session_date BETWEEN $1 AND $2)
+//           OR (co.session_date BETWEEN $1 AND $2)
+//         )
+//       ORDER BY session_date;
+//     `;
 
-    const params = [startDate, endDate, userId];
-    const { rows } = await db.query(query, params);
-    res.json(rows);
+//     const params = [startDate, endDate, userId];
+//     const { rows } = await db.query(query, params);
+//     res.json(rows);
 
-  } catch (err) {
-    console.error("Erreur exportAgentSessions:", err);
-    res.status(500).json({ error: "Erreur export agent sessions" });
-  }
-}; // a supprimer 
+//   } catch (err) {
+//     console.error("Erreur exportAgentSessions:", err);
+//     res.status(500).json({ error: "Erreur export agent sessions" });
+//   }
+// }; // a supprimer 
 
 
 exports.getMonthlySessions = async (req, res) => {
@@ -885,10 +895,11 @@ exports.getMonthlySessions = async (req, res) => {
           sa.user_id,
           sa.status,
           DATE(sa.start_time) AS session_date,
-          EXTRACT(EPOCH FROM (COALESCE(sa.end_time, NOW()) - sa.start_time))::INT AS duree_sec
+          COALESCE(sa.duration, 0) AS duree_sec
         FROM session_agents sa
         WHERE sa.user_id = $1
           AND DATE(sa.start_time) BETWEEN $2 AND $3
+          AND sa.end_time IS NOT NULL
       ),
 
       mapped AS (
@@ -968,10 +979,11 @@ exports.getMonthlySessionsFiltre = async (req, res) => {
           sa.user_id,
           sa.status,
           DATE(sa.start_time) AS session_date,
-          EXTRACT(EPOCH FROM (COALESCE(sa.end_time, NOW()) - sa.start_time))::INT AS duree_sec
+          COALESCE(sa.duration, 0) AS duree_sec
         FROM session_agents sa
         WHERE sa.user_id = $1
           AND DATE(sa.start_time) BETWEEN $2 AND $3
+          AND sa.end_time IS NOT NULL
       ),
 
       mapped AS (
