@@ -22,7 +22,7 @@ router.get('/monthly', verifyToken, sessionControllers.getMonthlySessions); // �
 router.get('/monthly-filtre', verifyToken, sessionControllers.getMonthlySessionsFiltre); // 📌 Récupère les sessions du mois en cours pour tous les agents avec filtres avancés // Méthode : GET /api/sessions/monthly-filtre
 router.patch('/correct-session', sessionControllers.correctSession); // 📌 Corrige une session existante avec de nouvelles durées pour chaque statut // Méthode : PATCH /api/sessions/correct-session
 router.get('/for-correct', sessionControllers.getSessionforCorrect);  // 📌 Récupère les sessions pouvant être corrigées par l’admin (avec info si déjà corrigée) // Méthode : GET /api/sessions/for-correct
-router.get("/agent-session-details/:userId/:date", sessionControllers.getSessionDetailsForCorrection); // 📌 Récupère les détails d’une session agent pour correction par l’admin (statuts et durées en secondes) // Méthode : GET /api/sessions/agent-session-details/:userId/:date
+router.get("/agent-session-details/:userId/:date", sessionControllers.getSessionDetailsOptimized); // 📌 Récupère les détails d’une session agent pour correction par l’admin (statuts et durées en secondes) // Méthode : GET /api/sessions/agent-session-details/:userId/:date
 
 // Route POST : création de données
 

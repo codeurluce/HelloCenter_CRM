@@ -1,16 +1,29 @@
 import React, { useEffect, useState, useMemo } from "react";
 import dayjs from "dayjs";
 import axiosInstance from "../../api/axiosInstance";
-import CorrectionModal from "./CorrectionModal";
+import CorrectionModal from "./AdminWorkTableDetailsModal";
 import CleanShiftModal from "./CleanShiftModal";
 import Swal from "sweetalert2";
-import { RefreshCw, Upload } from "lucide-react";
-import ExportAdminWorkTable from "./ExportAdminWorkTable";
+import { Eye, RefreshCw, Upload, Wrench } from "lucide-react";
+import AdminWorkTableDetailsModal from "./AdminWorkTableDetailsModal";
 
 // Convertir secondes en heures décimales
 const secondsToDecimal = (seconds) => {
     if (!seconds || seconds <= 0) return 0;
     return +(seconds / 3600).toFixed(2);
+};
+
+const PauseBadge = ({ hours }) => {
+  const colorClass = hours < 1.5 ? "bg-green-500" : "bg-red-500";
+  return (
+    <div className="flex items-center gap-2 justify-center">
+      <span>{hours}</span>
+      <span
+        className={`w-3 h-3 rounded-full inline-block ${colorClass}`}
+        title={`Pause : ${hours} h`}
+      ></span>
+    </div>
+  );
 };
 
 export default function AdminWorkTable() {
@@ -203,61 +216,74 @@ export default function AdminWorkTable() {
                                     <td className="p-2 border font-mono">{row.status_first_start ? dayjs(row.status_first_start).format("YYYY-MM-DD HH:mm:ss") : "--"}</td>
                                     <td className="p-2 border font-mono">{row.status_last_end ? dayjs(row.status_last_end).format("YYYY-MM-DD HH:mm:ss") : "--"}</td>
                                     <td className="p-2 border font-mono">{secondsToDecimal(row.travail)}</td>
-                                    <td className="p-2 border font-mono">{secondsToDecimal(row.pauses)}</td>
+                                    <td className="p-2 border font-mono"><PauseBadge hours={secondsToDecimal(row.pauses)} /></td>
                                     <td className="p-2 border font-mono">{row.cumul.toFixed(2)}</td>
                                     <td className="p-2 border text-center">
-                                        <button
-                                            className="bg-orange-500 text-white px-3 py-1 rounded hover:bg-orange-600 text-xs"
-                                            onClick={() => {
-                                                setSelectedRow(row);
-                                                setModalOpen(true);
-                                            }}
-                                        >
-                                            Corriger
-                                        </button> 
+                                        <div className="flex justify-center items-center gap-3">
+                                            <div className="relative group">
+                                                <button
+                                                    onClick={() => {
+                                                        setSelectedRow(row);
+                                                        setModalOpen(true);
+                                                    }}
+                                                    title=""
+                                                    className="px-3 py-1.5 rounded-lg border border-green-200 text-green-600 hover:bg-green-600 hover:text-white 
+                                                        transition-transform transform focus:outline-none focus:ring-2 focus:ring-offset-1 hover:scale-105"
+                                                >
+                                                    <Eye className="w-4 h-4" />
+                                                </button>
+                                                <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-green-600 text-white text-xs whitespace-nowrap">
+                                                    Consulter
+                                                </span>
+                                            </div>
 
-                                    {/* Bouton Réajuster */}
-                                        <button
-                                            className="bg-purple-600 text-white px-3 py-1 rounded hover:bg-purple-700 text-xs"
-                                            onClick={async () => {
-                                                const agentName = `${row.firstname} ${row.lastname}`;
-                                                const shiftDate = dayjs(row.session_date).format("YYYY-MM-DD");
+                                            {/* Bouton Réajuster */}
+                                            <div className="relative group">
+                                                <button
+                                                    className="px-3 py-1.5 rounded-lg border border-purple-100 text-purple-600 hover:bg-purple-600 hover:text-white"
+                                                    onClick={async () => {
+                                                        const agentName = `${row.firstname} ${row.lastname}`;
+                                                        const shiftDate = dayjs(row.session_date).format("YYYY-MM-DD");
 
-                                                const result = await Swal.fire({
-                                                    icon: "question",
-                                                    title: "Confirmer nettoyage",
-                                                    text: `Voulez-vous vraiment réajuster les sessions de l'agent ${agentName} pour la date ${shiftDate} ?`,
-                                                    showCancelButton: true,
-                                                    confirmButtonText: "Oui, Réajuster",
-                                                    cancelButtonText: "Annuler",
-                                                    confirmButtonColor: "#6d28d9",
-                                                    cancelButtonColor: "#dc2626",
-                                                });
+                                                        const result = await Swal.fire({
+                                                            icon: "question",
+                                                            title: "Confirmer nettoyage",
+                                                            text: `Voulez-vous vraiment réajuster les sessions de l'agent ${agentName} pour la date ${shiftDate} ?`,
+                                                            showCancelButton: true,
+                                                            confirmButtonText: "Oui, Réajuster",
+                                                            cancelButtonText: "Annuler",
+                                                            confirmButtonColor: "#6d28d9",
+                                                            cancelButtonColor: "#dc2626",
+                                                        });
 
-                                                if (!result.isConfirmed) return;
+                                                        if (!result.isConfirmed) return;
 
-                                                try {
-                                                    setLoading(true);
-                                                    await axiosInstance.post("/session_agents/clean-shift", {
-                                                        startDate: shiftDate,
-                                                        endDate: shiftDate,
-                                                        userIds: [row.user_id],
-                                                    });
+                                                        try {
+                                                            setLoading(true);
+                                                            await axiosInstance.post("/session_agents/clean-shift", {
+                                                                startDate: shiftDate,
+                                                                endDate: shiftDate,
+                                                                userIds: [row.user_id],
+                                                            });
 
-                                                    Swal.fire("Succès", `Les sessions de ${agentName} pour le ${shiftDate} ont été nettoyées.`, "success");
+                                                            Swal.fire("Succès", `Les sessions de ${agentName} pour le ${shiftDate} ont été nettoyées.`, "success");
 
-                                                    fetchData(); // rafraîchit le tableau
-                                                } catch (err) {
-                                                    console.error(err);
-                                                    Swal.fire("Erreur", err?.response?.data?.message || "Erreur lors du nettoyage", "error");
-                                                } finally {
-                                                    setLoading(false);
-                                                }
-                                            }}
-                                        >
-                                            Réajuster
-                                        </button>
-
+                                                            fetchData(); // rafraîchit le tableau
+                                                        } catch (err) {
+                                                            console.error(err);
+                                                            Swal.fire("Erreur", err?.response?.data?.message || "Erreur lors du nettoyage", "error");
+                                                        } finally {
+                                                            setLoading(false);
+                                                        }
+                                                    }}
+                                                >
+                                                    <Wrench className="w-4 h-4" />
+                                                </button>
+                                                <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-purple-600 text-white text-xs whitespace-nowrap">
+                                                    Réajuster
+                                                </span>
+                                            </div>
+                                        </div>
                                     </td>
                                 </tr>
                             ))
@@ -280,7 +306,7 @@ export default function AdminWorkTable() {
                 onSaved={fetchData}
             />
 
-            <ExportAdminWorkTable
+            <AdminWorkTableDetailsModal
                 isOpen={exportModalOpen}
                 onClose={() => setExportModalOpen(false)}
                 sessions={data}

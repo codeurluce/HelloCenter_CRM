@@ -1447,7 +1447,7 @@ exports.getSessionforCorrect = async (req, res) => {
 };
 
 
-exports.getSessionDetailsForCorrection = async (req, res) => {
+exports.getSessionDetailsOptimized = async (req, res) => {
   try {
     const { userId, date } = req.params;
 
@@ -1466,16 +1466,42 @@ exports.getSessionDetailsForCorrection = async (req, res) => {
 
     const { rows } = await db.query(query, [userId, date]);
 
-    // Construire un objet cumul
+    // Construire un objet cumul des statuts
     const cumul_statuts = {};
     rows.forEach(r => {
       cumul_statuts[r.status] = (cumul_statuts[r.status] || 0) + r.sec;
     });
 
-    res.json({ userId, date, cumul_statuts });
+    // CALCUL DES TOTAUX
+    const TotalPause =
+      (cumul_statuts["Pausette 1"] || 0) +
+      (cumul_statuts["Déjeuner"] || 0) +
+      (cumul_statuts["Pausette 2"] || 0);
+
+    const TotalIndispo =
+      (cumul_statuts["Réunion"] || 0) +
+      (cumul_statuts["Formation"] || 0) +
+      (cumul_statuts["Brief"] || 0);
+
+    const HeureTravail =
+      (cumul_statuts["Disponible"] || 0) + TotalIndispo;
+
+    const PresenceTotale = HeureTravail + TotalPause;
+
+    res.json({
+      userId,
+      date,
+      cumul_statuts,
+      totals: {
+        TotalPause,
+        TotalIndispo,
+        HeureTravail,
+        PresenceTotale
+      }
+    });
 
   } catch (err) {
-    console.error("Erreur getSessionDetailsForCorrection:", err);
+    console.error("Erreur getSessionDetailsOptimized:", err);
     res.status(500).json({ error: "Erreur interne du serveur" });
   }
 };
