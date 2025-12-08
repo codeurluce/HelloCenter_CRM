@@ -472,25 +472,30 @@ exports.getSessionAgentsForRH = async (req, res) => {
       return res.status(400).json({ error: "startDate et endDate sont obligatoires" });
     }
 
-    const userFilter = userIds.length ? `AND sa.user_id = ANY($3)` : "";
+    const hasUsers = userIds.length > 0;
 
     const query = `
-      -- 1) Sessions agents (travail / pause), durée calculée dynamiquement
+      -- 1) Sessions agents brutes
       WITH sessions AS (
         SELECT
           sa.user_id,
           DATE(sa.start_time) AS session_date,
+          sa.start_time,
+          sa.end_time,
           sa.status,
           EXTRACT(EPOCH FROM (COALESCE(sa.end_time, NOW()) - sa.start_time))::INT AS duree_sec
         FROM session_agents sa
         WHERE DATE(sa.start_time) BETWEEN $1 AND $2
-        ${userFilter}
+        ${hasUsers ? `AND sa.user_id = ANY($3)` : ""}
       ),
 
+      -- 2) Catégorisation Travail / Pause
       mapped AS (
         SELECT
           user_id,
           session_date,
+          start_time,
+          end_time,
           CASE
             WHEN status ILIKE ANY(ARRAY['Disponible','Réunion','Formation','Brief'])
               THEN 'travail'
@@ -502,51 +507,60 @@ exports.getSessionAgentsForRH = async (req, res) => {
         FROM sessions
       ),
 
+      -- 3) Cumul Travail / Pause + première et dernière session statuts
       cumuls AS (
         SELECT
           user_id,
           session_date,
           SUM(CASE WHEN category='travail' THEN duree_sec ELSE 0 END) AS travail,
-          SUM(CASE WHEN category='pause' THEN duree_sec ELSE 0 END) AS pauses
+          SUM(CASE WHEN category='pause' THEN duree_sec ELSE 0 END) AS pauses,
+          MIN(start_time) AS statut_first_start,
+          MAX(end_time) AS statut_last_end
         FROM mapped
         GROUP BY user_id, session_date
       ),
 
-      -- 2) Connexions / déconnexions réelles
+      -- 4) Connexions / déconnexions réelles
       connexions AS (
         SELECT
           user_id,
           DATE(event_time) AS session_date,
-          MIN(event_time) FILTER (WHERE event_type='connect') AS first_connection,
+          MIN(event_time) FILTER (WHERE event_type='connect') AS arrival_time,
           MAX(event_time) FILTER (
-              WHERE event_type IN ('disconnect','disconnectByAdmin','auto_disconnect')
-          ) AS last_disconnection
+            WHERE event_type IN ('disconnect','disconnectByAdmin','auto_disconnect')
+          ) AS departure_time
         FROM agent_connections_history
         WHERE DATE(event_time) BETWEEN $1 AND $2
-        ${userFilter.replace('sa.', 'user_id = ANY($3) AND ')}
+        ${hasUsers ? `AND user_id = ANY($3)` : ""}
         GROUP BY user_id, DATE(event_time)
       )
 
-      -- 3) Fusion des deux
-      SELECT 
+      -- 5) Fusion finale
+      SELECT
         u.id AS user_id,
         u.firstname,
         u.lastname,
         c.session_date,
-        cx.first_connection AS start_time,
-        cx.last_disconnection AS end_time,
+
+        -- Arrivée/départ réels
+        cx.arrival_time,
+        cx.departure_time,
+
+        -- Heures de connexion/déconnexion selon statuts
+        c.statut_first_start AS status_first_start,
+        c.statut_last_end    AS status_last_end,
+
         c.travail,
         c.pauses
       FROM cumuls c
       LEFT JOIN connexions cx
-        ON cx.user_id = c.user_id
-       AND cx.session_date = c.session_date
+        ON cx.user_id = c.user_id AND cx.session_date = c.session_date
       JOIN users u ON u.id = c.user_id
-      ORDER BY u.lastname, u.firstname, c.session_date;
+      ORDER BY c.session_date DESC, u.lastname, u.firstname;
     `;
 
     const params = [startDate, endDate];
-    if (userIds.length) params.push(userIds);
+    if (hasUsers) params.push(userIds);
 
     const { rows } = await db.query(query, params);
 

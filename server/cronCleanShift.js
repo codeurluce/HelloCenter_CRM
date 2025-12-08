@@ -3,6 +3,7 @@
  * Corrige les sessions avant SHIFT_START et après SHIFT_END.
  */
 
+
 const db = require("./db");
 
 // Paramètres du shift
@@ -10,106 +11,108 @@ const SHIFT_START = "09:00:00";
 const SHIFT_END = "18:00:00";
 
 /**
- * Nettoyage quotidien des sessions d'agents
+ * Nettoyage des sessions d'agents pour une date ou période donnée
+ * @param {String} startDate YYYY-MM-DD
+ * @param {String} endDate YYYY-MM-DD
+ * @param {Array<Number>} userIds facultatif, si vide => tous les agents
  */
-async function cleanDailyShift() {
-  const today = new Date().toISOString().split("T")[0];
-  console.log(`⏰ Nettoyage complet du shift du ${today}...`);
+async function cleanShift({ startDate, endDate = startDate, userIds = [] }) {
+  if (!startDate || !endDate) {
+    throw new Error("startDate et endDate sont obligatoires");
+  }
 
-  try {
-    // 1️⃣ Récupérer tous les agents avec sessions aujourd'hui
-    const agentsRes = await db.query(
-      `SELECT DISTINCT user_id 
-       FROM session_agents 
-       WHERE start_time::date = $1`,
-      [today]
-    );
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const dayCount = Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1;
 
-    const shiftStart = new Date(`${today}T${SHIFT_START}`);
-    const shiftEnd = new Date(`${today}T${SHIFT_END}`);
+  for (let i = 0; i < dayCount; i++) {
+    const currentDate = new Date(start);
+    currentDate.setDate(start.getDate() + i);
+    const dayStr = currentDate.toISOString().split("T")[0];
+    console.log(`⏰ Nettoyage complet du shift du ${dayStr}...`);
 
-    for (const { user_id } of agentsRes.rows) {
-      // 2️⃣ Récupérer toutes les sessions du jour
-      const sessionsRes = await db.query(
-        `SELECT id, status, start_time, end_time, duration
-         FROM session_agents
-         WHERE user_id = $1
-           AND start_time::date = $2
-         ORDER BY start_time ASC`,
-        [user_id, today]
+    try {
+      // 1️⃣ Filtrer par agents si fourni
+      const userFilter = userIds.length ? `AND user_id = ANY($2)` : "";
+      const params = userIds.length ? [dayStr, userIds] : [dayStr];
+
+      const agentsRes = await db.query(
+        `SELECT DISTINCT user_id 
+         FROM session_agents 
+         WHERE start_time::date = $1
+         ${userFilter}`,
+        params
       );
 
-      const sessions = sessionsRes.rows;
-      if (sessions.length === 0) continue;
+      const shiftStart = new Date(`${dayStr}T${SHIFT_START}`);
+      const shiftEnd = new Date(`${dayStr}T${SHIFT_END}`);
 
-      const firstSession = sessions[0];
-      const lastSession = sessions[sessions.length - 1];
+      for (const { user_id } of agentsRes.rows) {
+        const sessionsRes = await db.query(
+          `SELECT id, status, start_time, end_time, duration
+           FROM session_agents
+           WHERE user_id = $1
+             AND start_time::date = $2
+           ORDER BY start_time ASC`,
+          [user_id, dayStr]
+        );
 
-      for (const s of sessions) {
-        let start = new Date(s.start_time);
-        let end = new Date(s.end_time);
-        // let newDuration = Math.floor((end - start) / 1000);
+        const sessions = sessionsRes.rows;
+        if (sessions.length === 0) continue;
 
-        // ------------------------------
-        // 1️⃣ Premier statut → corriger start_time si avant shift
-        // ------------------------------
-        if (s.id === firstSession.id && start < shiftStart) {
-          start = shiftStart;
-          // newDuration = Math.floor((end - start) / 1000);
-        }
+        const firstSession = sessions[0];
+        const lastSession = sessions[sessions.length - 1];
 
-        // ------------------------------
-        // 2️⃣ Dernier statut → corriger end_time si après shift
-        // ------------------------------
-        if (s.id === lastSession.id && end > shiftEnd) {
-          end = shiftEnd;
-          // newDuration = Math.floor((end - start) / 1000);
-        }
+        for (const s of sessions) {
+          let startTime = new Date(s.start_time);
+          let endTime = s.end_time ? new Date(s.end_time) : null;
 
-        // ------------------------------
-        // 3️⃣ Statuts entièrement hors shift → duration = 0
-        // ------------------------------
-        if ((s.id !== firstSession.id && s.id !== lastSession.id) &&
-          (end <= shiftStart || start >= shiftEnd)) {
-          start = end = start >= shiftEnd ? shiftEnd : shiftStart;
-          // newDuration = 0;
-        }
+          // Si end_time est NULL → considère comme ongoing → fixe à shiftEnd
+          if (!endTime) {
+            endTime = shiftEnd;
+          }
 
-        // ------------------------------
-        // 4️⃣ Session avec start >= end → duration = 0
-        // ------------------------------
-        if (start >= end) {
-          // newDuration = 0;
-          start = end = start >= shiftEnd ? shiftEnd : shiftStart;
-        }
+          // ✂️ Tronquer aux bornes du shift
+          if (startTime < shiftStart) startTime = shiftStart;
+          if (endTime > shiftEnd) endTime = shiftEnd;
 
-        // ------------------------------
-        // 5️⃣ Mise à jour en base si nécessaire
-        // ------------------------------
-        if (
-          start.getTime() !== new Date(s.start_time).getTime() ||
-          end.getTime() !== new Date(s.end_time).getTime()
-          // newDuration !== s.duration
-        ) {
-          await db.query(
-            `UPDATE session_agents
-              SET start_time = $1,
-                  end_time   = $2
-              WHERE id = $3`,
-            [start.toISOString(), end.toISOString(), s.id]
-          );
+          // ⏱️ Si après troncature, start >= end → aligner
+          if (startTime >= endTime) {
+            startTime = endTime = shiftEnd; // ou shiftStart, mais shiftEnd est plus logique pour "fin de shift"
+          }
+
+          // 🔁 Mettre à jour si changé
+          const origStart = new Date(s.start_time);
+          const origEnd = s.end_time ? new Date(s.end_time) : null;
+
+          const startChanged = startTime.getTime() !== origStart.getTime();
+          const endChanged = (!origEnd && endTime.getTime() !== shiftEnd.getTime()) ||
+            (origEnd && endTime.getTime() !== origEnd.getTime());
+
+          if (startChanged || endChanged) {
+            await db.query(
+              `UPDATE session_agents
+       SET start_time = $1,
+           end_time   = $2
+       WHERE id = $3`,
+              [startTime.toISOString(), endTime.toISOString(), s.id]
+            );
+          }
         }
       }
-    }
 
-    console.log("✅ Nettoyage shift terminé !");
-  } catch (err) {
-    console.error("❌ Erreur nettoyage shift :", err);
+      console.log(`✅ Nettoyage du ${dayStr} terminé !`);
+    } catch (err) {
+      console.error(`❌ Erreur nettoyage du ${dayStr} :`, err);
+    }
   }
 }
 
-module.exports = { cleanDailyShift };
+module.exports = { cleanShift };
 
+// ✅ Cron quotidien pour le jour courant
 if (require.main === module) {
-  cleanDailyShift().then(() => process.exit(0));
+  cleanShift({ startDate: new Date().toISOString().split("T")[0] })
+    .then(() => process.exit(0))
+    .catch(() => process.exit(1));
 }

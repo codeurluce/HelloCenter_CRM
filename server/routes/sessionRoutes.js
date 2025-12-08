@@ -67,6 +67,21 @@ router.post('/close-force', async (req, res) => {
   }
 }); // 📌 Force la fermeture d’une session pour un utilisateur donné (via user_id dans le body) // Méthode : POST /api/sessions/close-force
 router.post('/export-sessions', sessionControllers.exportSessions); // 📌 Exporte les sessions par l'admin (format ou destination selon implémentation) // Méthode : POST /api/sessions/export-sessions
-// router.post('/export-sessions-agent', sessionControllers.exportSessionsAgent); // 📌 Exporte session par l'agent (l'agent exporte juste sa propre session) // Méthode : POST /api/sessions/export-sessions
+
+// Pour le cronCleanShift
+const { cleanShift } = require('../cronCleanShift');
+router.post('/clean-shift', async (req, res) => { // 📌 Nettoie les sessions après la fin de shift (manuellement via API) // Méthode : POST /api/sessions/clean-shift
+  const { startDate, endDate, userIds } = req.body;
+
+  try {
+    if (!startDate) return res.status(400).json({ success: false, message: "startDate obligatoire" });
+
+    await cleanShift({ startDate, endDate, userIds });
+    res.json({ success: true, message: "Nettoyage effectué !" });
+  } catch (err) {
+    console.error("Erreur clean-shift manuel:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
 
 module.exports = router;
