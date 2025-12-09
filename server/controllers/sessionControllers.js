@@ -108,80 +108,30 @@ exports.pingSession = async (req, res) => {
   }
 };
 
+// controllers/sessionControllers.js (ou autre fichier)
 exports.closeSessionForce = async (userId, userSockets, adminId) => {
   try {
-    console.log(`[SERVER] closeSessionForce called for user ${userId}`);
-
     const io = getIo();
 
-    // 1️⃣ Vérifier session active
-    const check = await db.query(
-      `SELECT id FROM session_agents
-       WHERE user_id = $1 AND end_time IS NULL
-       ORDER BY start_time DESC LIMIT 1`,
-      [userId]
-    );
+    // 🔥 Plus de UPDATE ici → déjà fait par handleAgentDisconnect
 
-    let session = null;
-
-    if (check.rowCount > 0) {
-      session = await db.query(
-        `UPDATE session_agents
-         SET end_time = NOW(),
-         WHERE id = $1
-         RETURNING id, start_time, end_time`,
-        [check.rows[0].id]
-      );
-      session = session.rows[0];
-
-      console.log(`[SERVER] Session clôturée pour ${userId}`);
-    } else {
-      console.log(`[SERVER] Aucune session active → statut null, on déconnecte quand même.`);
-    }
-
-    // 2️⃣ Déconnecter l'agent
-    await db.query("UPDATE users SET is_connected = FALSE WHERE id = $1", [userId]);
-
-    // 3️⃣ Historique
-    await db.query(
-      `INSERT INTO agent_connections_history (user_id, event_type, admin_id) VALUES ($1, 'disconnectByAdmin', $2)`,
-      [userId, adminId]
-    );
-
-    // 4️⃣ Notifier admins
-    io.to("admins").emit("agent_status_changed", {
-      userId,
-      newStatus: "Hors ligne"
-    });
-
-    io.to("admins").emit("agent_disconnected_for_admin", {
-      userId,
-      newStatus: "Hors ligne"
-    });
-
-    // 5️⃣ Notifier l’agent
+    // Émettre événements
+    io.to("admins").emit("agent_status_changed", { userId, newStatus: "Hors ligne" });
     io.to(`agent_${userId}`).emit("force_disconnect_by_admin", {
-      userId,
-      reason: "Déconnecté par l’administrateur",
-      forced: true
+      reason: "Déconnecté par l’administrateur"
     });
 
-    // 6️⃣ Déconnecter sockets physiquement
+    // Déconnecter les sockets
     const sockets = userSockets.get(userId);
     if (sockets) {
       sockets.forEach(socketId => {
         const s = io.sockets.sockets.get(socketId);
-        if (s) {
-          setTimeout(() => {
-            s.disconnect(true);
-          }, 100);
-        }
+        if (s) s.disconnect(true);
       });
       userSockets.delete(userId);
     }
 
-    return session;
-
+    return { socketsClosed: sockets?.size || 0 };
   } catch (err) {
     console.error('[SERVER] closeSessionForce error', err);
     throw err;
@@ -1095,38 +1045,42 @@ exports.getUserStatusToday = async (req, res) => {
 
 exports.splitSessionsAtMidnight = async () => {
   try {
-    // sessions actives hier à 23:59:59
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // 00:00:00 du jour courant
+
+    // Récupérer les sessions encore ouvertes DONT le start_time est AVANT aujourd'hui
     const activeSessions = await db.query(`
-      SELECT * FROM session_agents
+      SELECT id, user_id, start_time
+      FROM session_agents
       WHERE end_time IS NULL
-    `);
+        AND start_time < $1
+    `, [today]);
 
     for (const session of activeSessions.rows) {
-      const { user_id, start_time } = session;
+      const { user_id } = session;
 
-      // si start_time < aujourd'hui 00:00 → on doit couper
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      // 1. Clôturer la session à 23:59:59 de la veille
+      await db.query(`
+        UPDATE session_agents
+        SET end_time = DATE_TRUNC('day', NOW()) - INTERVAL '1 second'
+        WHERE user_id = $1 AND end_time IS NULL AND start_time < $2
+      `, [user_id, today]);
 
-      if (start_time < today) {
-        // 1. Clôturer l'ancienne session à 23:59:59 hier
-        await db.query(`
-          UPDATE session_agents
-          SET end_time = (DATE_TRUNC('day', NOW()) - INTERVAL '1 second'),
-          WHERE user_id = $1 AND end_time IS NULL
-        `, [user_id]);
+      // 2. Créer une nouvelle session à 00:00:00 aujourd'hui
+      await db.query(`
+        INSERT INTO session_agents (user_id, status, start_time)
+        VALUES ($1, 'Disponible', DATE_TRUNC('day', NOW()))
+      `, [user_id]);
 
-        // 2. Créer une nouvelle session à 00:00:00 aujourd'hui
-        await db.query(`
-          INSERT INTO session_agents (user_id, start_time)
-          VALUES ($1, DATE_TRUNC('day', NOW()))
-        `, [user_id]);
-
-        console.log(`🔄 Session de l'agent ${user_id} splittée à minuit`);
-      }
+      console.log(`✅ Session de l'agent ${user_id} splittée à minuit (23:59:59 → 00:00:00)`);
     }
+
+    if (activeSessions.rows.length === 0) {
+      console.log("ℹ️ Aucune session à splitter à minuit.");
+    }
+
   } catch (err) {
-    console.error("❌ Erreur splitSessionsAtMidnight:", err);
+    console.error("❌ Erreur dans splitSessionsAtMidnight :", err.message || err);
   }
 };
 

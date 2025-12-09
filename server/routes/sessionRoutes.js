@@ -69,7 +69,7 @@ router.post('/close-force', async (req, res) => {
 router.post('/export-sessions', sessionControllers.exportSessions); // 📌 Exporte les sessions par l'admin (format ou destination selon implémentation) // Méthode : POST /api/sessions/export-sessions
 
 // Pour le cronCleanShift
-const { cleanShift } = require('../cronCleanShift');
+const { cleanShift } = require('../cronFichiers/cronCleanShift');
 router.post('/clean-shift', async (req, res) => { // 📌 Nettoie les sessions après la fin de shift (manuellement via API) // Méthode : POST /api/sessions/clean-shift
   const { startDate, endDate, userIds } = req.body;
 

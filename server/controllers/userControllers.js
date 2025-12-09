@@ -265,6 +265,30 @@ const connectAgent = async (req, res) => {
   }
 };
 
+
+const handleAgentDisconnect = async (userId, eventType = 'disconnect') => {
+  try {
+    // Fermer la session active
+    await db.query(
+      `UPDATE session_agents SET end_time = NOW() WHERE user_id = $1 AND end_time IS NULL`,
+      [userId]
+    );
+
+    // Marquer comme déconnecté
+    await db.query("UPDATE users SET is_connected = FALSE WHERE id = $1", [userId]);
+
+    // Historique
+    await db.query(
+      "INSERT INTO agent_connections_history (user_id, event_type) VALUES ($1, $2)",
+      [userId, eventType]
+    );
+
+    console.log(`🔌 Déconnexion automatique traitée pour userId ${userId} (${eventType})`);
+  } catch (err) {
+    console.error(`❌ Erreur dans handleAgentDisconnect (userId=${userId}) :`, err);
+  }
+};
+
 // Déconnexion de l'agent
 const disconnectAgent = async (req, res) => {
   const { userId } = req.body;
@@ -275,25 +299,12 @@ const disconnectAgent = async (req, res) => {
 
   try {
     // Fermer la session active
-    await db.query(
-      `UPDATE session_agents
-       SET end_time = NOW()
-       WHERE user_id = $1 AND end_time IS NULL`,
-      [userId]
-    );
-
-    // Marquer l’agent comme déconnecté
-    await db.query("UPDATE users SET is_connected = FALSE WHERE id = $1", [userId]);
-
-    //  Ajouter un événement dans l’historique des connexions
-    await db.query(
-      "INSERT INTO agent_connections_history (user_id, event_type) VALUES ($1, 'disconnect')",
-      [userId]
-    );
+    await handleAgentDisconnect(userId, 'disconnect');
 
     // 🔔 Émettre l’événement à tous les admins
     const io = getIo();
     io.emit("agent_disconnected", { userId });
+
     res.json({ success: true, message: "Déconnexion réussie et session sauvegardés." });
   } catch (err) {
     console.error("Erreur disconnectAgent:", err);
@@ -304,37 +315,14 @@ const disconnectAgent = async (req, res) => {
 // Déconnexion forcée de l'agent pour inactivité
 const disconnectAgentForce = async (req, res) => {
   const { userId } = req.body;
-  console.log("🔧 [DISCONNECT-FORCE] Reçu depuis frontend → userId:", userId);
 
   if (!userId) {
     return res.status(400).json({ error: "userId manquant" });
   }
 
   try {
-    // Fermer la session en cours s’il y en a une ouverte
-    const sessionResult = await db.query(
-      `UPDATE session_agents
-       SET end_time = NOW(),
-       WHERE user_id = $1 AND end_time IS NULL
-       RETURNING id, start_time, end_time`,
-      [userId]
-    );
 
-    if (sessionResult.rows.length > 0) {
-      const session = sessionResult.rows[0];
-      console.log(`✅ Session #${session.id} fermée → start: ${session.start_time}, end: ${session.end_time}`);
-    } else {
-      console.log(`ℹ️ Aucune session active à fermer pour userId: ${userId}`);
-    }
-
-    // Mise à jour is_connected = false
-    await db.query("UPDATE users SET is_connected = FALSE WHERE id = $1", [userId]);
-
-    // Historique de déconnexion forcée
-    await db.query(
-      "INSERT INTO agent_connections_history (user_id, event_type, event_time) VALUES ($1, 'auto_disconnect', NOW())",
-      [userId]
-    );
+    await handleAgentDisconnect(userId, 'auto_disconnect');
 
     // 🔔 Émettre l’événement à tous les admins pour live update
     const io = getIo();
@@ -343,7 +331,6 @@ const disconnectAgentForce = async (req, res) => {
     res.json({
       success: true,
       message: "Déconnexion forcée traitée.",
-      sessionClosed: sessionResult.rows.length > 0
     });
   } catch (err) {
     console.error("❌ Erreur disconnectAgentForce:", err);
@@ -356,35 +343,37 @@ const disconnectAgentbyAdmin = async (req, res) => {
   const userId = req.params.id;
   const requester = req.user;
 
-  console.log("requester.id", requester.id, typeof requester.id);
-  console.log("userId", userId, typeof userId);
-
   if (!userId) {
     return res.status(400).json({ error: "userId manquant" });
   }
 
+  // Permissions
+  if (requester.id.toString() === userId.toString()) {
+    return res.status(400).json({ error: "Vous ne pouvez pas vous déconnecter vous-même" });
+  }
+
+  if (requester.role !== "Admin") {
+    return res.status(403).json({ error: "Action réservée aux administrateurs" });
+  }
+
   try {
-    // Permissions
-    if (requester.id.toString() === userId.toString()) {
-      return res.status(400).json({ error: "Vous ne pouvez pas vous déconnecter vous-même" });
-    }
-
-    if (requester.role !== "Admin") {
-      return res.status(403).json({ error: "Action réservée aux administrateurs" });
-    }
-
     const userRes = await db.query("SELECT is_connected FROM users WHERE id = $1", [userId]);
     if (!userRes.rows[0]?.is_connected) {
-      return res.status(400).json({ error: "L'agent est déjà déconnecté" });
+      return res.status(400).json({ error: "Déjà déconnecté" });
     }
+
+    await handleAgentDisconnect(userId, 'disconnectByAdmin');
 
     // ⚡ Remplacer TOUT ton code par un seul appel :
     const result = await closeSessionForce(userId, req.app.locals.userSockets, requester.id);
-    return res.json({ success: true, result });
 
+    const io = getIo();
+    io.to("admins").emit("agent_disconnected_for_admin", { userId });
+
+    res.json({ success: true, result });
   } catch (err) {
-    console.error("Erreur disconnectAgent:", err);
-    return res.status(500).json({ error: "Erreur lors de la déconnexion" });
+    console.error("Erreur disconnectAgentbyAdmin:", err);
+    res.status(500).json({ error: "Erreur déconnexion admin" });
   }
 };
 
@@ -593,4 +582,5 @@ module.exports = {
   disconnectAgentForce,
   validateSession,
   disconnectAgentbyAdmin,
+  handleAgentDisconnect,
 };

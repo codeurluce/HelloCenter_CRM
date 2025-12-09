@@ -31,7 +31,7 @@ export const AgentStatusProvider = ({ children }) => {
   const recentlyConnectedRef = useRef(false);
   const validationRef = useRef(false);
   const lastActivityRef = useRef(Date.now());
-  const inactivityIntervalRef = useRef(null);
+  // const inactivityIntervalRef = useRef(null);
   const inactivityToastShownRef = useRef(false);
 
   // ==========================
@@ -42,38 +42,38 @@ export const AgentStatusProvider = ({ children }) => {
     setIsInactive(false);
   };
 
-  const triggerForcedLogout = async () => {
-    stopInactivityCheck();
-    try {
-      if (userRef.current?.id) {
-        await axiosInstance.post("/agent/disconnect-force", { userId: userRef.current.id });
-      }
-    } catch (err) {
-      console.warn("Erreur disconnect-force:", err);
-    }
+  // const triggerForcedLogout = async () => {
+  //   stopInactivityCheck();
+  //   try {
+  //     if (userRef.current?.id) {
+  //       await axiosInstance.post("/agent/disconnect-force", { userId: userRef.current.id });
+  //     }
+  //   } catch (err) {
+  //     console.warn("Erreur disconnect-force:", err);
+  //   }
 
-    if (socket.connected) socket.disconnect();
-    localStorage.clear();
-    setUser(null);
-    setCurrentStatus(null);
-    // toast.warn("Vous avez été déconnecté. Veuillez vous reconnecter", { autoClose: 4000, onClose: () => navigate("/login"), });
-    setIsInactive(true);
-  };
+  //   if (socket.connected) socket.disconnect();
+  //   localStorage.clear();
+  //   setUser(null);
+  //   setCurrentStatus(null);
+  //   // toast.warn("Vous avez été déconnecté. Veuillez vous reconnecter", { autoClose: 4000, onClose: () => navigate("/login"), });
+  //   setIsInactive(true);
+  // };
 
-  const startInactivityCheck = () => {
-    if (inactivityIntervalRef.current) return;
-    console.log("🕒 Inactivity check started");
-    inactivityIntervalRef.current = setInterval(() => {
-      const elapsed = Date.now() - lastActivityRef.current;
-    if (elapsed >= 10_800_000) triggerForcedLogout(); // 3 heures (3 * 60 * 60 * 1000)
-    }, 60_000);
-  };
+  // const startInactivityCheck = () => {
+  //   if (inactivityIntervalRef.current) return;
+  //   console.log("🕒 Inactivity check started");
+  //   inactivityIntervalRef.current = setInterval(() => {
+  //     const elapsed = Date.now() - lastActivityRef.current;
+  //   // if (elapsed >= 10_800_000) triggerForcedLogout(); // 3 heures (3 * 60 * 60 * 1000)
+  //   // }, 60_000);
+  // };
 
-  const stopInactivityCheck = () => {
-    clearInterval(inactivityIntervalRef.current);
-    inactivityIntervalRef.current = null;
-    console.log("🕒 Inactivity check stopped");
-  };
+  // const stopInactivityCheck = () => {
+  //   clearInterval(inactivityIntervalRef.current);
+  //   inactivityIntervalRef.current = null;
+  //   console.log("🕒 Inactivity check stopped");
+  // };
 
   // ==========================
   // 🔹 Rafraîchir statut backend
@@ -93,7 +93,7 @@ export const AgentStatusProvider = ({ children }) => {
   // ==========================
   const handleForcedLogout = useCallback(
     async (reason) => {
-      stopInactivityCheck();
+      // stopInactivityCheck();
       if (recentlyConnectedRef.current) return;
 
       if (manualLogoutRef.current && reason === "Déconnexion volontaire") {
@@ -188,12 +188,12 @@ export const AgentStatusProvider = ({ children }) => {
     events.forEach((e) => window.addEventListener(e, resetActivity, { passive: true }));
     document.addEventListener("visibilitychange", handleVisibility);
 
-    startInactivityCheck();
+    // startInactivityCheck();
 
     return () => {
       events.forEach((e) => window.removeEventListener(e, resetActivity, { passive: true }));
       document.removeEventListener("visibilitychange", handleVisibility);
-      stopInactivityCheck();
+      // stopInactivityCheck();
     };
   }, [user?.id, currentStatus]);
 

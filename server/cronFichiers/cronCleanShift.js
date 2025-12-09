@@ -4,7 +4,7 @@
  */
 
 
-const db = require("./db");
+const db = require("../db");
 
 // Paramètres du shift
 const SHIFT_START = "09:00:00";
@@ -17,6 +17,7 @@ const SHIFT_END = "18:00:00";
  * @param {Array<Number>} userIds facultatif, si vide => tous les agents
  */
 async function cleanShift({ startDate, endDate = startDate, userIds = [] }) {
+    console.log("🚀 [cleanShift] Démarrage du nettoyage", { startDate, endDate });
   if (!startDate || !endDate) {
     throw new Error("startDate et endDate sont obligatoires");
   }
@@ -100,8 +101,7 @@ async function cleanShift({ startDate, endDate = startDate, userIds = [] }) {
           }
         }
       }
-
-      console.log(`✅ Nettoyage du ${dayStr} terminé !`);
+      console.log(`✅ Nettoyage du ${dayStr} terminé pour la période`, { startDate, endDate });
     } catch (err) {
       console.error(`❌ Erreur nettoyage du ${dayStr} :`, err);
     }

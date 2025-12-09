@@ -15,7 +15,10 @@ const http = require('http');
 const cron = require('node-cron');
 const { checkContrats } = require("./controllers/rhControllers");
 const { initSockets } = require('./socket');
-const { cleanDailyShift } = require('./cronCleanShift')
+const { splitSessionsAtMidnight } = require('./controllers/sessionControllers');
+const { cleanDailyShift } = require('./cronFichiers/cronCleanShift');
+const { cronCloseOrphanSessions } = require('./cronFichiers/cronCloseOrphanSessions');
+const { catchUpCleanShift } = require('./cronFichiers/catchUpCleanShift')
 
 require('./inactivityChecker')
 const sessionRoutes = require('./routes/sessionRoutes');
@@ -25,7 +28,7 @@ const historiquesfilesRoutes = require('./routes/historiquesfilesRoutes');
 const historiquesVentesRoutes = require('./routes/historiquesVentesRoutes');
 const userRoutes = require('./routes/userRoutes');
 const rhRoutes = require('./routes/rhRoutes')
-const { splitSessionsAtMidnight } = require('./controllers/sessionControllers');
+
 
 const app = express();
 const server = http.createServer(app);
@@ -88,16 +91,23 @@ app.locals.userSockets = userSockets;
 const { setIo } = require("./socketInstance");
 setIo(io);
 
+
 // Cron pour nettoyage après fin de shift, ex: 00H00 chaque jour
 cron.schedule('59 23 * * *', async () => {
-  console.log("⏰ Cron → Nettoyage des surplus de shift...");
+  console.log("🚀 [CRON] Lancement cleanDailyShift –", new Date().toISOString());
   await cleanDailyShift();
+  console.log("✅ [CRON] Fin cleanDailyShift –", new Date().toISOString());
 });
 
 // Tâche cron pour minuit
 cron.schedule('0 0 * * *', async () => {
   console.log("⏰ Minuit → Split des sessions en cours...");
   await splitSessionsAtMidnight();
+});
+
+cron.schedule('0 1 * * *', async () => {
+  console.log("⏰ Cron → Fermeture des sessions orphelines des jours passés...");
+  await cronCloseOrphanSessions();
 });
 
 cron.schedule("* * * * *", () => {
@@ -108,6 +118,11 @@ cron.schedule("* * * * *", () => {
 const PORT = process.env.PORT || 8080;
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Serveur HTTP + Socket.IO lancé sur le port ${PORT}`);
+
+    // 🔁 Lancer le rattrapage après quelques secondes (au cas où la DB met du temps à répondre)
+  setTimeout(() => {
+    catchUpCleanShift(3).catch(console.error);
+  }, 5000);
 });
 
 // Vérification DB au démarrage

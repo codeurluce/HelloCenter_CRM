@@ -14,7 +14,7 @@ const secondsToDecimal = (seconds) => {
 };
 
 const PauseBadge = ({ hours }) => {
-  const colorClass = hours < 1.5 ? "bg-green-500" : "bg-red-500";
+  const colorClass = hours < 1.51 ? "bg-green-500" : "bg-red-500";
   return (
     <div className="flex items-center gap-2 justify-center">
       <span>{hours}</span>

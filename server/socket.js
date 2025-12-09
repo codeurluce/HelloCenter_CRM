@@ -1,6 +1,7 @@
 // initSockets.js
 const db = require('./db');
 const { Server } = require("socket.io");
+const { handleAgentDisconnect } = require('./controllers/userControllers')
 
 let io; // Socket.io global
 const userSockets = new Map();
@@ -39,10 +40,17 @@ function initSockets(server) {
 
     socket.on("disconnect", () => {
       console.log(`[BACK] ❌ Déconnecté : ${socket.id} (user ${userId})`);
+
+      // Nettoyer le Map userSockets
       const set = userSockets.get(userId);
       if (set) {
         set.delete(socket.id);
         if (set.size === 0) userSockets.delete(userId);
+
+        // 🔥 Déclencher la fermeture de session en arrière-plan
+        handleAgentDisconnect(userId, "auto_disconnect").catch(err => {
+          console.error(`[Socket] Erreur dans handleAgentDisconnect (userId=${userId}):`, err);
+        });
       }
     });
   });
