@@ -16,7 +16,7 @@ const SHIFT_END = "18:00:00";
  * @param {String} endDate YYYY-MM-DD
  * @param {Array<Number>} userIds facultatif, si vide => tous les agents
  */
-async function cleanShift({ startDate, endDate = startDate, userIds = [] }) {
+async function cronCleanShift({ startDate, endDate = startDate, userIds = [] }) {
     console.log("🚀 [cleanShift] Démarrage du nettoyage", { startDate, endDate });
   if (!startDate || !endDate) {
     throw new Error("startDate et endDate sont obligatoires");
@@ -108,11 +108,11 @@ async function cleanShift({ startDate, endDate = startDate, userIds = [] }) {
   }
 }
 
-module.exports = { cleanShift };
+module.exports = { cronCleanShift };
 
 // ✅ Cron quotidien pour le jour courant
 if (require.main === module) {
-  cleanShift({ startDate: new Date().toISOString().split("T")[0] })
+  cronCleanShift({ startDate: new Date().toISOString().split("T")[0] })
     .then(() => process.exit(0))
     .catch(() => process.exit(1));
 }

@@ -1,6 +1,6 @@
 // scripts/catchUpCleanShift.js
 const db = require("../db");
-const { cleanDailyShift } = require("../cronFichiers/cronCleanShift");
+const { cronCleanShift } = require("./cronCleanShift");
 
 /**
  * Vérifie les N derniers jours et exécute cleanDailyShift
