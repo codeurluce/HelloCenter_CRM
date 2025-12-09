@@ -3,7 +3,7 @@ const db = require("../db");
 const { cronCleanShift } = require("./cronCleanShift");
 
 /**
- * Vérifie les N derniers jours et exécute cleanDailyShift
+ * Vérifie les N derniers jours et exécute cronCleanShift
  * pour les jours où des sessions dépassent 18h ou sont orphelines.
  */
 async function catchUpCleanShift(daysToCheck = 3) {
@@ -21,8 +21,8 @@ async function catchUpCleanShift(daysToCheck = 3) {
       `, [dateStr]);
 
       if (rows.length > 0) {
-        console.log(`🔁 [RATTRAPAGE] Nettoyage manquant pour ${dateStr} → exécution de cleanDailyShift`);
-        await cleanDailyShift({ startDate: dateStr, endDate: dateStr });
+        console.log(`🔁 [RATTRAPAGE] Nettoyage manquant pour ${dateStr} → exécution de cronCleanShift`);
+        await cronCleanShift({ startDate: dateStr, endDate: dateStr });
       }
     }
     console.log("✅ Rattrapage cleanShift terminé.");
