@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useMemo } from "react";
 import dayjs from "dayjs";
 import axiosInstance from "../../api/axiosInstance";
-import CorrectionModal from "./AdminWorkTableDetailsModal";
 import CleanShiftModal from "./CleanShiftModal";
 import Swal from "sweetalert2";
 import { Eye, RefreshCw, Upload, Wrench } from "lucide-react";
 import AdminWorkTableDetailsModal from "./AdminWorkTableDetailsModal";
+import ExportAdminWorkTable from "./ExportAdminWorkTable";
 
 // Convertir secondes en heures décimales
 const secondsToDecimal = (seconds) => {
@@ -14,16 +14,16 @@ const secondsToDecimal = (seconds) => {
 };
 
 const PauseBadge = ({ hours }) => {
-  const colorClass = hours < 1.51 ? "bg-green-500" : "bg-red-500";
-  return (
-    <div className="flex items-center gap-2 justify-center">
-      <span>{hours}</span>
-      <span
-        className={`w-3 h-3 rounded-full inline-block ${colorClass}`}
-        title={`Pause : ${hours} h`}
-      ></span>
-    </div>
-  );
+    const colorClass = hours < 1.51 ? "bg-green-500" : "bg-red-500";
+    return (
+        <div className="flex items-center gap-2 justify-center">
+            <span>{hours}</span>
+            <span
+                className={`w-3 h-3 rounded-full inline-block ${colorClass}`}
+                title={`Pause : ${hours} h`}
+            ></span>
+        </div>
+    );
 };
 
 export default function AdminWorkTable() {
@@ -140,28 +140,28 @@ export default function AdminWorkTable() {
                 <div className="flex gap-2">
                     <button
                         onClick={fetchData}
-                        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                        className="flex bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm"
                     >
                         Appliquer
                     </button>
                     <button
                         onClick={resetFilters}
-                        className="bg-gray-300 text-black px-4 py-2 rounded hover:bg-gray-400"
+                        className="flex bg-gray-300 text-black px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors font-medium shadow-sm"
                     >
                         Reset
                     </button>
                 </div>
                 <button
                     onClick={fetchData}
-                    className="flex ml-auto items-center gap-2 py-2 px-4 rounded-md border border-blue-500 text-blue-600 hover:bg-blue-100 transition"
+                    className="flex ml-auto items-center gap-2 py-2 px-4 rounded-lg border border-blue-500 text-blue-600 hover:bg-blue-100 transition"
                 >
                     <RefreshCw size={16} /> Rafraîchir
                 </button>
                 <button
                     onClick={() => setCleanModalOpen(true)}
-                    className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
+                    className=" flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors font-medium shadow-sm"
                 >
-                    Réajuster Shift
+                    <Wrench size={16} />Réajuster Shift
                 </button>
                 <button
                     onClick={() => setExportModalOpen(true)}
@@ -292,7 +292,7 @@ export default function AdminWorkTable() {
                 </table>
             </div>
 
-            <CorrectionModal
+            <AdminWorkTableDetailsModal
                 isOpen={modalOpen}
                 onClose={() => setModalOpen(false)}
                 row={selectedRow}
@@ -306,7 +306,7 @@ export default function AdminWorkTable() {
                 onSaved={fetchData}
             />
 
-            <AdminWorkTableDetailsModal
+            <ExportAdminWorkTable
                 isOpen={exportModalOpen}
                 onClose={() => setExportModalOpen(false)}
                 sessions={data}

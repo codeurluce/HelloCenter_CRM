@@ -13,16 +13,15 @@ router.get('/check', sessionControllers.checkSessionActive);  // 📌 Vérifie s
 router.get('/last-status/:userId', sessionControllers.getLastAgentStatus); // 📌 Récupère le dernier statut d’un agent par son userId (utile pour restauration après reconnexion) // Méthode : GET /api/sessions/last-status/:userId
 router.get('/user/live', sessionControllers.getLiveSessionAgents); // 📌 Récupère toutes les sessions en ligne des agents actifs // Méthode : GET /api/sessions/user/live
 router.get('/agents-session-rh', sessionControllers.getSessionAgentsForRH); // 📌 Récupère les sessions des agents pour le RH // Méthode : GET /api/sessions/agents-session-rh
-router.get('/export-session-rh', sessionControllers.exportSessionAgentsForRH); // 📌 Exporte les sessions des agents pour le RH // Méthode : GET /api/sessions/export-session-rh
+router.get('/export-session-rh', verifyToken, sessionControllers.exportSessionAgentsForRH); // 📌 Exporte les sessions des agents pour le RH // Méthode : GET /api/sessions/export-session-rh
 router.get('/user/live/:userId', sessionControllers.getSessionAgent); // 📌 Récupère la session active d’un agent spécifique par userId // Méthode : GET /api/sessions/user/live/:userId
 router.get('/user/agent-connection-details', sessionControllers.getDailyConnectionTimes); // 📌 Récupère le détail des connexions journalières des agents // Méthode : GET /api/sessions/user/agent_connection_details
 router.get('/user/:id/status-today', sessionControllers.getUserStatusToday); // 📌 Récupère le statut et présence totale d’un utilisateur pour la journée en cours // Méthode : GET /api/sessions/user/:id/status-today
 router.get('/user/:id/all-history', sessionControllers.getAllHistorySessions) // 📌 Récupère tout l’historique des sessions d’un utilisateur donné // Méthode : GET /api/sessions/user/:id/all-history
 router.get('/monthly', verifyToken, sessionControllers.getMonthlySessions); // 📌 Récupère les sessions du mois en cours pour tous les agents (filtrage et pagination possibles) // Méthode : GET /api/sessions/monthly
 router.get('/monthly-filtre', verifyToken, sessionControllers.getMonthlySessionsFiltre); // 📌 Récupère les sessions du mois en cours pour tous les agents avec filtres avancés // Méthode : GET /api/sessions/monthly-filtre
-router.patch('/correct-session', sessionControllers.correctSession); // 📌 Corrige une session existante avec de nouvelles durées pour chaque statut // Méthode : PATCH /api/sessions/correct-session
-router.get('/for-correct', sessionControllers.getSessionforCorrect);  // 📌 Récupère les sessions pouvant être corrigées par l’admin (avec info si déjà corrigée) // Méthode : GET /api/sessions/for-correct
 router.get("/agent-session-details/:userId/:date", sessionControllers.getSessionDetailsOptimized); // 📌 Récupère les détails d’une session agent pour correction par l’admin (statuts et durées en secondes) // Méthode : GET /api/sessions/agent-session-details/:userId/:date
+// router.patch('/correct-session', sessionControllers.correctSession); // 📌 Corrige une session existante avec de nouvelles durées pour chaque statut // Méthode : PATCH /api/sessions/correct-session
 
 // Route POST : création de données
 
@@ -85,3 +84,5 @@ router.post('/clean-shift', async (req, res) => { // 📌 Nettoie les sessions a
 });
 
 module.exports = router;
+
+// router.get('/for-correct', sessionControllers.getSessionforCorrect);  // 📌 Récupère les sessions pouvant être corrigées par l’admin (avec info si déjà corrigée) // Méthode : GET /api/sessions/for-correct

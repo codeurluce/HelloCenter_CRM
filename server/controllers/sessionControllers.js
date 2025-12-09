@@ -524,6 +524,109 @@ exports.getSessionAgentsForRH = async (req, res) => {
 
 
 // GET /api/sessions/admin/export - Exporter les sessions des agents pour l'admin
+// exports.exportSessionAgentsForRH = async (req, res) => {
+//   try {
+//     const { startDate, endDate, userIds = [] } = req.query;
+
+//     if (!startDate || !endDate) {
+//       return res.status(400).json({ error: "startDate et endDate sont obligatoires" });
+//     }
+
+//     // 🔹 Normaliser userIds en array d'entiers
+//     let userIdsArray = [];
+//     if (userIds) {
+//       if (Array.isArray(userIds)) {
+//         userIdsArray = userIds.map((id) => parseInt(id, 10));
+//       } else {
+//         userIdsArray = [parseInt(userIds, 10)];
+//       }
+//     }
+
+//     const userFilter = userIdsArray.length ? `AND sa.user_id = ANY($3)` : "";
+
+//     const query = `
+//       -- 1) Sessions agents (travail / pause), durée calculée dynamiquement
+//       WITH sessions AS (
+//         SELECT
+//           sa.user_id,
+//           DATE(sa.start_time) AS session_date,
+//           sa.status,
+//           EXTRACT(EPOCH FROM (COALESCE(sa.end_time, NOW()) - sa.start_time))::INT AS duree_sec
+//         FROM session_agents sa
+//         WHERE DATE(sa.start_time) BETWEEN $1 AND $2
+//         ${userFilter}
+//       ),
+
+//       mapped AS (
+//         SELECT
+//           user_id,
+//           session_date,
+//           CASE
+//             WHEN status ILIKE ANY(ARRAY['Disponible','Réunion','Formation','Brief'])
+//               THEN 'travail'
+//             WHEN status ILIKE ANY(ARRAY['Déjeuner','Pausette 1','Pausette 2'])
+//               THEN 'pause'
+//             ELSE 'autre'
+//           END AS category,
+//           duree_sec
+//         FROM sessions
+//       ),
+
+//       cumuls AS (
+//         SELECT
+//           user_id,
+//           session_date,
+//           SUM(CASE WHEN category='travail' THEN duree_sec ELSE 0 END) AS travail,
+//           SUM(CASE WHEN category='pause' THEN duree_sec ELSE 0 END) AS pauses
+//         FROM mapped
+//         GROUP BY user_id, session_date
+//       ),
+
+//       connexions AS (
+//         SELECT
+//           user_id,
+//           DATE(event_time) AS session_date,
+//           MIN(event_time) FILTER (WHERE event_type='connect') AS first_connection,
+//           MAX(event_time) FILTER (
+//               WHERE event_type IN ('disconnect','disconnectByAdmin','auto_disconnect')
+//           ) AS last_disconnection
+//         FROM agent_connections_history
+//         WHERE DATE(event_time) BETWEEN $1 AND $2
+//         ${userIdsArray.length ? "AND user_id = ANY($3)" : ""}
+//         GROUP BY user_id, DATE(event_time)
+//       )
+
+//       -- 3) Fusion des deux
+//       SELECT 
+//         u.id AS user_id,
+//         u.firstname,
+//         u.lastname,
+//         c.session_date,
+//         cx.first_connection AS start_time,
+//         cx.last_disconnection AS end_time,
+//         c.travail,
+//         c.pauses
+//       FROM cumuls c
+//       LEFT JOIN connexions cx
+//         ON cx.user_id = c.user_id
+//        AND cx.session_date = c.session_date
+//       JOIN users u ON u.id = c.user_id
+//       ORDER BY u.lastname, u.firstname, c.session_date;
+//     `;
+
+//     const params = [startDate, endDate];
+//     if (userIdsArray.length) params.push(userIdsArray);
+
+//     const { rows } = await db.query(query, params);
+
+//     res.json(rows);
+
+//   } catch (err) {
+//     console.error("Erreur exportSessionAgentsForRH:", err);
+//     res.status(500).json({ error: "Erreur export sessions" });
+//   }
+// };
+
 exports.exportSessionAgentsForRH = async (req, res) => {
   try {
     const { startDate, endDate, userIds = [] } = req.query;
@@ -542,25 +645,30 @@ exports.exportSessionAgentsForRH = async (req, res) => {
       }
     }
 
-    const userFilter = userIdsArray.length ? `AND sa.user_id = ANY($3)` : "";
+    const hasUsers = userIdsArray.length > 0;
 
     const query = `
-      -- 1) Sessions agents (travail / pause), durée calculée dynamiquement
+      -- 1) Sessions agents brutes (pour min/max start/end + catégorisation)
       WITH sessions AS (
         SELECT
           sa.user_id,
           DATE(sa.start_time) AS session_date,
+          sa.start_time,
+          sa.end_time,
           sa.status,
           EXTRACT(EPOCH FROM (COALESCE(sa.end_time, NOW()) - sa.start_time))::INT AS duree_sec
         FROM session_agents sa
         WHERE DATE(sa.start_time) BETWEEN $1 AND $2
-        ${userFilter}
+        ${hasUsers ? `AND sa.user_id = ANY($3)` : ""}
       ),
 
+      -- 2) Catégorisation Travail / Pause
       mapped AS (
         SELECT
           user_id,
           session_date,
+          start_time,
+          end_time,
           CASE
             WHEN status ILIKE ANY(ARRAY['Disponible','Réunion','Formation','Brief'])
               THEN 'travail'
@@ -572,54 +680,72 @@ exports.exportSessionAgentsForRH = async (req, res) => {
         FROM sessions
       ),
 
+      -- 3) Cumul + bornes temporelles des statuts
       cumuls AS (
         SELECT
           user_id,
           session_date,
-          SUM(CASE WHEN category='travail' THEN duree_sec ELSE 0 END) AS travail,
-          SUM(CASE WHEN category='pause' THEN duree_sec ELSE 0 END) AS pauses
+          SUM(CASE WHEN category = 'travail' THEN duree_sec ELSE 0 END) AS travail,
+          SUM(CASE WHEN category = 'pause' THEN duree_sec ELSE 0 END) AS pauses,
+          MIN(start_time) AS status_first_start,
+          MAX(end_time) AS status_last_end
         FROM mapped
         GROUP BY user_id, session_date
       ),
 
+      -- 4) Connexions réelles (arrivée/départ machine)
       connexions AS (
         SELECT
           user_id,
           DATE(event_time) AS session_date,
-          MIN(event_time) FILTER (WHERE event_type='connect') AS first_connection,
+          MIN(event_time) FILTER (WHERE event_type = 'connect') AS arrival_time,
           MAX(event_time) FILTER (
-              WHERE event_type IN ('disconnect','disconnectByAdmin','auto_disconnect')
-          ) AS last_disconnection
+            WHERE event_type IN ('disconnect','disconnectByAdmin','auto_disconnect')
+          ) AS departure_time
         FROM agent_connections_history
         WHERE DATE(event_time) BETWEEN $1 AND $2
-        ${userIdsArray.length ? "AND user_id = ANY($3)" : ""}
+        ${hasUsers ? `AND user_id = ANY($3)` : ""}
         GROUP BY user_id, DATE(event_time)
       )
 
-      -- 3) Fusion des deux
+      -- 5) Fusion finale
       SELECT 
         u.id AS user_id,
         u.firstname,
         u.lastname,
         c.session_date,
-        cx.first_connection AS start_time,
-        cx.last_disconnection AS end_time,
+
+        -- 🔹 Heures réelles de connexion/déconnexion (machine)
+        cx.arrival_time,
+        cx.departure_time,
+
+        -- 🔹 Heures selon les statuts (première/dernière session)
+        c.status_first_start,
+        c.status_last_end,
+
+        -- Durées
         c.travail,
         c.pauses
       FROM cumuls c
       LEFT JOIN connexions cx
-        ON cx.user_id = c.user_id
-       AND cx.session_date = c.session_date
+        ON cx.user_id = c.user_id AND cx.session_date = c.session_date
       JOIN users u ON u.id = c.user_id
       ORDER BY u.lastname, u.firstname, c.session_date;
     `;
 
     const params = [startDate, endDate];
-    if (userIdsArray.length) params.push(userIdsArray);
+    if (hasUsers) params.push(userIdsArray);
 
     const { rows } = await db.query(query, params);
 
-    res.json(rows);
+    // Optionnel : formater les durées en "HH:MM:SS" si besoin côté export
+    const formattedRows = rows.map(row => ({
+      ...row,
+      travail_hhmm: formatSecondsToHMS(row.travail),
+      pauses_hhmm: formatSecondsToHMS(row.pauses)
+    }));
+
+    res.json(formattedRows);
 
   } catch (err) {
     console.error("Erreur exportSessionAgentsForRH:", err);
@@ -627,6 +753,14 @@ exports.exportSessionAgentsForRH = async (req, res) => {
   }
 };
 
+// Utilitaire pour formater les secondes en HH:MM:SS
+function formatSecondsToHMS(seconds) {
+  if (seconds == null || seconds < 0) return "00:00:00";
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  return [h, m, s].map(v => v.toString().padStart(2, '0')).join(':');
+}
 
 exports.getDailyConnectionTimes = async (req, res) => {
   try {
@@ -750,97 +884,6 @@ ORDER BY u.lastname, u.firstname, session_date;
     res.status(500).json({ error: "Erreur export sessions" });
   }
 };
-
-
-// controllers/sessionAgentsController.js l'export pour un agent
-// exports.exportSessionsAgent = async (req, res) => {
-//   console.log("🔥 Requête reçue sur /export-sessions-agent");
-//   console.log("Body:", req.body);
-//   console.log("User:", req.user);
-//   try {
-//     const { startDate, endDate } = req.body;
-//     const userId = req.user?.id || req.body.userId; // selon ton système d’auth
-
-//     if (!userId) {
-//       console.log("❌ User ID manquant");
-//       return res.status(400).json({ error: "Utilisateur non identifié" });
-//     }
-//     if (!startDate || !endDate) {
-//       console.log("❌ Dates manquantes");
-//       return res.status(400).json({ error: "startDate et endDate sont obligatoires" });
-//     }
-//     console.log("✅ Paramètres OK:", { userId, startDate, endDate });
-//     const query = `
-//       WITH sessions AS (
-//         SELECT 
-//           sa.user_id,
-//           sa.status,
-//           DATE(sa.start_time) AS session_date,
-//           sa.start_time,
-//           COALESCE(sa.end_time, NOW()) AS end_time,
-//           COALESCE(sa.duration, 0) AS duree_sec
-//         FROM session_agents sa
-//         WHERE DATE(sa.start_time) BETWEEN $1 AND $2
-//           AND sa.user_id = $3
-//       ),
-//       cumuls AS (
-//         SELECT user_id, session_date, status, SUM(duree_sec)::INT AS sec
-//         FROM sessions
-//         GROUP BY user_id, session_date, status
-//       ),
-//       cumul_total AS (
-//         SELECT user_id, session_date, SUM(sec)::INT AS presence_totale_sec
-//         FROM cumuls
-//         GROUP BY user_id, session_date
-//       ),
-//       cumul_json AS (
-//         SELECT user_id, session_date, json_object_agg(status, sec) AS cumul_statuts
-//         FROM cumuls
-//         GROUP BY user_id, session_date
-//       ),
-//       connections AS (
-//         SELECT 
-//           ach.user_id,
-//           DATE(ach.event_time) AS session_date,
-//           MIN(ach.event_time) FILTER (WHERE event_type = 'connect') AS first_connection,
-//           MAX(ach.event_time) FILTER (WHERE event_type = 'disconnect') AS last_disconnection
-//         FROM agent_connections_history ach
-//         WHERE DATE(ach.event_time) BETWEEN $1 AND $2
-//           AND ach.user_id = $3
-//         GROUP BY ach.user_id, DATE(ach.event_time)
-//       )
-//       SELECT 
-//         u.id AS user_id,
-//         u.firstname,
-//         u.lastname,
-//         COALESCE(ct.presence_totale_sec, 0) AS presence_totale_sec,
-//         COALESCE(cj.cumul_statuts, '{}'::json) AS cumul_statuts,
-//         co.first_connection,
-//         co.last_disconnection,
-//         COALESCE(ct.session_date, cj.session_date, co.session_date) AS session_date
-//       FROM users u
-//       LEFT JOIN cumul_total ct ON ct.user_id = u.id
-//       LEFT JOIN cumul_json cj ON cj.user_id = u.id AND cj.session_date = ct.session_date
-//       LEFT JOIN connections co ON co.user_id = u.id AND co.session_date = ct.session_date
-//       WHERE u.id = $3
-//         AND (
-//           (ct.session_date BETWEEN $1 AND $2)
-//           OR (cj.session_date BETWEEN $1 AND $2)
-//           OR (co.session_date BETWEEN $1 AND $2)
-//         )
-//       ORDER BY session_date;
-//     `;
-
-//     const params = [startDate, endDate, userId];
-//     const { rows } = await db.query(query, params);
-//     res.json(rows);
-
-//   } catch (err) {
-//     console.error("Erreur exportAgentSessions:", err);
-//     res.status(500).json({ error: "Erreur export agent sessions" });
-//   }
-// }; // a supprimer 
-
 
 exports.getMonthlySessions = async (req, res) => {
   try {
@@ -1290,116 +1333,6 @@ exports.getAllHistorySessions = async (req, res) => {
     res.status(500).json({ error: "Erreur serveur" });
   }
 };
-
-// controllers/sessionControllers.js
-exports.correctSession = async (req, res) => {
-  try {
-    const { userId, sessionDate, updates } = req.body;
-
-    if (!userId || !sessionDate || !updates) {
-      return res.status(400).json({ error: "Paramètres manquants" });
-    }
-
-    const statusesInOrder = [
-      "Disponible",
-      "Pausette 1",
-      "Déjeuner",
-      "Pausette 2",
-      "Réunion",
-      "Formation",
-      "Brief"
-    ];
-
-    // 1) Récupérer la vraie heure de connexion
-    const startRow = await db.query(
-      `SELECT MIN(event_time) AS first_connection
-       FROM agent_connections_history
-       WHERE user_id = $1 AND DATE(event_time) = $2`,
-      [userId, sessionDate]
-    );
-
-    const firstConnection = startRow.rows[0]?.first_connection;
-
-    if (!firstConnection) {
-      return res.status(400).json({
-        error: "Impossible de corriger : aucune connexion trouvée pour ce jour."
-      });
-    }
-
-    // 2) Supprimer uniquement les sessions agents du jour
-    await db.query(
-      "DELETE FROM session_agents WHERE user_id = $1 AND DATE(start_time) = $2",
-      [userId, sessionDate]
-    );
-
-    // 3) Repartir de la vraie heure de connexion
-    let cursor = new Date(firstConnection);
-
-    // 4) Reconstruire proprement chaque statut
-    for (const st of statusesInOrder) {
-
-      const seconds = updates[st] || 0;
-      if (seconds <= 0) continue;
-
-      const start = new Date(cursor);
-      const end = new Date(start.getTime() + seconds * 1000);
-
-      const pause_type = ["Pausette 1", "Pausette 2", "Déjeuner"].includes(st)
-        ? st
-        : null;
-
-      await db.query(
-        `INSERT INTO session_agents 
-            (user_id, status, start_time, end_time, pause_type, created_at)
-         VALUES ($1, $2, $3, $4, $5, NOW())`,
-        [
-          userId,
-          st,
-          start,
-          end,
-          pause_type
-        ]
-      );
-
-      cursor = end; // avancer le pointeur
-    }
-
-    return res.json({ message: "Correction appliquée avec succès" });
-
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: "Erreur serveur" });
-  }
-};
-
-
-exports.getSessionforCorrect = async (req, res) => {
-  const { userId, date } = req.params;
-
-  if (!userId || !date) return res.status(400).json({ error: "Paramètres manquants" });
-
-  try {
-    const query = `
-      SELECT status, EXTRACT(EPOCH FROM (end_time - start_time))::int AS duree_sec
-      FROM session_agents
-      WHERE user_id = $1
-        AND DATE(start_time) = $2
-    `;
-    const { rows } = await db.query(query, [userId, date]);
-
-    // Transformer en objet { Disponible: xx, 'Pausette 1': yy, ... }
-    const cumul_statuts = {};
-    rows.forEach(r => {
-      cumul_statuts[r.status] = (cumul_statuts[r.status] || 0) + r.duree_sec;
-    });
-
-    res.json({ userId, date, cumul_statuts });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Erreur récupération session brute" });
-  }
-};
-
 
 exports.getSessionDetailsOptimized = async (req, res) => {
   try {

@@ -15,8 +15,16 @@ dayjs.extend(isSameOrAfter);
 const columnOptions = [
     { key: "date", label: "Date" },
     { key: "agent", label: "Agent" },
-    { key: "start_time", label: "Connexion" },
-    { key: "end_time", label: "Déconnexion" },
+
+    // 🔹 Connexion / déconnexion réelles (depuis agent_connections_history)
+    { key: "arrival_time", label: "Heure d'arrivée" },
+    { key: "departure_time", label: "Heure de départ" },
+
+    // 🔹 Bornes selon les statuts (session_agents)
+    { key: "status_first_start", label: "Connexion" },
+    { key: "status_last_end", label: "Déconnexion" },
+
+    // Durées
     { key: "travail", label: "Travail (h)" },
     { key: "pauses", label: "Pauses (h)" },
     { key: "cumul", label: "Cumul (h)" },
@@ -185,11 +193,17 @@ export default function ExportAdminWorkTable({
                         case "agent":
                             row[col.label] = `${r.firstname || ""} ${r.lastname || ""}`.trim();
                             break;
-                        case "start_time":
-                            row[col.label] = r.start_time ? dayjs(r.start_time).format("YYYY-MM-DD HH:mm:ss") : "";
+                        case "arrival_time":
+                            row[col.label] = r.arrival_time ? dayjs(r.arrival_time).format("YYYY-MM-DD HH:mm:ss") : "";
                             break;
-                        case "end_time":
-                            row[col.label] = r.end_time ? dayjs(r.end_time).format("YYYY-MM-DD HH:mm:ss") : "";
+                        case "departure_time":
+                            row[col.label] = r.departure_time ? dayjs(r.departure_time).format("YYYY-MM-DD HH:mm:ss") : "";
+                            break;
+                        case "status_first_start":
+                            row[col.label] = r.status_first_start ? dayjs(r.status_first_start).format("YYYY-MM-DD HH:mm:ss") : "";
+                            break;
+                        case "status_last_end":
+                            row[col.label] = r.status_last_end ? dayjs(r.status_last_end).format("YYYY-MM-DD HH:mm:ss") : "";
                             break;
                         case "travail":
                             row[col.label] = r.travail ? parseFloat((r.travail / 3600).toFixed(2)) : 0;
