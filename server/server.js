@@ -93,10 +93,11 @@ setIo(io);
 
 
 // Cron pour nettoyage après fin de shift, ex: 00H00 chaque jour
-cron.schedule('59 23 * * *', async () => {
-  console.log("🚀 [CRON] Lancement cronCleanShift –", new Date().toISOString());
-  await cronCleanShift();
-  console.log("✅ [CRON] Fin cronCleanShift –", new Date().toISOString());
+cron.schedule('55 23 * * *', async () => {
+  const today = new Date().toISOString().split("T")[0];
+  console.log("🚀 [CRON] Lancement cronCleanShift pour", today);
+  await cronCleanShift({ startDate: today });
+  console.log("✅ [CRON] Fin cronCleanShift pour", today);
 });
 
 // Tâche cron pour minuit
