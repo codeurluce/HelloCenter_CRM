@@ -413,6 +413,16 @@ exports.getSessionAgent = async (req, res) => {
   }
 };
 
+
+// Utilitaire pour formater les secondes en HH:MM:SS
+function formatSecondsToHMS(seconds) {
+  if (seconds == null || seconds < 0) return "00:00:00";
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  return [h, m, s].map(v => v.toString().padStart(2, '0')).join(':');
+}
+
 // GET /api/sessions/admin - Récupérer les sessions des agents pour l'admin avec filtres
 exports.getSessionAgentsForRH = async (req, res) => {
   try {
@@ -421,69 +431,61 @@ exports.getSessionAgentsForRH = async (req, res) => {
       return res.status(400).json({ error: "startDate et endDate sont obligatoires" });
     }
 
-    const hasUsers = userIds.length > 0;
+    const userIdsArray = Array.isArray(userIds)
+      ? userIds.map(id => parseInt(id, 10))
+      : userIds ? [parseInt(userIds, 10)] : [];
+    const hasUsers = userIdsArray.length > 0;
 
-    // 🔹 1) Récupération des cumuls depuis daily_agent_cumul
+    // 1) Cumuls
     let cumulsQuery = `
-      SELECT 
-        d.user_id, d.day AS session_date,
-        d.travail_sec AS travail,
-        d.pauses_sec AS pauses
+      SELECT d.id, d.user_id, d.day AS session_date,
+             d.travail_sec AS travail, d.pauses_sec AS pauses
       FROM daily_agent_cumul d
       WHERE d.day BETWEEN $1 AND $2
     `;
     const cumulsParams = [startDate, endDate];
     if (hasUsers) {
       cumulsQuery += " AND d.user_id = ANY($3)";
-      cumulsParams.push(userIds.map(Number));
+      cumulsParams.push(userIdsArray);
     }
     const cumulsRes = await db.query(cumulsQuery, cumulsParams);
-    const cumulsMap = new Map(cumulsRes.rows.map(c => [`${c.user_id}-${c.session_date.toISOString().split("T")[0]}`, c]));
+    const cumulsMap = new Map(cumulsRes.rows.map(c => [
+      `${c.user_id}-${c.session_date.toISOString().split("T")[0]}`, c
+    ]));
 
-    // 🔹 2) Connexions / statuts détaillés (heures des sessions)
+    // 2) Connexions / sessions
     const query = `
       WITH sessions AS (
-        SELECT
-          sa.user_id,
-          DATE(sa.start_time) AS session_date,
-          sa.start_time,
-          sa.end_time,
-          sa.status
+        SELECT sa.user_id,
+               DATE(sa.start_time) AS session_date,
+               sa.start_time, sa.end_time, sa.status
         FROM session_agents sa
         WHERE DATE(sa.start_time) BETWEEN $1 AND $2
         ${hasUsers ? `AND sa.user_id = ANY($3)` : ""}
       ),
       connexions AS (
-        SELECT
-          user_id,
-          DATE(event_time) AS session_date,
-          MIN(event_time) FILTER (WHERE event_type='connect') AS arrival_time,
-          MAX(event_time) FILTER (
-            WHERE event_type IN ('disconnect','disconnectByAdmin','auto_disconnect')
-          ) AS departure_time
+        SELECT user_id,
+               DATE(event_time) AS session_date,
+               MIN(event_time) FILTER (WHERE event_type='connect') AS arrival_time,
+               MAX(event_time) FILTER (
+                 WHERE event_type IN ('disconnect','disconnectByAdmin','auto_disconnect')
+               ) AS departure_time
         FROM agent_connections_history
         WHERE DATE(event_time) BETWEEN $1 AND $2
         ${hasUsers ? `AND user_id = ANY($3)` : ""}
         GROUP BY user_id, DATE(event_time)
       ),
       statut_bounds AS (
-        SELECT
-          user_id,
-          session_date,
-          MIN(start_time) AS status_first_start,
-          MAX(end_time) AS status_last_end
+        SELECT user_id,
+               session_date,
+               MIN(start_time) AS status_first_start,
+               MAX(end_time) AS status_last_end
         FROM sessions
         GROUP BY user_id, session_date
       )
-      SELECT
-        u.id AS user_id,
-        u.firstname,
-        u.lastname,
-        sb.session_date,
-        cx.arrival_time,
-        cx.departure_time,
-        sb.status_first_start,
-        sb.status_last_end
+      SELECT u.id AS user_id, u.firstname, u.lastname,
+             sb.session_date, cx.arrival_time, cx.departure_time,
+             sb.status_first_start, sb.status_last_end
       FROM statut_bounds sb
       LEFT JOIN connexions cx
         ON cx.user_id = sb.user_id AND cx.session_date = sb.session_date
@@ -492,16 +494,17 @@ exports.getSessionAgentsForRH = async (req, res) => {
     `;
 
     const params = [startDate, endDate];
-    if (hasUsers) params.push(userIds);
+    if (hasUsers) params.push(userIdsArray);
 
     const { rows } = await db.query(query, params);
 
-    // 🔹 3) Fusion avec les cumuls depuis daily_agent_cumul
+    // 3) Fusion cumuls
     const finalRows = rows.map(r => {
       const key = `${r.user_id}-${r.session_date.toISOString().split("T")[0]}`;
-      const c = cumulsMap.get(key) || { travail: 0, pauses: 0 };
+      const c = cumulsMap.get(key) || { id: null, travail: 0, pauses: 0 };
       return {
         ...r,
+        cumul_id: c.id,
         travail: c.travail,
         pauses: c.pauses,
         presence: c.travail + c.pauses
@@ -516,8 +519,7 @@ exports.getSessionAgentsForRH = async (req, res) => {
   }
 };
 
-
-// GET /api/sessions/admin/export - Exporter les sessions des agents pour l'admin
+// GET /api/sessions/admin/export
 exports.exportSessionAgentsForRH = async (req, res) => {
   try {
     const { startDate, endDate, userIds = [] } = req.query;
@@ -525,13 +527,12 @@ exports.exportSessionAgentsForRH = async (req, res) => {
       return res.status(400).json({ error: "startDate et endDate sont obligatoires" });
     }
 
-    // 🔹 Normaliser userIds en array d'entiers
     const userIdsArray = Array.isArray(userIds)
       ? userIds.map(id => parseInt(id, 10))
       : userIds ? [parseInt(userIds, 10)] : [];
     const hasUsers = userIdsArray.length > 0;
 
-    // 🔹 1) Récupérer les cumuls depuis daily_agent_cumul
+    // 1) Cumuls
     let cumulsQuery = `
       SELECT user_id, day AS session_date, travail_sec AS travail, pauses_sec AS pauses
       FROM daily_agent_cumul
@@ -543,10 +544,12 @@ exports.exportSessionAgentsForRH = async (req, res) => {
       cumulsParams.push(userIdsArray);
     }
     const cumulsRes = await db.query(cumulsQuery, cumulsParams);
-    const cumulsMap = new Map(cumulsRes.rows.map(c => [`${c.user_id}-${c.session_date.toISOString().split("T")[0]}`, c]));
+    const cumulsMap = new Map(cumulsRes.rows.map(c => [
+      `${c.user_id}-${c.session_date.toISOString().split("T")[0]}`, c
+    ]));
 
-    // 🔹 2) Récupérer bornes de sessions et connexions
-    let query = `
+    // 2) Bornes sessions / connexions
+    const query = `
       WITH sessions AS (
         SELECT user_id, DATE(start_time) AS session_date, start_time, end_time, status
         FROM session_agents
@@ -582,7 +585,7 @@ exports.exportSessionAgentsForRH = async (req, res) => {
 
     const { rows } = await db.query(query, params);
 
-    // 🔹 3) Fusionner avec les cumuls et formater si nécessaire
+    // 3) Fusion cumuls + format HH:MM:SS
     const finalRows = rows.map(r => {
       const key = `${r.user_id}-${r.session_date.toISOString().split("T")[0]}`;
       const c = cumulsMap.get(key) || { travail: 0, pauses: 0 };
@@ -604,15 +607,6 @@ exports.exportSessionAgentsForRH = async (req, res) => {
   }
 };
 
-
-// Utilitaire pour formater les secondes en HH:MM:SS
-function formatSecondsToHMS(seconds) {
-  if (seconds == null || seconds < 0) return "00:00:00";
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = seconds % 60;
-  return [h, m, s].map(v => v.toString().padStart(2, '0')).join(':');
-}
 
 exports.getDailyConnectionTimes = async (req, res) => {
   try {
@@ -1216,5 +1210,96 @@ exports.getDailyCumuls = async (req, res) => {
   } catch (err) {
     console.error("Erreur getDailyCumuls:", err);
     res.status(500).json({ error: "Erreur serveur" });
+  }
+};
+
+
+// correction des cumuls journaliers
+exports.correctCumul = async (req, res) => {
+  try {
+    // 🔹 1) Récupérer et valider l'ID
+    const idNum = Number(req.params.id);
+    if (isNaN(idNum)) return res.status(400).json({ message: "ID invalide." });
+
+    // 🔹 2) Récupérer et valider les valeurs envoyées
+    const { travail_sec, pauses_sec, presence_sec } = req.body || {};
+
+    if (travail_sec === undefined || pauses_sec === undefined || presence_sec === undefined) {
+      return res.status(400).json({ message: "Tous les champs travail_sec, pauses_sec, presence_sec sont obligatoires." });
+    }
+
+    const t = Number(travail_sec);
+    const p = Number(pauses_sec);
+    const pr = Number(presence_sec);
+
+    if ([t, p, pr].some(v => isNaN(v))) {
+      return res.status(400).json({ message: "Les valeurs doivent être numériques." });
+    }
+    if (t < 0 || p < 0 || pr < 0) {
+      return res.status(400).json({ message: "Les durées ne peuvent pas être négatives." });
+    }
+    if (t + p > pr) {
+      return res.status(400).json({ message: "travail_sec + pauses_sec doit être ≤ presence_sec." });
+    }
+
+    // 🔹 3) Récupérer la ligne existante
+    const oldRes = await db.query("SELECT * FROM daily_agent_cumul WHERE id = $1", [idNum]);
+    const old = oldRes.rows[0];
+    if (!old) return res.status(404).json({ message: "Cumul introuvable." });
+
+    // 🔹 4) Détecter les changements
+    const changes = [];
+    if (old.travail_sec !== t) changes.push(`travail_sec: ${old.travail_sec} → ${t}`);
+    if (old.pauses_sec !== p) changes.push(`pauses_sec: ${old.pauses_sec} → ${p}`);
+    if (old.presence_sec !== pr) changes.push(`presence_sec: ${old.presence_sec} → ${pr}`);
+    if (changes.length === 0) return res.status(400).json({ message: "Aucun changement détecté." });
+
+    // 🔹 5) Construire le commentaire
+    const adminId = req.user?.id || null;
+    const adminName = `${req.user?.firstname || ""} ${req.user?.lastname || ""}`.trim() || "Admin inconnu";
+    const autoComment = `Correction cumul du ${old.day} par ${adminName} — ${changes.join(" , ")}`;
+
+    // 🔹 6) Update
+    const result = await db.query(
+      `UPDATE daily_agent_cumul
+       SET travail_sec = $1,
+           pauses_sec = $2,
+           presence_sec = $3,
+           is_corrected = TRUE,
+           corrected_by = $4,
+           old_values = $5,
+           new_values = $6,
+           commentaire = $7,
+           updated_at = NOW()
+       WHERE id = $8
+       RETURNING *`,
+      [
+        t,
+        p,
+        pr,
+        adminId,
+        JSON.stringify({ travail_sec: old.travail_sec, pauses_sec: old.pauses_sec, presence_sec: old.presence_sec }),
+        JSON.stringify({ travail_sec: t, pauses_sec: p, presence_sec: pr }),
+        autoComment,
+        idNum
+      ]
+    );
+
+    // 🔹 7) Vérifier si l'UPDATE a affecté une ligne
+    if (!result.rows[0]) {
+      console.error(`correctCumul: UPDATE n'a affecté aucune ligne pour id=${idNum}`);
+      return res.status(404).json({ message: "La mise à jour n'a affecté aucune ligne." });
+    }
+
+    // 🔹 8) Réponse
+    res.status(200).json({
+      message: "Cumul corrigé avec succès.",
+      updated: result.rows[0],
+      commentaire: autoComment
+    });
+
+  } catch (error) {
+    console.error("Erreur correctCumul :", error);
+    res.status(500).json({ message: "Erreur serveur", error: error.message });
   }
 };

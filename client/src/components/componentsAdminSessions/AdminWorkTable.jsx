@@ -3,9 +3,10 @@ import dayjs from "dayjs";
 import axiosInstance from "../../api/axiosInstance";
 import CleanShiftModal from "./CleanShiftModal";
 import Swal from "sweetalert2";
-import { Eye, RefreshCw, Upload, Wrench } from "lucide-react";
+import { Eye, Pencil, RefreshCw, Upload, Wrench } from "lucide-react";
 import AdminWorkTableDetailsModal from "./AdminWorkTableDetailsModal";
 import ExportAdminWorkTable from "./ExportAdminWorkTable";
+import AdminWorkTableCorrectModal from "./AdminWorkTableCorrectModal";
 
 // Convertir secondes en heures décimales
 const secondsToDecimal = (seconds) => {
@@ -15,6 +16,19 @@ const secondsToDecimal = (seconds) => {
 
 const PauseBadge = ({ hours }) => {
     const colorClass = hours < 1.51 ? "bg-green-500" : "bg-red-500";
+    return (
+        <div className="flex items-center gap-2 justify-center">
+            <span>{hours}</span>
+            <span
+                className={`w-3 h-3 rounded-full inline-block ${colorClass}`}
+                title={`Pause : ${hours} h`}
+            ></span>
+        </div>
+    );
+};
+
+const TravailBagde = ({ hours }) => {
+    const colorClass = hours < 7.51 ? "bg-green-500" : "bg-red-500";
     return (
         <div className="flex items-center gap-2 justify-center">
             <span>{hours}</span>
@@ -37,6 +51,7 @@ export default function AdminWorkTable() {
     const [selectedRow, setSelectedRow] = useState(null);
     const [exportModalOpen, setExportModalOpen] = useState(false);
     const [cleanModalOpen, setCleanModalOpen] = useState(false);
+    const [correctModalOpen, setCorrectModalOpen] = useState(false);
 
     const today = dayjs().format("YYYY-MM-DD");
     const firstDay = dayjs().startOf("month").format("YYYY-MM-DD");
@@ -215,7 +230,7 @@ export default function AdminWorkTable() {
                                     <td className="p-2 border font-mono">{row.departure_time ? dayjs(row.departure_time).format("YYYY-MM-DD HH:mm:ss") : "--"}</td>
                                     <td className="p-2 border font-mono">{row.status_first_start ? dayjs(row.status_first_start).format("YYYY-MM-DD HH:mm:ss") : "--"}</td>
                                     <td className="p-2 border font-mono">{row.status_last_end ? dayjs(row.status_last_end).format("YYYY-MM-DD HH:mm:ss") : "--"}</td>
-                                    <td className="p-2 border font-mono">{secondsToDecimal(row.travail)}</td>
+                                    <td className="p-2 border font-mono"><TravailBagde hours={secondsToDecimal(row.travail)} /></td>
                                     <td className="p-2 border font-mono"><PauseBadge hours={secondsToDecimal(row.pauses)} /></td>
                                     <td className="p-2 border font-mono">{row.cumul.toFixed(2)}</td>
                                     <td className="p-2 border text-center">
@@ -234,6 +249,21 @@ export default function AdminWorkTable() {
                                                 </button>
                                                 <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-green-600 text-white text-xs whitespace-nowrap">
                                                     Consulter
+                                                </span>
+                                            </div>
+
+                                            <div className="relative group">
+                                                <button
+                                                    onClick={() => {
+                                                        setSelectedRow(row);
+                                                        setCorrectModalOpen(true);
+                                                    }}
+                                                    className="px-3 py-1.5 rounded-lg border border-yellow-200 text-yellow-600 hover:bg-yellow-600 hover:text-white transition-transform transform focus:outline-none focus:ring-2 focus:ring-offset-1 hover:scale-105"
+                                                >
+                                                    <Pencil className="w-4 h-4" />
+                                                </button>
+                                                <span className="pointer-events-none absolute -top-9 right-0 hidden group-hover:block px-2 py-1 rounded shadow-lg bg-yellow-600 text-white text-xs whitespace-nowrap">
+                                                    Corriger
                                                 </span>
                                             </div>
 
@@ -311,6 +341,13 @@ export default function AdminWorkTable() {
                 onClose={() => setExportModalOpen(false)}
                 sessions={data}
                 agents={uniqueAgents}
+            />
+
+            <AdminWorkTableCorrectModal
+                isOpen={correctModalOpen}
+                onClose={() => setCorrectModalOpen(false)}
+                row={selectedRow}
+                onSaved={fetchData}
             />
         </div>
     );

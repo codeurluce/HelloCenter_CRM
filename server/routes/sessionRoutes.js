@@ -12,7 +12,7 @@ router.get('/', sessionControllers.getSessions); // 📌 Récupère toutes les s
 router.get('/check', sessionControllers.checkSessionActive);  // 📌 Vérifie si une session est active // Méthode : GET /api/sessions/check
 router.get('/last-status/:userId', sessionControllers.getLastAgentStatus); // 📌 Récupère le dernier statut d’un agent par son userId (utile pour restauration après reconnexion) // Méthode : GET /api/sessions/last-status/:userId
 router.get('/user/live', sessionControllers.getLiveSessionAgents); // 📌 Récupère toutes les sessions en ligne des agents actifs // Méthode : GET /api/sessions/user/live
-router.get('/agents-session-rh', sessionControllers.getSessionAgentsForRH); // 📌 Récupère les sessions des agents pour le RH // Méthode : GET /api/sessions/agents-session-rh
+router.get('/agents-session-rh', verifyToken, sessionControllers.getSessionAgentsForRH); // 📌 Récupère les sessions des agents pour le RH // Méthode : GET /api/sessions/agents-session-rh
 router.get('/export-session-rh', verifyToken, sessionControllers.exportSessionAgentsForRH); // 📌 Exporte les sessions des agents pour le RH // Méthode : GET /api/sessions/export-session-rh
 router.get('/user/live/:userId', sessionControllers.getSessionAgent); // 📌 Récupère la session active d’un agent spécifique par userId // Méthode : GET /api/sessions/user/live/:userId
 router.get('/user/agent-connection-details', sessionControllers.getDailyConnectionTimes); // 📌 Récupère le détail des connexions journalières des agents // Méthode : GET /api/sessions/user/agent_connection_details
@@ -66,6 +66,7 @@ router.post('/close-force', async (req, res) => {
   }
 }); // 📌 Force la fermeture d’une session pour un utilisateur donné (via user_id dans le body) // Méthode : POST /api/sessions/close-force
 router.post('/export-sessions', sessionControllers.exportSessions); // 📌 Exporte les sessions par l'admin (format ou destination selon implémentation) // Méthode : POST /api/sessions/export-sessions
+router.patch('/correct-cumul/:id', sessionControllers.correctCumul);
 
 // Pour le cronCleanShift
 const { cronCleanShift } = require('../cronFichiers/cronCleanShift');
