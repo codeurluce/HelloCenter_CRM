@@ -29,12 +29,12 @@ const SidebarAdmin = ({ activeItem, setActiveItem, onLogout }) => {
     { id: 'sales', label: 'Ventes', icon: ShoppingCart },
     { id: 'activité', label: 'Activité', icon: CircleUser },
     { id: 'sessions', label: 'Sessions', icon: Clock },
-    { id: 'rh', label: 'RH', icon: Users },
     // { id: 'comptable', label: 'Comptable', icon: Calculator },
     
   ];
 
   const bottomItems = [
+    { id: 'rh', label: 'RH', icon: Users },
     { id: 'administration', label: 'Administration', icon: UserSearch },
     { id: 'settings', label: 'Paramètres', icon: Settings },
     {
