@@ -417,60 +417,42 @@ exports.getSessionAgent = async (req, res) => {
 exports.getSessionAgentsForRH = async (req, res) => {
   try {
     const { startDate, endDate, userIds = [] } = req.query;
-
     if (!startDate || !endDate) {
       return res.status(400).json({ error: "startDate et endDate sont obligatoires" });
     }
 
     const hasUsers = userIds.length > 0;
 
+    // 🔹 1) Récupération des cumuls depuis daily_agent_cumul
+    let cumulsQuery = `
+      SELECT 
+        d.user_id, d.day AS session_date,
+        d.travail_sec AS travail,
+        d.pauses_sec AS pauses
+      FROM daily_agent_cumul d
+      WHERE d.day BETWEEN $1 AND $2
+    `;
+    const cumulsParams = [startDate, endDate];
+    if (hasUsers) {
+      cumulsQuery += " AND d.user_id = ANY($3)";
+      cumulsParams.push(userIds.map(Number));
+    }
+    const cumulsRes = await db.query(cumulsQuery, cumulsParams);
+    const cumulsMap = new Map(cumulsRes.rows.map(c => [`${c.user_id}-${c.session_date.toISOString().split("T")[0]}`, c]));
+
+    // 🔹 2) Connexions / statuts détaillés (heures des sessions)
     const query = `
-      -- 1) Sessions agents brutes
       WITH sessions AS (
         SELECT
           sa.user_id,
           DATE(sa.start_time) AS session_date,
           sa.start_time,
           sa.end_time,
-          sa.status,
-          EXTRACT(EPOCH FROM (COALESCE(sa.end_time, NOW()) - sa.start_time))::INT AS duree_sec
+          sa.status
         FROM session_agents sa
         WHERE DATE(sa.start_time) BETWEEN $1 AND $2
         ${hasUsers ? `AND sa.user_id = ANY($3)` : ""}
       ),
-
-      -- 2) Catégorisation Travail / Pause
-      mapped AS (
-        SELECT
-          user_id,
-          session_date,
-          start_time,
-          end_time,
-          CASE
-            WHEN status ILIKE ANY(ARRAY['Disponible','Réunion','Formation','Brief'])
-              THEN 'travail'
-            WHEN status ILIKE ANY(ARRAY['Déjeuner','Pausette 1','Pausette 2'])
-              THEN 'pause'
-            ELSE 'autre'
-          END AS category,
-          duree_sec
-        FROM sessions
-      ),
-
-      -- 3) Cumul Travail / Pause + première et dernière session statuts
-      cumuls AS (
-        SELECT
-          user_id,
-          session_date,
-          SUM(CASE WHEN category='travail' THEN duree_sec ELSE 0 END) AS travail,
-          SUM(CASE WHEN category='pause' THEN duree_sec ELSE 0 END) AS pauses,
-          MIN(start_time) AS statut_first_start,
-          MAX(end_time) AS statut_last_end
-        FROM mapped
-        GROUP BY user_id, session_date
-      ),
-
-      -- 4) Connexions / déconnexions réelles
       connexions AS (
         SELECT
           user_id,
@@ -483,30 +465,30 @@ exports.getSessionAgentsForRH = async (req, res) => {
         WHERE DATE(event_time) BETWEEN $1 AND $2
         ${hasUsers ? `AND user_id = ANY($3)` : ""}
         GROUP BY user_id, DATE(event_time)
+      ),
+      statut_bounds AS (
+        SELECT
+          user_id,
+          session_date,
+          MIN(start_time) AS status_first_start,
+          MAX(end_time) AS status_last_end
+        FROM sessions
+        GROUP BY user_id, session_date
       )
-
-      -- 5) Fusion finale
       SELECT
         u.id AS user_id,
         u.firstname,
         u.lastname,
-        c.session_date,
-
-        -- Arrivée/départ réels
+        sb.session_date,
         cx.arrival_time,
         cx.departure_time,
-
-        -- Heures de connexion/déconnexion selon statuts
-        c.statut_first_start AS status_first_start,
-        c.statut_last_end    AS status_last_end,
-
-        c.travail,
-        c.pauses
-      FROM cumuls c
+        sb.status_first_start,
+        sb.status_last_end
+      FROM statut_bounds sb
       LEFT JOIN connexions cx
-        ON cx.user_id = c.user_id AND cx.session_date = c.session_date
-      JOIN users u ON u.id = c.user_id
-      ORDER BY c.session_date DESC, u.lastname, u.firstname;
+        ON cx.user_id = sb.user_id AND cx.session_date = sb.session_date
+      JOIN users u ON u.id = sb.user_id
+      ORDER BY sb.session_date DESC, u.lastname, u.firstname;
     `;
 
     const params = [startDate, endDate];
@@ -514,13 +496,26 @@ exports.getSessionAgentsForRH = async (req, res) => {
 
     const { rows } = await db.query(query, params);
 
-    res.json(rows);
+    // 🔹 3) Fusion avec les cumuls depuis daily_agent_cumul
+    const finalRows = rows.map(r => {
+      const key = `${r.user_id}-${r.session_date.toISOString().split("T")[0]}`;
+      const c = cumulsMap.get(key) || { travail: 0, pauses: 0 };
+      return {
+        ...r,
+        travail: c.travail,
+        pauses: c.pauses,
+        presence: c.travail + c.pauses
+      };
+    });
+
+    res.json(finalRows);
 
   } catch (err) {
     console.error("Erreur getSessionAgentsForRH:", err);
     res.status(500).json({ error: "Erreur récupération sessions admin" });
   }
 };
+
 
 
 // GET /api/sessions/admin/export - Exporter les sessions des agents pour l'admin
@@ -968,7 +963,6 @@ exports.getMonthlySessions = async (req, res) => {
   }
 };
 
-
 exports.getMonthlySessionsFiltre = async (req, res) => {
   try {
     const userId = req.user?.id || req.query.userId;
@@ -1050,7 +1044,6 @@ exports.getMonthlySessionsFiltre = async (req, res) => {
     res.status(500).json({ error: "Erreur récupération sessions filtrées" });
   }
 };
-
 
 exports.getUserStatusToday = async (req, res) => {
   const { id } = req.params;
@@ -1383,5 +1376,40 @@ exports.getSessionDetailsOptimized = async (req, res) => {
   } catch (err) {
     console.error("Erreur getSessionDetailsOptimized:", err);
     res.status(500).json({ error: "Erreur interne du serveur" });
+  }
+};
+
+// obtenir les cumuls journaliers des agents
+exports.getDailyCumuls = async (req, res) => {
+  try {
+    const { startDate, endDate, userIds = [] } = req.query;
+    if (!startDate || !endDate) {
+      return res.status(400).json({ error: "startDate et endDate obligatoires" });
+    }
+
+    let query = `
+      SELECT 
+        d.user_id, u.firstname, u.lastname, d.day,
+        d.travail_sec, d.pauses_sec, d.presence_sec,
+        d.is_corrected, d.corrected_by, d.old_values, d.new_values,
+        d.updated_at
+      FROM daily_agent_cumul d
+      JOIN users u ON u.id = d.user_id
+      WHERE d.day BETWEEN $1 AND $2
+    `;
+    const params = [startDate, endDate];
+
+    if (userIds.length > 0) {
+      query += " AND d.user_id = ANY($3)";
+      params.push(userIds.map(Number));
+    }
+
+    query += " ORDER BY d.day DESC, u.lastname, u.firstname";
+
+    const { rows } = await db.query(query, params);
+    res.json(rows);
+  } catch (err) {
+    console.error("Erreur getDailyCumuls:", err);
+    res.status(500).json({ error: "Erreur serveur" });
   }
 };

@@ -38,19 +38,27 @@ function initSockets(server) {
     userSockets.get(userId).add(socket.id);
     socket.join(`agent_${userId}`);
 
-    socket.on("disconnect", () => {
+    socket.on("disconnect", async () => {
       console.log(`[BACK] ❌ Déconnecté : ${socket.id} (user ${userId})`);
 
-      // Nettoyer le Map userSockets
       const set = userSockets.get(userId);
       if (set) {
         set.delete(socket.id);
-        if (set.size === 0) userSockets.delete(userId);
+        if (set.size === 0) {
+          userSockets.delete(userId);
 
-        // 🔥 Déclencher la fermeture de session en arrière-plan
-        handleAgentDisconnect(userId, "auto_disconnect").catch(err => {
-          console.error(`[Socket] Erreur dans handleAgentDisconnect (userId=${userId}):`, err);
-        });
+          // 🔹 Délai de grâce : attendre X secondes avant de vraiment déconnecter
+          //    au cas où l'agent se reconnecte (ex: refresh, changement d'onglet)
+          setTimeout(async () => {
+            const stillEmpty = !userSockets.has(userId);
+            if (stillEmpty) {
+              console.log(`[INACTIVITY] Aucune reconnexion après 30s → déconnexion réelle pour user ${userId}`);
+              await handleAgentDisconnect(userId, "auto_disconnect");
+            } else {
+              console.log(`[RECONNECT] Agent ${userId} s'est reconnecté → annulation déconnexion`);
+            }
+          }, 30_000); // 30 secondes de grâce
+        }
       }
     });
   });
