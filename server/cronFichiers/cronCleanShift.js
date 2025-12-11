@@ -17,7 +17,7 @@ const SHIFT_END = "18:00:00";
  * @param {Array<Number>} userIds facultatif, si vide => tous les agents
  */
 async function cronCleanShift({ startDate, endDate = startDate, userIds = [] }) {
-    console.log("🚀 [cleanShift] Démarrage du nettoyage", { startDate, endDate });
+    console.log("🚀 [cronCleanShift] Démarrage du nettoyage", { startDate, endDate });
   if (!startDate || !endDate) {
     throw new Error("startDate et endDate sont obligatoires");
   }

@@ -314,6 +314,8 @@ const markNotificationAsRead = async (req, res) => {
 
 async function checkContrats() {
     try {
+        console.log("📄 Vérification des contrats RH...");
+        
         const today = dayjs().startOf("day");
 
         // Tous les contrats

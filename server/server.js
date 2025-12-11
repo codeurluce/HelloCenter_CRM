@@ -92,28 +92,28 @@ const { setIo } = require("./socketInstance");
 setIo(io);
 
 
-// Cron pour nettoyage après fin de shift, ex: 00H00 chaque jour
-cron.schedule('55 23 * * *', async () => {
-  const today = new Date().toISOString().split("T")[0];
-  console.log("🚀 [CRON] Lancement cronCleanShift pour", today);
-  await cronCleanShift({ startDate: today });
-  console.log("✅ [CRON] Fin cronCleanShift pour", today);
-});
-
-// Tâche cron pour minuit
+// Tâche cron pour minuit coupe toutes les sessions en cours (endtime = 23:59:59) et verifie les contrats
 cron.schedule('0 0 * * *', async () => {
-  console.log("⏰ Minuit → Split des sessions en cours...");
+  console.log("⏰ Minuit → Vérification contrats + split sessions");
+  checkContrats();
   await splitSessionsAtMidnight();
 });
 
+// ²4h00 : fermer les sessions orphelines des jours passés
 cron.schedule('0 1 * * *', async () => {
   console.log("⏰ Cron → Fermeture des sessions orphelines des jours passés...");
   await cronCloseOrphanSessions();
 });
 
-cron.schedule("* * * * *", () => {
-  checkContrats();
+// Nettoyer le JOUR PRÉCÉDENT à 00h05
+cron.schedule('5 0 * * *', async () => {
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const dateStr = yesterday.toISOString().split('T')[0];
+  console.log("🚀 [CRON] Nettoyage du jour précédent :", dateStr);
+  await cronCleanShift({ startDate: dateStr });
 });
+
 
 // Lancer le serveur
 const PORT = process.env.PORT || 8080;

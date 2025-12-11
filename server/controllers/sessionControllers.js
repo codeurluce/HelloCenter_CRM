@@ -1085,7 +1085,6 @@ exports.getUserStatusToday = async (req, res) => {
   }
 };
 
-
 exports.splitSessionsAtMidnight = async () => {
   try {
     const today = new Date();
@@ -1108,12 +1107,6 @@ exports.splitSessionsAtMidnight = async () => {
         SET end_time = DATE_TRUNC('day', NOW()) - INTERVAL '1 second'
         WHERE user_id = $1 AND end_time IS NULL AND start_time < $2
       `, [user_id, today]);
-
-      // 2. Créer une nouvelle session à 00:00:00 aujourd'hui
-      await db.query(`
-        INSERT INTO session_agents (user_id, status, start_time)
-        VALUES ($1, 'Disponible', DATE_TRUNC('day', NOW()))
-      `, [user_id]);
 
       console.log(`✅ Session de l'agent ${user_id} splittée à minuit (23:59:59 → 00:00:00)`);
     }
