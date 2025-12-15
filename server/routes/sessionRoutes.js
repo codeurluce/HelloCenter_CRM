@@ -65,8 +65,8 @@ router.post('/close-force', async (req, res) => {
     res.status(500).json({ message: "Erreur serveur" });
   }
 }); // 📌 Force la fermeture d’une session pour un utilisateur donné (via user_id dans le body) // Méthode : POST /api/sessions/close-force
-router.post('/export-sessions', sessionControllers.exportSessions); // 📌 Exporte les sessions par l'admin (format ou destination selon implémentation) // Méthode : POST /api/sessions/export-sessions
-router.patch('/correct-cumul/:id', sessionControllers.correctCumul);
+router.post('/export-sessions', verifyToken, sessionControllers.exportSessions); // 📌 Exporte les sessions par l'admin (format ou destination selon implémentation) // Méthode : POST /api/sessions/export-sessions
+router.patch('/correct-cumul/:id', verifyToken, sessionControllers.correctCumul);
 
 // Pour le cronCleanShift
 const { cronCleanShift } = require('../cronFichiers/cronCleanShift');

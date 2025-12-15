@@ -1102,7 +1102,6 @@ exports.getAllHistorySessions = async (req, res) => {
   }
 };
 
-
 // les Détails sur les  cumuls d'un agent
 exports.getSessionDetailsOptimized = async (req, res) => {
   try {
@@ -1177,7 +1176,6 @@ exports.getSessionDetailsOptimized = async (req, res) => {
   }
 };
 
-
 // obtenir les cumuls journaliers des agents
 exports.getDailyCumuls = async (req, res) => {
   try {
@@ -1212,7 +1210,6 @@ exports.getDailyCumuls = async (req, res) => {
     res.status(500).json({ error: "Erreur serveur" });
   }
 };
-
 
 // correction des cumuls journaliers
 exports.correctCumul = async (req, res) => {
