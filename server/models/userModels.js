@@ -15,7 +15,7 @@ function generateTempPassword(length = 10) {
 // ✅ Normalisation ici
 const findUserByEmail = async (email) => {
     const result = await db.query(
-        `SELECT id, firstname, lastname, email, role, profil, password, 
+        `SELECT id, firstname, lastname, email, role, profil, site_id, password, 
                 is_first_login, password_changed_at, is_active
          FROM users
          WHERE email = $1`,

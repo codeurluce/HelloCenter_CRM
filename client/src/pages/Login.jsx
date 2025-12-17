@@ -30,6 +30,7 @@ const Login = ({ onLogin }) => {
 
       localStorage.setItem('token', token);
       localStorage.setItem('role', user.role);
+      localStorage.setItem('site_id', user.site_id);
       // localStorage.setItem('univers', user.profil);
       // localStorage.setItem('mustChangePassword', mustChangePassword);
       // localStorage.setItem('user', JSON.stringify(user));

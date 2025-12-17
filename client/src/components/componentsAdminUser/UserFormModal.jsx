@@ -7,6 +7,7 @@ const rolesOptions = [
   { value: "Agent", label: "Agent" },
   { value: "Manager", label: "Manager" },
   { value: "Admin", label: "Admin" },
+  { value: "super_admin", label: "Super Admin" },
 ];
 
 const universOptions = [
@@ -15,13 +16,33 @@ const universOptions = [
   { value: "Hybride", label: "Hybride" },
 ];
 
-export default function UserFormModal({ show, setShow, editingUser, onSave, saving }) {
+const sitesOptions = [
+  { value: 1, label: "Dakar" },
+  { value: 2, label: "Saint-Louis" },
+];
+
+export default function UserFormModal({
+  show,
+  setShow,
+  editingUser,
+  onSave,
+  saving,
+}) {
+  const role = localStorage.getItem("role");
+  // const isAdmin = role === "Admin";
+  // const isManager = role === "Manager";
+  const isSuperAdmin = role === "super_admin";
+  const storedSiteId = localStorage.getItem("site_id");
+  const adminSiteId = storedSiteId ? parseInt(storedSiteId, 10) : 1;
+  console.log("Admin site ID:", adminSiteId);
+
   const defaultForm = {
     firstname: "",
     lastname: "",
     role: "Agent",
     profil: "Energie",
     is_first_login: true,
+    site_id: isSuperAdmin ? 1 : adminSiteId, // super admin = Dakar par défaut, sinon site de l'admin
   };
 
   const [form, setForm] = useState(defaultForm);
@@ -36,13 +57,16 @@ export default function UserFormModal({ show, setShow, editingUser, onSave, savi
           role: editingUser.role || "Agent",
           profil: editingUser.profil || "Energie",
           is_first_login: editingUser.is_first_login ?? true,
+          site_id: editingUser.site_id || adminSiteId, // prendre le site existant ou celui de l'admin
         });
       } else {
-        setForm(defaultForm);
+        setForm({
+          ...defaultForm,
+          site_id: isSuperAdmin ? 1 : adminSiteId,
+        });
       }
     }
   }, [editingUser, show]);
-
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -98,7 +122,9 @@ export default function UserFormModal({ show, setShow, editingUser, onSave, savi
           {/* Prénom + Nom */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label className="text-sm font-medium text-gray-700">Prénom</label>
+              <label className="text-sm font-medium text-gray-700">
+                Prénom
+              </label>
               <div className="relative mt-1">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
@@ -123,7 +149,6 @@ export default function UserFormModal({ show, setShow, editingUser, onSave, savi
               />
             </div>
           </div>
-
 
           {/* Email */}
           {editingUser && (
@@ -162,7 +187,9 @@ export default function UserFormModal({ show, setShow, editingUser, onSave, savi
             </div>
 
             <div>
-              <label className="text-sm font-medium text-gray-700">Profil / Univers</label>
+              <label className="text-sm font-medium text-gray-700">
+                Profil / Univers
+              </label>
               <select
                 className="w-full mt-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                 value={form.profil}
@@ -178,6 +205,26 @@ export default function UserFormModal({ show, setShow, editingUser, onSave, savi
                 ))}
               </select>
             </div>
+          </div>
+
+          {/* Site du user */}
+          <div>
+            <label className="text-sm font-medium text-gray-700">Site</label>
+            <select
+              className="w-full mt-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              value={form.site_id}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, site_id: parseInt(e.target.value) }))
+              }
+              disabled={!isSuperAdmin} // seulement super admin peut changer
+              required
+            >
+              {sitesOptions.map((s) => (
+                <option key={s.value} value={s.value}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Boutons */}

@@ -18,8 +18,8 @@ export default function AdminLiveSessions() {
 
     const role = localStorage.getItem("role");
     const isAdmin = role === "Admin";
-    const isManager = role === "Manager";
-    const isAdminOrManager = isAdmin || isManager;
+    // const isManager = role === "Manager";
+    // const isAdminOrManager = isAdmin || isManager;
 
   // Etats de la barre de filtre/recherche
   const [q, setQ] = useState("");
