@@ -2,8 +2,6 @@
 const db = require('../db');
 const dayjs = require("dayjs");
 const { getIo } = require("../socketInstance");
-const { cronCleanShift } = require('../cronFichiers/cronCleanShift');
-
 
 // ----------------------------- NOUVELLE GESTION DU TIMER VIA BACKEND -------------------
 
@@ -828,6 +826,7 @@ exports.getMonthlySessionsFiltre = async (req, res) => {
   }
 };
 
+
 exports.getUserStatusToday = async (req, res) => {
   const { id } = req.params;
 
@@ -895,48 +894,6 @@ exports.splitSessionsAtMidnight = async () => {
     console.error("❌ Erreur dans splitSessionsAtMidnight :", err.message || err);
   }
 };
-
-// controllers/sessionControllers.js
-const db = require('../db');
-
-exports.closeForceSession = async (req, res) => {
-  try {
-    const { user_id } = req.body;
-    if (!user_id) {
-      return res.status(400).json({ message: "❌ user_id est requis" });
-    }
-
-    const sessionResult = await db.query(
-      `UPDATE session_agents
-       SET end_time = NOW(),
-           duration = EXTRACT(EPOCH FROM (NOW() - start_time))
-       WHERE user_id = $1 AND end_time IS NULL
-       RETURNING *`,
-      [user_id]
-    );
-
-    if (sessionResult.rows.length === 0) {
-      return res.status(200).json({ message: "ℹ️ Aucune session active à fermer" });
-    }
-
-    await db.query("UPDATE users SET is_connected = FALSE WHERE id = $1", [user_id]);
-    await db.query(
-      "INSERT INTO agent_connections_history (user_id, event_type) VALUES ($1, 'disconnect_force')",
-      [user_id]
-    );
-
-    res.json({
-      message: "✅ Session fermée avec succès",
-      session: sessionResult.rows[0]
-    });
-
-  } catch (err) {
-    console.error("❌ Erreur dans closeForceSession:", err);
-    res.status(500).json({ message: "Erreur serveur" });
-  }
-};
-
-
 
 /**
  * Récupère le dernier statut actif d’un agent
@@ -1341,24 +1298,5 @@ exports.correctCumul = async (req, res) => {
   } catch (error) {
     console.error("Erreur correctCumul :", error);
     res.status(500).json({ message: "Erreur serveur", error: error.message });
-  }
-};
-
-// controllers/sessionControllers.js
-
-exports.cleanShift = async (req, res) => {
-  const { startDate, endDate, userIds } = req.body;
-
-  try {
-    if (!startDate) {
-      return res.status(400).json({ success: false, message: "startDate obligatoire" });
-    }
-
-    await cronCleanShift({ startDate, endDate, userIds });
-
-    res.json({ success: true, message: "Nettoyage effectué !" });
-  } catch (err) {
-    console.error("Erreur clean-shift manuel:", err);
-    res.status(500).json({ success: false, message: err.message });
   }
 };
