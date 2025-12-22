@@ -6,13 +6,17 @@ const {
     updateAgentContract,
     getNotificationsFinContrat,
     markNotificationAsRead,
-} = require("../controllers/rhControllers")
+} = require("../controllers/rhControllers");
+const auth = require("../middlewares/authMiddleware");
+const siteScope = require("../middlewares/siteScope");
 
 
-router.get("/users-contrat", verifyToken, getUsersContrat); // 📌 Récupérer tous les utilisateurs et aussi leur contrat
-router.get("/notifications/fin-contrat", verifyToken, getNotificationsFinContrat)
-router.put("/:id/update-contrat", verifyToken, updateAgentContract)
-router.patch("/notifications/:id/lu", verifyToken, markNotificationAsRead)
+router.use(auth); // toutes les routes nécessitent d'être connecté
+router.use(siteScope);   // toutes les routes filtrent selon la scope/site
 
+router.get("/users-contrat", getUsersContrat); // 📌 Récupérer tous les utilisateurs et aussi leur contrat
+router.get("/notifications/fin-contrat", getNotificationsFinContrat)
+router.put("/:id/update-contrat", updateAgentContract)
+router.patch("/notifications/:id/lu", markNotificationAsRead)
 
 module.exports = router;

@@ -1,6 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const auth = require('../middlewares/authMiddleware');
+const siteScope = require('../middlewares/siteScope');
+
+router.use(auth);
+router.use(siteScope);
 
 // ➕ Ajouter une entrée historique
 router.post('/', async (req, res) => {

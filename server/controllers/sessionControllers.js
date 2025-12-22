@@ -897,7 +897,6 @@ exports.splitSessionsAtMidnight = async () => {
 };
 
 // controllers/sessionControllers.js
-const db = require('../db');
 
 exports.closeForceSession = async (req, res) => {
   try {
