@@ -8,13 +8,15 @@ exports.getNewFilesCountByAgent = async (req, res) => {
 
   try {
     const agentFiles = req.user.id; // exemple: 'Energie' ou 'OffreMobile'
+    const siteId = req.siteId;
 
     const result = await db.query(`
       SELECT COUNT(*) AS total_files_today
       FROM files
       WHERE statut = 'nouvelle'
         AND assigned_to = $1
-    `, [agentFiles]);
+        AND site_id = $2
+    `, [agentFiles, siteId]);
 
     res.json({ total_files_today: result.rows[0].total_files_today });
   } catch (error) {
@@ -26,11 +28,15 @@ exports.getNewFilesCountByAgent = async (req, res) => {
 // obtenir le nombre total de nouvelles fiches (statut = nouvelle) pour l'admin
 exports.getAdminFilesSummary = async (req, res) => {
   try {
+    const siteId = req.siteId;
     const result = await db.query(`
       SELECT COUNT(*) AS total_files_today
       FROM files
       WHERE statut = 'nouvelle'
-    `);
+    AND site_id = $1
+      `,
+      [siteId]
+    );
 
     res.json(result.rows[0]);
   } catch (error) {
