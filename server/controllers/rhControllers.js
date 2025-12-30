@@ -43,6 +43,7 @@ const getUsersContrat = async (req, res) => {
         c.updated_by
       FROM users u
       LEFT JOIN contrat c ON c.user_id = u.id
+      WHERE u.is_active = true
       ORDER BY u.lastname ASC
     `);
 
