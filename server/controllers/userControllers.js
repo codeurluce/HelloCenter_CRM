@@ -493,31 +493,52 @@ const disconnectAgentbyAdmin = async (req, res) => {
     return res.status(400).json({ error: "userId manquant" });
   }
 
-  // Permissions
+  // Permissions : on ne peut pas se déconnecter soi-même
   if (requester.id.toString() === userId.toString()) {
     return res
       .status(400)
       .json({ error: "Vous ne pouvez pas vous déconnecter vous-même" });
   }
 
-  if (requester.role !== "Admin") {
+  // Vérifier le rôle du demandeur
+  if (!["Admin", "Manager"].includes(requester.role)) {
     return res
       .status(403)
-      .json({ error: "Action réservée aux administrateurs" });
+      .json({ error: "Action réservée aux administrateurs ou managers" });
   }
 
   try {
+    // Récupérer le rôle et la connexion de l'utilisateur cible
     const userRes = await db.query(
-      "SELECT is_connected FROM users WHERE id = $1",
+      "SELECT is_connected, role FROM users WHERE id = $1",
       [userId]
     );
-    if (!userRes.rows[0]?.is_connected) {
+    const target = userRes.rows[0];
+
+    if (!target) {
+      return res.status(404).json({ error: "Utilisateur non trouvé" });
+    }
+
+    if (!target.is_connected) {
       return res.status(400).json({ error: "Déjà déconnecté" });
     }
 
+    // Logique de protection des rôles
+    if (requester.role === "Manager" && ["Admin", "SuperAdmin"].includes(target.role)) {
+      return res
+        .status(403)
+        .json({ error: "Un manager ne peut pas déconnecter un admin" });
+    }
+
+    // if (requester.role === "Admin" && target.role === "SuperAdmin") {
+    //   // Ici tu peux décider si Admin peut déconnecter SuperAdmin ou pas
+    //   return res
+    //     .status(403)
+    //     .json({ error: "Un admin ne peut pas déconnecter le superAdmin" });
+    // }
+
     await handleAgentDisconnect(userId, "disconnectByAdmin");
 
-    // ⚡ Remplacer TOUT ton code par un seul appel :
     const result = await closeSessionForce(
       userId,
       req.app.locals.userSockets,
@@ -533,6 +554,7 @@ const disconnectAgentbyAdmin = async (req, res) => {
     res.status(500).json({ error: "Erreur déconnexion admin" });
   }
 };
+
 
 // Infos utilisateur connecté
 const getMe = async (req, res) => {
