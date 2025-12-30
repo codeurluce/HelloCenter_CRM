@@ -17,6 +17,10 @@ export default function SearchFilterBar({
   statusFilter,
   setStatusFilter,
 
+  sitesOptions,
+  siteFilter,
+  setSiteFilter,
+
   onRefresh,
   onCreate,
   onResetPage,
@@ -73,13 +77,35 @@ export default function SearchFilterBar({
 
       <select
         value={statusFilter}
-        onChange={(e) => { setStatusFilter(e.target.value); onResetPage?.(); }}
+        onChange={(e) => {
+          setStatusFilter(e.target.value);
+          onResetPage?.();
+        }}
         className="px-3 py-2 rounded-lg border border-gray-200 focus:outline-none"
       >
         <option value="">Tous les status</option>
         <option value="active">Actifs</option>
         <option value="inactive">Désactivés</option>
       </select>
+
+      {/* Filtre site (optionnel) */}
+      {sitesOptions && sitesOptions.length > 0 && (
+        <select
+          value={siteFilter}
+          onChange={(e) => {
+            setSiteFilter(e.target.value);
+            onResetPage?.();
+          }}
+          className="px-3 py-2 rounded-lg border border-gray-200 focus:outline-none"
+        >
+          <option value="">Tous les sites</option>
+          {sitesOptions.map((site) => (
+            <option key={site.id} value={site.id}>
+              {site.name}
+            </option>
+          ))}
+        </select>
+      )}
 
       {/* Bouton créer aligné à droite */}
       <div className="ml-auto">

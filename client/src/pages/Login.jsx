@@ -54,6 +54,9 @@ const Login = ({ onLogin }) => {
           case 'Admin':
             navigate('/admin');
             break;
+          case 'SuperAdmin':
+            navigate('/superAdmin');
+            break;
           default:
             setError('Rôle utilisateur inconnu.');
         }

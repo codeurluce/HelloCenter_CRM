@@ -1,13 +1,12 @@
 // src/components/admin/UserFormModal.jsx
 import React, { useState, useEffect } from "react";
 import { Loader2, User, UserPlus, UserPen, X } from "lucide-react";
-import axiosInstance from "../../api/axiosInstance";
 
 const rolesOptions = [
   { value: "Agent", label: "Agent" },
   { value: "Manager", label: "Manager" },
   { value: "Admin", label: "Admin" },
-  { value: "super_admin", label: "Super Admin" },
+  { value: "SuperAdmin", label: "Super Admin" },
 ];
 
 const universOptions = [
@@ -71,22 +70,6 @@ export default function UserFormModal({
   const handleSubmit = async (e) => {
     e.preventDefault();
     onSave(form);
-
-    // try {
-    //   // Envoi des données modifiées au backend
-    //   const res = await axiosInstance.put(`/users/${editingUser.id}/update`, {
-    //     firstname: form.firstname,
-    //     lastname: form.lastname,
-    //     email: form.email,
-    //     role: form.role,
-    //     profil: form.profil,
-    //   });
-
-    //   onSave(res.data); // mettre à jour la liste frontend
-    //   setShow(false);
-    // } catch (err) {
-    //   console.error("Erreur update user:", err.response?.data || err.message);
-    // }
   };
 
   if (!show) return null;

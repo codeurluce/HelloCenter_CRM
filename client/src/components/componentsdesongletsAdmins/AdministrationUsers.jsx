@@ -1,5 +1,5 @@
 // src/components/admin/AdministrationUsers.jsx
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import useUsers from "../../api/useUsers";
 import SearchFilterBar from "../componentsAdminUser/SearchFilterBar";
 import UsersTable from "../componentsAdminUser/UsersTable";
@@ -14,6 +14,7 @@ const rolesOptions = [
   { value: "Agent", label: "Agent" },
   { value: "Manager", label: "Manager" },
   { value: "Admin", label: "Admin" },
+  { value: "SuperAdmin", label: "Super Admin" },
 ];
 
 const profilsOptions = [
@@ -27,6 +28,22 @@ const statusOptions = [
   { value: "inactive", label: "Désactivés" },
 ];
 
+// Hook personnalisé pour récupérer les sites
+function useSites(currentUser) {
+  const [sites, setSites] = useState([]);
+
+  useEffect(() => {
+    if (currentUser?.role === "SuperAdmin") {
+      axiosInstance
+        .get("/sites")
+        .then((res) => setSites(res.data))
+        .catch((err) => console.error("Erreur récupération sites:", err));
+    }
+  }, [currentUser]);
+
+  return sites;
+}
+
 export default function AdministrationUsers() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
@@ -38,27 +55,88 @@ export default function AdministrationUsers() {
   const [editingUser, setEditingUser] = useState(null);
   const [saving, setSaving] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState(null);
+  const [siteFilter, setSiteFilter] = useState("");
+  const [currentUser, setCurrentUser] = useState(null);
+  const isSuperAdmin = currentUser?.role === "SuperAdmin";
+
+  // Hook pour récupérer les sites
+  const sites = useSites(currentUser);
 
   // Hook pour récupérer les users
-  const { users, filteredUsers, total, loading, error, fetchUsers, toggleUserActive } = useUsers({
+  const {
+    users,
+    filteredUsers,
+    total,
+    loading,
+    error,
+    fetchUsers,
+    toggleUserActive,
+  } = useUsers({
     page,
     limit,
     roleFilter,
     profilFilter,
     statusFilter,
+    siteFilter,
     q,
   });
 
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const res = await axiosInstance.get("/users/me");
+        setCurrentUser(res.data);
+      } catch (err) {
+        console.error(
+          "Erreur récupération profil :",
+          err.response?.data || err.message
+        );
+        toast.error("Impossible de charger votre profil");
+      }
+    };
+
+    fetchCurrentUser();
+  }, []);
+
+  useEffect(() => {
+    if (
+      currentUser &&
+      currentUser.role !== "SuperAdmin" &&
+      currentUser.site_id
+    ) {
+      const siteId = currentUser.site_id.toString();
+      setSiteFilter(siteId);
+      fetchUsers({ siteFilter: siteId }); // si useUsers permet de passer un param optionnel
+    }
+  }, [currentUser]);
+
   const totalPages = Math.max(
     1,
-    Math.ceil((roleFilter || profilFilter || statusFilter || q ? filteredUsers.length : total) / limit)
+    Math.ceil(
+      (roleFilter || profilFilter || statusFilter || q
+        ? filteredUsers.length
+        : total) / limit
+    )
   );
 
   const pageData = useMemo(() => {
-    const source = roleFilter || profilFilter || q || statusFilter ? filteredUsers : users;
+    const source =
+      roleFilter || profilFilter || q || statusFilter || siteFilter
+        ? filteredUsers
+        : users;
     const start = (page - 1) * limit;
     return source.slice(start, start + limit);
-  }, [users, filteredUsers, roleFilter, profilFilter, q, statusFilter, page, limit]);
+  }, [
+    users,
+    filteredUsers,
+    roleFilter,
+    profilFilter,
+    q,
+    statusFilter,
+    siteFilter,
+    page,
+    limit,
+  ]);
 
   const openCreate = () => {
     setEditingUser(null);
@@ -97,7 +175,9 @@ export default function AdministrationUsers() {
       fetchUsers();
     } catch (err) {
       console.error(err.response?.data || err.message);
-      toast.error(err.response?.data?.message || "Erreur lors de l'enregistrement");
+      toast.error(
+        err.response?.data?.message || "Erreur lors de l'enregistrement"
+      );
     } finally {
       setSaving(false);
     }
@@ -108,21 +188,23 @@ export default function AdministrationUsers() {
       const result = await Swal.fire({
         title: `Réinitialiser le mot de passe ?`,
         text: `Êtes-vous sûr de vouloir réinitialiser le mot de passe de ${user.firstname} ${user.lastname} ?`,
-        icon: 'warning',
+        icon: "warning",
         showCancelButton: true,
-        confirmButtonColor: '#d33', // rouge pour bien indiquer un reset
-        cancelButtonColor: '#6c757d', // gris neutre
-        confirmButtonText: 'Réinitialiser',
-        cancelButtonText: 'Annuler',
+        confirmButtonColor: "#d33", // rouge pour bien indiquer un reset
+        cancelButtonColor: "#6c757d", // gris neutre
+        confirmButtonText: "Réinitialiser",
+        cancelButtonText: "Annuler",
         reverseButtons: true,
       });
 
       if (result.isConfirmed) {
-        const res = await axiosInstance.post(`/users/${user.id}/reset-password`);
+        const res = await axiosInstance.post(
+          `/users/${user.id}/reset-password`
+        );
 
         Swal.fire({
-          icon: 'success',
-          title: 'Mot de passe réinitialisé',
+          icon: "success",
+          title: "Mot de passe réinitialisé",
           html: `
           ✅ Le nouveau mot de passe temporaire est : 
           <br/><br/>
@@ -132,14 +214,14 @@ export default function AdministrationUsers() {
           <br/><br/>
           L’agent devra le changer à sa prochaine connexion.
         `,
-          confirmButtonText: 'OK'
+          confirmButtonText: "OK",
         });
       }
     } catch (err) {
       console.error(err.response?.data || err.message);
       Swal.fire({
-        icon: 'error',
-        title: 'Erreur',
+        icon: "error",
+        title: "Erreur",
         text: "❌ Une erreur est survenue lors de la réinitialisation du mot de passe",
       });
     }
@@ -166,6 +248,9 @@ export default function AdministrationUsers() {
         onRefresh={fetchUsers}
         onCreate={openCreate}
         onResetPage={() => setPage(1)}
+        sitesOptions={sites}
+        siteFilter={siteFilter}
+        setSiteFilter={setSiteFilter}
       />
 
       {error && <div className="text-red-600">{error}</div>}
@@ -208,7 +293,6 @@ export default function AdministrationUsers() {
         onSave={handleSave}
         saving={saving}
       />
-
     </div>
   );
 }

@@ -28,6 +28,7 @@ const historiquesfilesRoutes = require('./routes/historiquesfilesRoutes');
 const historiquesVentesRoutes = require('./routes/historiquesVentesRoutes');
 const userRoutes = require('./routes/userRoutes');
 const rhRoutes = require('./routes/rhRoutes')
+const sitesRoutes = require('./routes/sitesRoutes');
 
 
 const app = express();
@@ -68,6 +69,7 @@ app.use('/api/files', filesRoutes);
 app.use('/api/historiques', historiquesfilesRoutes);
 app.use('/api/historiques/ventes', historiquesVentesRoutes);
 app.use('/api/rh', rhRoutes);
+app.use('/api/sites', sitesRoutes);
 
 // Routes de santé
 app.get('/api/test-db', async (req, res) => {

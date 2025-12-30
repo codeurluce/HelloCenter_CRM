@@ -77,7 +77,7 @@ const createUser = async (req, res) => {
   const { role: creatorRole, site_id: creatorSiteId } = req.user;
 
   // Vérification du rôle
-  if (creatorRole !== "super_admin" && role === "super_admin") {
+  if (creatorRole !== "SuperAdmin" && role === "SuperAdmin") {
     return res.status(403).json({
       message:
         "Vous ne pouvez pas créer un utilisateur avec le role: super admin.",
@@ -85,7 +85,7 @@ const createUser = async (req, res) => {
   }
 
   // Vérification du site pour les admins
-  if (creatorRole !== "super_admin" && newUserSiteId !== creatorSiteId) {
+  if (creatorRole !== "SuperAdmin" && newUserSiteId !== creatorSiteId) {
     return res.status(403).json({
       message: "Vous ne pouvez créer des utilisateurs que dans votre site.",
     });
@@ -147,14 +147,14 @@ const updateUser = async (req, res) => {
 
   const targetUser = userCheck.rows[0];
 
-  if (updaterRole !== "super_admin" && role === "super_admin") {
+  if (updaterRole !== "SuperAdmin" && role === "SuperAdmin") {
     return res.status(403).json({
       message: "Vous ne pouvez pas attribuer le rôle super admin.",
     });
   }
 
   // Vérification du site pour les admins
-  if (updaterRole !== "super_admin" && site_id !== updaterSiteId) {
+  if (updaterRole !== "SuperAdmin" && site_id !== updaterSiteId) {
     return res.status(403).json({
       message: "Vous ne pouvez modifier un agent que dans votre site.",
     });
@@ -558,61 +558,83 @@ const getMe = async (req, res) => {
 // Récupérer tous les utilisateurs (admin seulement)
 const getAllUsers = async (req, res) => {
   try {
-    if (req.user.role !== "Admin") {
+    const { role, site_id: userSiteId } = req.user;
+    const { site_id } = req.query; // 👈 filtre choisi par SuperAdmin
+
+    if (role !== "Admin" && role !== "SuperAdmin") {
       return res.status(403).json({ message: "Accès refusé" });
     }
 
-    const result = await db.query(
-      `SELECT id, lastname, firstname, email, role, profil, is_active, site_id, created_at 
-       FROM users
-       ORDER BY is_active DESC, lastname ASC`
-    );
+    let query = `
+      SELECT id, lastname, firstname, email, role, profil, is_active, site_id, created_at
+      FROM users
+      WHERE 1=1
+    `;
+    let params = [];
 
-    const users = result.rows.map((u) => ({
-      ...u,
-      active: u.is_active === true || u.is_active === 1, // booléen
-    }));
+    // 🔒 Admin → son site seulement
+    if (role === "Admin") {
+      params.push(userSiteId);
+      query += ` AND site_id = $${params.length}`;
+    }
 
-    res.json(users);
+    // 👑 SuperAdmin → site choisi (optionnel)
+    if (role === "SuperAdmin" && site_id) {
+      params.push(site_id);
+      query += ` AND site_id = $${params.length}`;
+    }
+
+    query += ` ORDER BY is_active DESC, lastname ASC`;
+
+    const result = await db.query(query, params);
+    res.json(result.rows);
   } catch (error) {
-    console.error("Erreur lors de la récupération des utilisateurs:", error);
-    res
-      .status(500)
-      .json({
-        message: "Erreur serveur lors de la récupération des utilisateurs",
-      });
+    console.error("Erreur getAllUsers:", error);
+    res.status(500).json({ message: "Erreur serveur" });
   }
 };
 
 // recuperation des users, pour faire les assignations des fiches
 const getAllUsersBd = async (req, res) => {
   try {
-    if (req.user.role !== "Admin") {
+    const { role, site_id: userSiteId } = req.user;
+    const { site_id } = req.query; // 👈 filtre optionnel (SuperAdmin)
+
+    if (role !== "Admin" && role !== "SuperAdmin") {
       return res.status(403).json({ message: "Accès refusé" });
     }
 
-    const result = await db.query(
-      `SELECT id, firstname, lastname, email, role, is_active, site_id, created_at
-       FROM users
-       WHERE is_active = true
-       ORDER BY is_active DESC, lastname ASC`
-    );
+    let query = `
+      SELECT id, firstname, lastname, email, role, site_id
+      FROM users
+      WHERE is_active = true
+    `;
+    let params = [];
 
-    const agents = result.rows.map((u) => ({
-      id: u.id,
-      name: `${u.firstname} ${u.lastname}`,
-      email: u.email,
-      site_id: u.site_id,
-    }));
+    // 🔒 Admin → uniquement son site
+    if (role === "Admin") {
+      params.push(userSiteId);
+      query += ` AND site_id = $${params.length}`;
+    }
 
-    res.json(agents);
+    // 👑 SuperAdmin → filtre site si fourni
+    if (role === "SuperAdmin" && site_id) {
+      params.push(site_id);
+      query += ` AND site_id = $${params.length}`;
+    }
+
+    query += ` ORDER BY lastname ASC`;
+
+    const result = await db.query(query, params);
+    res.json(result.rows);
   } catch (error) {
     console.error("Erreur récupération agents:", error);
-    res
-      .status(500)
-      .json({ message: "Erreur serveur lors de la récupération des agents" });
+    res.status(500).json({ message: "Erreur serveur" });
   }
 };
+
+module.exports = { getAllUsersBd };
+
 
 // Activer/Désactiver un user
 const toggleActiveUser = async (req, res) => {

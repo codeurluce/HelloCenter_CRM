@@ -8,7 +8,7 @@ import Swal from "sweetalert2";
  * - profilFilter: string (ex: "Energie")
  * - statusFilter: string ("active" / "inactive")
  * - q: recherche texte
- * - options.clientSideOnly: 
+ * - options.clientSideOnly:
  *    true  => récupère tous les users et filtre côté client
  *    false => envoie les filtres au backend
  */
@@ -18,6 +18,7 @@ export default function useUsers({
   roleFilter,
   profilFilter,
   statusFilter,
+  siteFilter,
   q,
   options = { clientSideOnly: true },
 }) {
@@ -39,13 +40,15 @@ export default function useUsers({
 
       if (options.clientSideOnly) {
         // Récupération brute puis filtrage côté client
-        const { data } = await axiosInstance.get("/users", { params: { page, limit } });
+        const { data } = await axiosInstance.get("/users", {
+          params: { page, limit },
+        });
         let list = data.items ?? data;
 
         // Mapping active pour le filtre statusFilter
-        list = list.map(u => ({
+        list = list.map((u) => ({
           ...u,
-          active: u.is_active === true || u.is_active === 1
+          active: u.is_active === true || u.is_active === 1,
         }));
 
         setUsers(Array.isArray(list) ? list : []);
@@ -55,6 +58,7 @@ export default function useUsers({
         const params = { page, limit };
         if (roleFilter) params.role = normalizeForServer(roleFilter);
         if (profilFilter) params.profil = normalizeForServer(profilFilter);
+        if (siteFilter) params.site_id = siteFilter;
         if (q) params.q = q;
 
         const { data } = await axiosInstance.get("/users", { params });
@@ -65,7 +69,10 @@ export default function useUsers({
       }
     } catch (e) {
       console.error("fetchUsers error", e);
-      setError(e.response?.data?.message || "Erreur lors du chargement des utilisateurs.");
+      setError(
+        e.response?.data?.message ||
+          "Erreur lors du chargement des utilisateurs."
+      );
     } finally {
       setLoading(false);
     }
@@ -74,7 +81,7 @@ export default function useUsers({
   useEffect(() => {
     fetchUsers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, limit, roleFilter, profilFilter, statusFilter, q]);
+  }, [page, limit, roleFilter, profilFilter, statusFilter, siteFilter, q]);
 
   const filteredUsers = useMemo(() => {
     let result = Array.isArray(users) ? users.slice() : [];
@@ -98,36 +105,44 @@ export default function useUsers({
     // Filtre actif/désactivé
     if (statusFilter) {
       const sf = statusFilter.trim().toLowerCase();
-      result = result.filter(u => {
+      result = result.filter((u) => {
         if (sf === "active") return u.active === true;
         if (sf === "inactive") return u.active === false;
         return true;
       });
     }
 
+    if (siteFilter) {
+      const sf = siteFilter.toString();
+      result = result.filter((u) => u.site_id?.toString() === sf);
+    }
+    console.log("filtered by site:", siteFilter, result.length);
+
     // Recherche texte
     if (q) {
       const needle = q.trim().toLowerCase();
       result = result.filter(
         (u) =>
-          (`${u.firstname || ""} ${u.lastname || ""}`)
+          `${u.firstname || ""} ${u.lastname || ""}`
             .toLowerCase()
             .includes(needle) ||
           (u.email || "").toLowerCase().includes(needle) ||
           (u.profil || "").toLowerCase().includes(needle) ||
           (u.univers || "").toLowerCase().includes(needle)
       );
+      console.log(siteFilter, filteredUsers);
     }
 
     return result;
-  }, [users, roleFilter, profilFilter, statusFilter, q]);
-
+  }, [users, roleFilter, profilFilter, statusFilter, siteFilter, q]);
 
   const toggleUserActive = async (user) => {
     try {
       const result = await Swal.fire({
         title: `${user.is_active ? "Désactiver" : "Activer"} l'agent ?`,
-        text: `Êtes-vous sûr de vouloir ${user.is_active ? "désactiver" : "activer"} ${user.firstname} ${user.lastname} ?`,
+        text: `Êtes-vous sûr de vouloir ${
+          user.is_active ? "désactiver" : "activer"
+        } ${user.firstname} ${user.lastname} ?`,
         icon: "warning",
         showCancelButton: true,
         confirmButtonColor: user.is_active ? "#d33" : "#28a745",
@@ -150,7 +165,9 @@ export default function useUsers({
         // Mise à jour locale sans refetch complet :
         setUsers((prev) =>
           prev.map((u) =>
-            u.id === user.id ? { ...u, is_active: !u.is_active, active: !u.active } : u
+            u.id === user.id
+              ? { ...u, is_active: !u.is_active, active: !u.active }
+              : u
           )
         );
 
@@ -161,12 +178,22 @@ export default function useUsers({
       await Swal.fire({
         icon: "error",
         title: "Erreur",
-        text: err.response?.data?.message || "Erreur lors de la mise à jour du statut de l'utilisateur",
+        text:
+          err.response?.data?.message ||
+          "Erreur lors de la mise à jour du statut de l'utilisateur",
       });
       throw err;
     }
   };
 
-
-  return { users, filteredUsers, total, loading, error, fetchUsers, setUsers, toggleUserActive };
+  return {
+    users,
+    filteredUsers,
+    total,
+    loading,
+    error,
+    fetchUsers,
+    setUsers,
+    toggleUserActive,
+  };
 }

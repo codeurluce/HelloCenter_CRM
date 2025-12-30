@@ -17,6 +17,7 @@ import ManagerDashboard from './pages/ManagerPages';
 import { AuthProvider } from './pages/AuthContext';
 import { ThemeProvider } from './shared/ThemeContext';
 import { ThemeProvider as NextThemeProvider } from "next-themes";
+import SuperAdminDashboard from './pages/SuperAdminPages';
 
 
 function AppWrapper() {
@@ -41,6 +42,7 @@ const routeByRole = (role) => {
     case 'Agent': return '/agent';
     case 'Manager': return '/manager';
     case 'Admin': return '/admin';
+    case 'SuperAdmin': return '/superAdmin';
     default: return '/';
   }
 };
@@ -134,6 +136,12 @@ const App = () => {
       <Route path="/admin" element={
         <ProtectedRoute roles={['Admin']}>
           <AdminDashboard onLogout={handleLogout} />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/superAdmin" element={
+        <ProtectedRoute roles={['SuperAdmin']}>
+          <SuperAdminDashboard onLogout={handleLogout} />
         </ProtectedRoute>
       } />
 
