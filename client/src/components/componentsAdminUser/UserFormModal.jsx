@@ -1,6 +1,7 @@
 // src/components/admin/UserFormModal.jsx
 import React, { useState, useEffect } from "react";
 import { Loader2, User, UserPlus, UserPen, X } from "lucide-react";
+import axiosInstance from "../../api/axiosInstance";
 
 const rolesOptions = [
   { value: "Agent", label: "Agent" },
@@ -15,11 +16,6 @@ const universOptions = [
   { value: "Hybride", label: "Hybride" },
 ];
 
-const sitesOptions = [
-  { value: 1, label: "Dakar" },
-  { value: 2, label: "Saint-Louis" },
-];
-
 export default function UserFormModal({
   show,
   setShow,
@@ -27,6 +23,7 @@ export default function UserFormModal({
   onSave,
   saving,
 }) {
+  
   const role = localStorage.getItem("role");
   // const isAdmin = role === "Admin";
   // const isManager = role === "Manager";
@@ -66,6 +63,22 @@ export default function UserFormModal({
       }
     }
   }, [editingUser, show]);
+
+   const [sitesOptions, setSitesOptions] = useState([]);
+
+  useEffect(() => {
+    const fetchSites = async () => {
+      try {
+        const res = await axiosInstance.get("/sites"); // ton endpoint
+        const options = res.data.map((s) => ({ value: s.id, label: s.name }));
+        setSitesOptions(options);
+      } catch (err) {
+        console.error("Erreur fetch sites:", err);
+      }
+    };
+
+    if (show) fetchSites(); // on fetch quand le modal s'ouvre
+  }, [show]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

@@ -7,5 +7,8 @@ router.use(auth);
 
 // Liste des sites (SuperAdmin uniquement)
 router.get("/", auth, sitesController.getAllSites);
+router.post("/", auth, sitesController.createSites);
+router.put("/:id", auth, sitesController.updateSites);
+router.delete("/:id", auth, sitesController.deleteSites);
 
 module.exports = router;
