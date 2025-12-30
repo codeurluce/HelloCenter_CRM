@@ -75,6 +75,7 @@ const createUser = async (req, res) => {
     site_id: newUserSiteId,
   } = req.body;
   const { role: creatorRole, site_id: creatorSiteId } = req.user;
+  console.log("site_id reçu :", newUserSiteId);
 
   // Vérification du rôle
   if (creatorRole !== "SuperAdmin" && role === "SuperAdmin") {

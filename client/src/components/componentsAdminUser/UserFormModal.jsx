@@ -30,7 +30,7 @@ export default function UserFormModal({
   const role = localStorage.getItem("role");
   // const isAdmin = role === "Admin";
   // const isManager = role === "Manager";
-  const isSuperAdmin = role === "super_admin";
+  const isSuperAdmin = role === "SuperAdmin";
   const storedSiteId = localStorage.getItem("site_id");
   const adminSiteId = storedSiteId ? parseInt(storedSiteId, 10) : 1;
   console.log("Admin site ID:", adminSiteId);

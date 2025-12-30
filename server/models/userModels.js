@@ -31,7 +31,7 @@ const findUserByEmail = async (email) => {
     };
 };
 
-const createUserWithGeneratedEmail = async (lastname, firstname, role = 'Agent', profil = 'Available') => {
+const createUserWithGeneratedEmail = async (lastname, firstname, role = 'Agent', profil = 'Available', site_id) => {
     let suffix = '';
     let email;
     let userExists = true;
@@ -54,10 +54,10 @@ const createUserWithGeneratedEmail = async (lastname, firstname, role = 'Agent',
     const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
     const result = await db.query(
-        `INSERT INTO users (lastname, firstname, email, password, role, profil, is_first_login, password_changed_at, is_active)  
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true) 
+        `INSERT INTO users (lastname, firstname, email, password, role, profil, site_id, is_first_login, password_changed_at, is_active)  
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, true) 
          RETURNING *`,
-        [lastname, firstname, email, hashedPassword, role, profil, true, new Date()]
+        [lastname, firstname, email, hashedPassword, role, profil, site_id, true, new Date()]
     );
 
     const user = result.rows[0];
