@@ -1,4 +1,5 @@
 // controllers/sitesController.js
+// Gestion des sites
 const db = require("../db");
 
 exports.getAllSites = async (req, res) => {
