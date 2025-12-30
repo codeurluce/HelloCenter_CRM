@@ -16,7 +16,6 @@ import { colorThemes } from '../../shared/colorThemes';
 import { useTheme } from '../../shared/ThemeContext';
 import { useNotifications } from '../componentsAdminRH/NotificationsContext';
 
-
 const SidebarAdmin = ({ activeItem, setActiveItem, onLogout }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { theme } = useTheme();

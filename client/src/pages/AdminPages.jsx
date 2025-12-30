@@ -205,9 +205,9 @@ useEffect(() => {
                     <MonthlySalesChartAdmin />
                   </div>
                 </div>
-                {/* <div className="flex-1">
+                <div className="flex-1">
                   <MonthlyAgentSalesPieChart />
-                </div> */}
+                </div>
               </>
             )}
 
