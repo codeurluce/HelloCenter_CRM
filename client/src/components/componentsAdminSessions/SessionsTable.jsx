@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { RefreshCw, Eye, LogOut, Pause, FileText, } from "lucide-react";
+import { RefreshCw, Eye, LogOut, Pause, FileText } from "lucide-react";
 import SessionAgentDetailsModal from "./SessionAgentDetailsModal";
 import SessionAgentHistoryModal from "./SessionAgentHistoryModal.tsx";
 import axiosInstance from "../../api/axiosInstance";
 import Swal from "sweetalert2";
-import { toast } from "react-toastify"
+import { toast } from "react-toastify";
 
 // Formatage hh:mm:ss
 const formatTime = (seconds) => {
@@ -32,57 +32,12 @@ const renderTooltip = (cumul) => {
     .join("\n");
 };
 
-//  Met en pause forcé un agent
-const handleForcePause = async (agentId, firstname, lastname) => {
-  const result = await Swal.fire({
-    title: `Mettre ${firstname} ${lastname} en pause ?`,
-    text: "L'agent sera forcé en pause déjeuner.",
-    icon: "warning",
-    showCancelButton: true,
-    confirmButtonText: "Oui, mettre en pause",
-    cancelButtonText: "Annuler",
-    confirmButtonColor: "#ea580c",
-    reverseButtons: true,
-  });
-
-  if (!result.isConfirmed) return;
-
-  try {
-    await axiosInstance.post(`/session_agents/${agentId}/forcePause`);
-    toast.success(`${firstname} ${lastname} est maintenant en pause.`);
-  } catch (err) {
-    console.error("Erreur mise en pause agent :", err.response?.data || err.message);
-    toast.error(err.response?.data?.error || "Impossible de mettre l'agent en pause");
-  }
-};
-
-//  Déconnecté un agent
-const handleDisconnect = async (agentId, firstname, lastname) => {
-  // Afficher une confirmation
-  const result = await Swal.fire({
-    title: `Déconnecter ${firstname} ${lastname} `,
-    text: "Êtes-vous sûr de vouloir déconnecter cet agent ?",
-    icon: "warning",
-    showCancelButton: true,
-    confirmButtonText: "Oui, déconnecter",
-    cancelButtonText: "Annuler",
-    confirmButtonColor: "#dc2626",
-    reverseButtons: true,
-  });
-
-  if (!result.isConfirmed) return; // Si l'utilisateur annule, on sort
-
-  // Sinon, on effectue la déconnexion
-  try {
-    await axiosInstance.post(`/agent/${agentId}/disconnectByAdmin`);
-    toast.success("Agent déconnecté avec succès");
-  } catch (err) {
-    console.error("Erreur déconnexion agent :", err.response?.data || err.message);
-    toast.error(err.response?.data?.error || "Impossible de déconnecter l'agent");
-  }
-};
-
-export default function SessionsTable({ sessions, loading, refresh }) {
+export default function SessionsTable({
+  sessions: sessionsProp,
+  loading,
+  refresh,
+  updateAgentStatus,
+}) {
   const [tick, setTick] = useState(0);
   const [selectedAgent, setSelectedAgent] = useState(null);
 
@@ -91,9 +46,72 @@ export default function SessionsTable({ sessions, loading, refresh }) {
   const [loadingHistory, setLoadingHistory] = useState(false);
 
   useEffect(() => {
-    const interval = setInterval(() => setTick(t => t + 1), 1000);
+    const interval = setInterval(() => setTick((t) => t + 1), 1000);
     return () => clearInterval(interval);
   }, []);
+
+  //  Met en pause forcé un agent
+  const handleForcePause = async (agentId, firstname, lastname) => {
+    const result = await Swal.fire({
+      title: `Mettre ${firstname} ${lastname} en pause ?`,
+      text: "L'agent sera forcé en pause déjeuner.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Oui, mettre en pause",
+      cancelButtonText: "Annuler",
+      confirmButtonColor: "#ea580c",
+      reverseButtons: true,
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      await axiosInstance.post(`/session_agents/${agentId}/forcePause`);
+      updateAgentStatus(agentId, "Déjeuner");
+      toast.success(`${firstname} ${lastname} est maintenant en pause.`);
+      // ✅ Mettre à jour le state local pour refléter le changement sans refresh
+    } catch (err) {
+      console.error(
+        "Erreur mise en pause agent :",
+        err.response?.data || err.message
+      );
+      toast.error(
+        err.response?.data?.error || "Impossible de mettre l'agent en pause"
+      );
+    }
+  };
+
+  //  Déconnecté un agent
+  const handleDisconnect = async (agentId, firstname, lastname) => {
+    // Afficher une confirmation
+    const result = await Swal.fire({
+      title: `Déconnecter ${firstname} ${lastname} `,
+      text: "Êtes-vous sûr de vouloir déconnecter cet agent ?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Oui, déconnecter",
+      cancelButtonText: "Annuler",
+      confirmButtonColor: "#dc2626",
+      reverseButtons: true,
+    });
+
+    if (!result.isConfirmed) return; // Si l'utilisateur annule, on sort
+
+    // Sinon, on effectue la déconnexion
+    try {
+      await axiosInstance.post(`/agent/${agentId}/disconnectByAdmin`);
+      updateAgentStatus(agentId, "Hors connexion");
+      toast.success("Agent déconnecté avec succès");
+    } catch (err) {
+      console.error(
+        "Erreur déconnexion agent :",
+        err.response?.data || err.message
+      );
+      toast.error(
+        err.response?.data?.error || "Impossible de déconnecter l'agent"
+      );
+    }
+  };
 
   return (
     <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm bg-white">
@@ -109,12 +127,24 @@ export default function SessionsTable({ sessions, loading, refresh }) {
       <table className="w-full border-collapse">
         <thead className="bg-blue-50">
           <tr>
-            <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Nom</th>
-            <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Prénom</th>
-            <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Statut actuel</th>
-            <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Depuis</th>
-            <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">Présence Totale</th>
-            <th className="px-6 py-3 text-center text-sm font-semibold text-blue-700">Actions</th>
+            <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
+              Nom
+            </th>
+            <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
+              Prénom
+            </th>
+            <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
+              Statut actuel
+            </th>
+            <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
+              Depuis
+            </th>
+            <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
+              Présence Totale
+            </th>
+            <th className="px-6 py-3 text-center text-sm font-semibold text-blue-700">
+              Actions
+            </th>
           </tr>
         </thead>
 
@@ -124,53 +154,66 @@ export default function SessionsTable({ sessions, loading, refresh }) {
               <td colSpan="6">
                 <div className="text-center py-12">
                   <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                  <span className="text-blue-700 font-medium">Chargement des sessions...</span>
+                  <span className="text-blue-700 font-medium">
+                    Chargement des sessions...
+                  </span>
                 </div>
               </td>
             </tr>
-          ) : sessions.length === 0 ? (
+          ) : sessionsProp.length === 0 ? (
             <tr>
-              <td colSpan="6" className="text-center py-6 text-gray-500 italic">Aucune session trouvée</td>
+              <td colSpan="6" className="text-center py-6 text-gray-500 italic">
+                Aucune session trouvée
+              </td>
             </tr>
           ) : (
-            sessions.map((s) => (
-              <tr key={s.user_id || s.id} className="border-t border-gray-200 hover:bg-blue-50">
+            sessionsProp.map((s) => (
+              <tr
+                key={s.user_id || s.id}
+                className="border-t border-gray-200 hover:bg-blue-50"
+              >
                 <td className="px-6 py-3 text-gray-800">{s.lastname}</td>
                 <td className="px-6 py-3 text-gray-800">{s.firstname}</td>
                 <td className="px-6 py-3">
                   <span
-                    className={`inline-block px-3 py-1 rounded-full text-xs font-semibold cursor-default ${getDisplayStatus(s) === "Disponible"
-                      ? "bg-green-200 text-green-900"
-                      : getDisplayStatus(s).includes("Pause") || getDisplayStatus(s).includes("Pausette")
+                    className={`inline-block px-3 py-1 rounded-full text-xs font-semibold cursor-default ${
+                      getDisplayStatus(s) === "Disponible"
+                        ? "bg-green-200 text-green-900"
+                        : getDisplayStatus(s).includes("Pause") ||
+                          getDisplayStatus(s).includes("Pausette")
                         ? "bg-yellow-200 text-yellow-900"
                         : getDisplayStatus(s).includes("Déjeuner")
-                          ? "bg-yellow-200 text-yellow-900"
-                          : getDisplayStatus(s).includes("Formation")
-                            ? "bg-red-200 text-red-900"
-                            : getDisplayStatus(s).includes("Réunion")
-                              ? "bg-red-200 text-red-900"
-                              : getDisplayStatus(s).includes("Brief")
-                                ? "bg-red-200 text-red-900"
-                                //   ? "bg-teal-200 text-teal-900"
-                                : getDisplayStatus(s).includes("En ligne")
-                                  ? "bg-green-50 text-green-500"
-                                  // : getDisplayStatus(s).includes("Indisponible")
-                                  //   ? "bg-red-100 text-red-800"
-                                  : getDisplayStatus(s).includes("Hors ligne") || getDisplayStatus(s).includes("Déconnecté")
-                                    ? "bg-gray-300 text-gray-700"
-                                    : "bg-gray-100 text-gray-800"
-                      }`}
+                        ? "bg-yellow-200 text-yellow-900"
+                        : getDisplayStatus(s).includes("Formation")
+                        ? "bg-red-200 text-red-900"
+                        : getDisplayStatus(s).includes("Réunion")
+                        ? "bg-red-200 text-red-900"
+                        : getDisplayStatus(s).includes("Brief")
+                        ? "bg-red-200 text-red-900"
+                        : //   ? "bg-teal-200 text-teal-900"
+                        getDisplayStatus(s).includes("En ligne")
+                        ? "bg-green-50 text-green-500"
+                        : // : getDisplayStatus(s).includes("Indisponible")
+                        //   ? "bg-red-100 text-red-800"
+                        getDisplayStatus(s).includes("Hors ligne") ||
+                          getDisplayStatus(s).includes("Déconnecté")
+                        ? "bg-gray-300 text-gray-700"
+                        : "bg-gray-100 text-gray-800"
+                    }`}
                     title={renderTooltip(s.cumul_statuts)}
                   >
                     {getDisplayStatus(s)}
                   </span>
                 </td>
                 <td className="px-6 py-3 font-mono text-sm text-gray-700">
-                  {(!s.is_connected || !s.statut_actuel) ? "00:00:00" : formatTime(s.depuis_sec)}
+                  {!s.is_connected || !s.statut_actuel
+                    ? "00:00:00"
+                    : formatTime(s.depuis_sec)}
                 </td>
-                <td className="px-6 py-3 font-mono text-sm text-gray-700">{formatTime(s.presence_totale_sec)}</td>
+                <td className="px-6 py-3 font-mono text-sm text-gray-700">
+                  {formatTime(s.presence_totale_sec)}
+                </td>
                 <td className="px-6 py-3 text-center flex justify-center gap-3">
-
                   {/* Bouton consulter */}
                   <div className="relative group">
                     <button
@@ -204,7 +247,9 @@ export default function SessionsTable({ sessions, loading, refresh }) {
                   {/* Bouton Forcer la pause */}
                   <div className="relative group">
                     <button
-                      onClick={() => handleForcePause(s.user_id, s.firstname, s.lastname)}
+                      onClick={() =>
+                        handleForcePause(s.user_id, s.firstname, s.lastname)
+                      }
                       title=""
                       className="px-3 py-1.5 rounded-lg border border-orange-200 text-orange-600 hover:bg-orange-600 hover:text-white transition-transform transform focus:outline-none focus:ring-2 focus:ring-offset-1 hover:scale-105"
                     >
@@ -218,7 +263,9 @@ export default function SessionsTable({ sessions, loading, refresh }) {
                   {/* Bouton deconnexion */}
                   <div className="relative group">
                     <button
-                      onClick={() => handleDisconnect(s.user_id, s.firstname, s.lastname)}
+                      onClick={() =>
+                        handleDisconnect(s.user_id, s.firstname, s.lastname)
+                      }
                       title=""
                       className="px-3 py-1.5 rounded-lg border border-red-100 text-red-600 hover:bg-red-600 hover:text-white 
                                                         transition-transform transform focus:outline-none focus:ring-2 focus:ring-offset-1 hover:scale-105"
@@ -245,10 +292,10 @@ export default function SessionsTable({ sessions, loading, refresh }) {
       {historyAgent && (
         <SessionAgentHistoryModal
           agent={historyAgent}
-          isOpen={!!historyAgent}   // true si on a sélectionné un agent
+          isOpen={!!historyAgent} // true si on a sélectionné un agent
           onClose={() => setHistoryAgent(null)}
         />
       )}
     </div>
-  ); 
+  );
 }

@@ -222,6 +222,15 @@ useEffect(() => {
   };
 }, [user?.id, user?.role]);
 
+const updateAgentStatus = (userId, newStatus) => {
+  setAgents(prev =>
+    prev.map(agent =>
+      agent.user_id === userId
+        ? { ...agent, statut_actuel: newStatus }
+        : agent
+    )
+  );
+};
 
   // ---- Filtrage côté front (comme ta page AdministrationUsers) ----
   const normalize = (s = "") =>
@@ -268,6 +277,7 @@ useEffect(() => {
         sessions={filteredAgents}
         loading={loading}
         refresh={fetchAgents}
+        updateAgentStatus={updateAgentStatus}
       />
 
       {showExport && (

@@ -21,6 +21,7 @@ export default function useUsers({
   siteFilter,
   q,
   options = { clientSideOnly: true },
+  enabled = true,
 }) {
   const [users, setUsers] = useState([]);
   const [total, setTotal] = useState(0);
@@ -34,6 +35,7 @@ export default function useUsers({
   };
 
   const fetchUsers = async () => {
+    if (!enabled) return;
     try {
       setLoading(true);
       setError("");
@@ -79,9 +81,10 @@ export default function useUsers({
   };
 
   useEffect(() => {
+    if (!enabled) return;
     fetchUsers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, limit, roleFilter, profilFilter, statusFilter, siteFilter, q]);
+  }, [enabled, page, limit, roleFilter, profilFilter, statusFilter, siteFilter, q]);
 
   const filteredUsers = useMemo(() => {
     let result = Array.isArray(users) ? users.slice() : [];
@@ -116,7 +119,6 @@ export default function useUsers({
       const sf = siteFilter.toString();
       result = result.filter((u) => u.site_id?.toString() === sf);
     }
-    console.log("filtered by site:", siteFilter, result.length);
 
     // Recherche texte
     if (q) {
@@ -130,7 +132,6 @@ export default function useUsers({
           (u.profil || "").toLowerCase().includes(needle) ||
           (u.univers || "").toLowerCase().includes(needle)
       );
-      console.log(siteFilter, filteredUsers);
     }
 
     return result;

@@ -26,7 +26,9 @@ export default function AdminSettings({ user }) {
   const [sitesLoading, setSitesLoading] = useState(true);
   const isAdmin = currentUser?.role === "Admin";
   const isSuperAdmin = currentUser?.role === "SuperAdmin";
-  const isAdminOrSuperAdmin = isAdmin || isSuperAdmin;
+  const isAdminOrSuperAdmin =
+    currentUser?.role === "Admin" || currentUser?.role === "SuperAdmin";
+
   const {
     users: agents,
     loading,
@@ -39,6 +41,7 @@ export default function AdminSettings({ user }) {
     profilFilter: "",
     statusFilter: "",
     q: "",
+    enabled: !!currentUser && isAdminOrSuperAdmin,
   });
 
   useEffect(() => {
@@ -122,38 +125,39 @@ export default function AdminSettings({ user }) {
     }
   };
 
-const fetchSites = async () => {
+  const fetchSites = async () => {
     setSitesLoading(true);
-  try {
-    const res = await axiosInstance.get("/sites"); // endpoint backend
-        // Remplir l'état sites pour le tableau
-    setSites(res.data);
+    try {
+      const res = await axiosInstance.get("/sites"); // endpoint backend
+      // Remplir l'état sites pour le tableau
+      setSites(res.data);
 
-    const map = {};
-    const colors = ["blue", "green", "yellow", "purple"]; // juste un exemple
-    res.data.forEach((s, i) => {
-      const color = colors[i % colors.length];
-      map[s.id] = {
-        name: s.name,
-        bg: `bg-${color}-100`,
-        text: `text-${color}-800`,
-        darkBg: `dark:bg-${color}-700`,
-        darkText: `dark:text-${color}-100`,
-      };
-    });
-    setSiteMap(map);
-
-  } catch (err) {
-    console.error("Erreur fetch sites:", err);
-    toast.error("Impossible de charger les sites");
-  }finally { 
-    setSitesLoading(false); 
-}
-};
+      const map = {};
+      const colors = ["blue", "green", "yellow", "purple"]; // juste un exemple
+      res.data.forEach((s, i) => {
+        const color = colors[i % colors.length];
+        map[s.id] = {
+          name: s.name,
+          bg: `bg-${color}-100`,
+          text: `text-${color}-800`,
+          darkBg: `dark:bg-${color}-700`,
+          darkText: `dark:text-${color}-100`,
+        };
+      });
+      setSiteMap(map);
+    } catch (err) {
+      console.error("Erreur fetch sites:", err);
+      toast.error("Impossible de charger les sites");
+    } finally {
+      setSitesLoading(false);
+    }
+  };
 
   useEffect(() => {
-    fetchSites();
-  }, []);
+    if (isSuperAdmin) {
+      fetchSites();
+    }
+  }, [isSuperAdmin]);
 
   const handleAddSite = () => {
     Swal.fire({
