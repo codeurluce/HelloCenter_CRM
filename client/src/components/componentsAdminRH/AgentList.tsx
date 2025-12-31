@@ -18,7 +18,9 @@ export default function AgentList() {
 
   // Définir les rôles
   const role = localStorage.getItem("role");
+  const isAdmin = role === "Admin";
   const isSuperAdmin = role === "SuperAdmin";
+  const isSuperAdminOrAdmin = isSuperAdmin || isAdmin;
 
   // Génère une couleur pastel à partir d'une chaîne
   const getColorForSite = (code: string) => {
@@ -95,7 +97,7 @@ export default function AgentList() {
         />
 
         {/* Filtre site */}
-        {isSuperAdmin && sites && sites.length > 0 && (
+        {isSuperAdminOrAdmin && sites && sites.length > 0 && (
           <select
             value={siteFilter}
             onChange={(e) => setSiteFilter(e.target.value)}
@@ -124,7 +126,7 @@ export default function AgentList() {
         <table className="w-full border-collapse">
           <thead className="bg-blue-50">
             <tr>
-              {isSuperAdmin && (
+              {isSuperAdminOrAdmin && (
                 <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
                   Sites
                 </th>
@@ -182,7 +184,7 @@ export default function AgentList() {
                   key={a.id}
                   className="border-t border-gray-200 hover:bg-blue-50"
                 >
-                  {isSuperAdmin && (
+                  {isSuperAdminOrAdmin && (
                     <td className="px-6 py-3 text-gray-800">
                       {a.site ? (
                         <span

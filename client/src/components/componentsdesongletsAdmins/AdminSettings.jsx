@@ -243,47 +243,150 @@ export default function AdminSettings({ user }) {
   return (
     <div className="space-y-8">
       {/* --- Section Profil utilisateur --- */}
-      <section className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700">
-        <h2 className="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-100 border-b pb-2">
+
+      <section className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 transition-all duration-300">
+        <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white flex items-center gap-2 border-b border-gray-200 dark:border-gray-700 pb-3">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-6 w-6 text-blue-600 dark:text-blue-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M5.121 17.804A9 9 0 1118.364 4.561M12 7v5l3 3"
+            />
+          </svg>
           Mon profil
         </h2>
 
         {currentUser ? (
-          <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
-            {/* Bloc infos principales */}
-            <div className="flex-1 space-y-2">
-              <p className="text-gray-700 dark:text-gray-200">
-                <span className="font-semibold">Nom :</span>{" "}
-                {currentUser.lastname || "-"}
-              </p>
-              <p className="text-gray-700 dark:text-gray-200">
-                <span className="font-semibold">Prénom :</span>{" "}
-                {currentUser.firstname || "-"}
-              </p>
-              <p className="text-gray-700 dark:text-gray-200">
-                <span className="font-semibold">Email :</span>{" "}
+          <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
+            {/* Avatar + nom complet */}
+            <div className="flex flex-col items-center md:items-start text-center md:text-left">
+              <div className="relative w-24 h-24 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center text-white text-3xl font-semibold shadow-md">
+                {currentUser.firstname?.[0]}
+                {currentUser.lastname?.[0]}
+              </div>
+              <h3 className="text-xl font-semibold mt-4 text-gray-900 dark:text-gray-100">
+                {currentUser.firstname} {currentUser.lastname}
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 {currentUser.email}
-              </p>
-              <p className="text-gray-700 dark:text-gray-200">
-                <span className="font-semibold">Compte créé le :</span>{" "}
-                {new Date(currentUser.created_at).toLocaleDateString()}
               </p>
             </div>
 
-            {/* Bloc rôle / profil */}
-            <div className="flex flex-col gap-2">
-              <p className="text-gray-700 dark:text-gray-200">
-                Role :
-                <span className="ml-2 inline-block px-3 py-1 rounded-full bg-green-100 text-green-800 dark:bg-green-700 dark:text-green-100 text-sm font-medium">
+            {/* Infos principales en 3 colonnes / 2 lignes */}
+            <div className="flex-1 grid grid-cols-1 sm:grid-cols-4 gap-6 bg-gray-50 dark:bg-gray-800 p-6 rounded-xl border border-gray-100 dark:border-gray-700 shadow-inner">
+              {/* Ligne 1 */}
+              <div>
+                <p className="text-xs uppercase text-gray-500 dark:text-gray-400">
+                  Nom
+                </p>
+                <p className="text-gray-800 dark:text-gray-100 font-medium">
+                  {currentUser.lastname || "-"}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs uppercase text-gray-500 dark:text-gray-400">
+                  Email
+                </p>
+                <p className="text-gray-800 dark:text-gray-100 font-medium">
+                  {currentUser.email}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs uppercase text-gray-500 dark:text-gray-400">
+                  Rôle
+                </p>
+                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-100 text-green-800 dark:bg-green-700/30 dark:text-green-300 text-sm font-semibold shadow-sm">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
                   {currentUser.role || "-"}
                 </span>
-              </p>
-              <p className="text-gray-700 dark:text-gray-200">
-                Profil :
-                <span className="ml-2 inline-block px-3 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-700 dark:text-blue-100 text-sm font-medium">
+              </div>
+              <div>
+                <p className="text-xs uppercase text-gray-500 dark:text-gray-400">
+                  Site
+                </p>
+                <span
+                  className="inline-flex items-center gap-2 px-3 py-1 rounded-full 
+    bg-yellow-100 text-yellow-800 
+    dark:bg-yellow-700/30 dark:text-yellow-300 
+    text-sm font-semibold shadow-sm"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 7h18M3 12h18M3 17h18"
+                    />
+                  </svg>
+                  {currentUser.site_name || "-"}
+                </span>
+              </div>
+
+              {/* Ligne 2 */}
+              <div>
+                <p className="text-xs uppercase text-gray-500 dark:text-gray-400">
+                  Prénom
+                </p>
+                <p className="text-gray-800 dark:text-gray-100 font-medium">
+                  {currentUser.firstname || "-"}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs uppercase text-gray-500 dark:text-gray-400">
+                  Date de création
+                </p>
+                <p className="text-gray-800 dark:text-gray-100 font-medium">
+                  {new Date(currentUser.created_at).toLocaleDateString()}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs uppercase text-gray-500 dark:text-gray-400">
+                  Profil
+                </p>
+                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-700/30 dark:text-blue-300 text-sm font-semibold shadow-sm">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 11c0 3.866-3.582 7-8 7a8 8 0 0116 0c-4.418 0-8-3.134-8-7z"
+                    />
+                  </svg>
                   {currentUser.profil || "-"}
                 </span>
-              </p>
+              </div>
             </div>
           </div>
         ) : (
@@ -292,75 +395,6 @@ export default function AdminSettings({ user }) {
           </p>
         )}
       </section>
-
-      {/* <section className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 transition-all duration-300">
-  <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white flex items-center gap-2 border-b border-gray-200 dark:border-gray-700 pb-3">
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A9 9 0 1118.364 4.561M12 7v5l3 3" />
-    </svg>
-    Mon profil
-  </h2> */}
-
-      {/* {currentUser ? ( */}
-      {/* <div className="flex flex-col md:flex-row items-center md:items-start gap-8"> */}
-      {/* Avatar + nom complet */}
-      {/* <div className="flex flex-col items-center md:items-start text-center md:text-left">
-        <div className="relative w-24 h-24 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center text-white text-3xl font-semibold shadow-md">
-          {currentUser.firstname?.[0]}{currentUser.lastname?.[0]}
-        </div>
-        <h3 className="text-xl font-semibold mt-4 text-gray-900 dark:text-gray-100">
-          {currentUser.firstname} {currentUser.lastname}
-        </h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400">{currentUser.email}</p>
-      </div> */}
-
-      {/* Infos principales en 3 colonnes / 2 lignes */}
-      {/* <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-6 bg-gray-50 dark:bg-gray-800 p-6 rounded-xl border border-gray-100 dark:border-gray-700 shadow-inner"> */}
-      {/* Ligne 1 */}
-      {/* <div>
-          <p className="text-xs uppercase text-gray-500 dark:text-gray-400">Nom</p>
-          <p className="text-gray-800 dark:text-gray-100 font-medium">{currentUser.lastname || '-'}</p>
-        </div>
-        <div>
-          <p className="text-xs uppercase text-gray-500 dark:text-gray-400">Email</p>
-          <p className="text-gray-800 dark:text-gray-100 font-medium">{currentUser.email}</p>
-        </div>  
-        <div>
-          <p className="text-xs uppercase text-gray-500 dark:text-gray-400">Rôle</p>
-          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-100 text-green-800 dark:bg-green-700/30 dark:text-green-300 text-sm font-semibold shadow-sm">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-            {currentUser.role || '-'}
-          </span>
-        </div> */}
-
-      {/* Ligne 2 */}
-      {/* <div>
-          <p className="text-xs uppercase text-gray-500 dark:text-gray-400">Prénom</p>
-          <p className="text-gray-800 dark:text-gray-100 font-medium">{currentUser.firstname || '-'}</p>
-        </div>
-        <div>
-          <p className="text-xs uppercase text-gray-500 dark:text-gray-400">Date de création</p>
-          <p className="text-gray-800 dark:text-gray-100 font-medium">
-            {new Date(currentUser.created_at).toLocaleDateString()}
-          </p>
-        </div>
-        <div>
-          <p className="text-xs uppercase text-gray-500 dark:text-gray-400">Profil</p>
-          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-700/30 dark:text-blue-300 text-sm font-semibold shadow-sm">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c0 3.866-3.582 7-8 7a8 8 0 0116 0c-4.418 0-8-3.134-8-7z" />
-            </svg> */}
-      {/* {currentUser.profil || '-'} */}
-      {/* </span>
-        </div>
-      </div>
-    </div>
-  ) : (
-    <p className="text-sm text-gray-500 dark:text-gray-400">Aucune information disponible</p>
-  )}
-</section> */}
 
       {/* --- Section Apparence --- */}
       <section className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">

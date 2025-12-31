@@ -198,7 +198,7 @@ const deleteUserByAdmin = async (req, res) => {
     return res
       .status(400)
       .json({ error: "Vous ne pouvez pas vous supprimer vous-même." });
-  if (requester.role !== "Admin")
+  if (requester.role !== "SuperAdmin")
     return res
       .status(403)
       .json({
@@ -562,11 +562,25 @@ const getMe = async (req, res) => {
 
   try {
     const result = await db.query(
-      `SELECT id, lastname, firstname, email, role, profil, site_id, created_at FROM users WHERE id = $1`,
+      `
+      SELECT 
+        u.id,
+        u.lastname,
+        u.firstname,
+        u.email,
+        u.role,
+        u.profil,
+        u.site_id,
+        u.created_at,
+        s.name AS site_name
+      FROM users u
+      LEFT JOIN sites s ON s.id = u.site_id
+      WHERE u.id = $1
+      `,
       [userId]
     );
-    const user = result.rows[0];
 
+    const user = result.rows[0];
     if (!user) {
       return res.status(404).json({ message: "Utilisateur non trouvé" });
     }

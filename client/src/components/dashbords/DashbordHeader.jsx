@@ -4,7 +4,9 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import SimpleTimer from './SimpleTimer';
 import axiosInstance from '../../api/axiosInstance.js';
+import { getCurrentUser } from '../../api/authAPI.js'
 import StatusSelector, { statuses } from "../../shared/StatusSelector.jsx";
+
 
 const DashboardHeader = ({
   activePage,
@@ -27,23 +29,50 @@ const DashboardHeader = ({
   const agentMenuRef = useRef(null);
   const calendarRef = useRef(null);
   const notifiedIdsRef = useRef(new Set());
+  const [siteName, setSiteName] = useState('');
+  
+  
 
   // Charge agent depuis localStorage
-  useEffect(() => {
-    const storedAgent = localStorage.getItem('user');
-    if (storedAgent) {
-      const agent = JSON.parse(storedAgent);
+// Charge l'agent connecté depuis le backend + site
+useEffect(() => {
+  const fetchAgentAndSite = async () => {
+    try {
+      // 👤 Agent connecté
+      const agent = await getCurrentUser();
+      if (!agent) return;
+
       setConnectedAgent(agent);
 
-      const storedNotifFlag = localStorage.getItem(`hasNewRDVNotif_${agent.id}`) === 'true';
-      const storedNotifications = JSON.parse(localStorage.getItem(`rdvNotifications_${agent.id}`)) || [];
+      // 🔔 Notifications persistantes
+      const storedNotifFlag =
+        localStorage.getItem(`hasNewRDVNotif_${agent.id}`) === "true";
+      const storedNotifications =
+        JSON.parse(localStorage.getItem(`rdvNotifications_${agent.id}`)) || [];
 
       if (storedNotifFlag && storedNotifications.length > 0) {
         setHasNewRDVNotif(true);
         setRdvNotifications(storedNotifications);
       }
+
+      // 🏢 Récupération du nom du site
+      if (agent.site_id) {
+        const sitesRes = await axiosInstance.get("/sites");
+        const site = sitesRes.data.find(
+          (s) => s.id === agent.site_id
+        );
+        if (site) {
+          setSiteName(site.name);
+        }
+      }
+    } catch (error) {
+      console.error("Erreur chargement agent / site :", error);
     }
-  }, []);
+  };
+
+  fetchAgentAndSite(); // ✅ OBLIGATOIRE
+}, []);
+
 
   // Gestion click hors notifications / menus agent
   useEffect(() => {
@@ -152,6 +181,7 @@ const DashboardHeader = ({
               <p><strong>Prénom :</strong> {connectedAgent.lastname}</p>
               <p><strong>Profil :</strong> {connectedAgent.univers}</p>
               <p><strong>Role :</strong> {connectedAgent.role}</p>
+              <p><strong>Site :</strong> {siteName || connectedAgent.site_id}</p>
             </div>
           )}
         </div>

@@ -18,6 +18,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('user');
     localStorage.removeItem('role');
     localStorage.removeItem('univers');
+    localStorage.removeItem('site_id');
     setUser(null);
   };
 
