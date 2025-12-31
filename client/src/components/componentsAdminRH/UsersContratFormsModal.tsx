@@ -20,6 +20,7 @@ interface UsersContratFormsModalProps {
 
 const postesList = ["RH", "Conseiller", "Superviseur", "RPA", "IT"];
 const typeContratList = ["CDD", "CDI", "Stagiaire", "Alternance", "Intérim"];
+const etatContratList = ["En cours", "Arret", "Démission", "Fin contrat"];
 const typePieceList = ["CNI", "Passeport"];
 const situationList = [
     "Célibataire",
@@ -47,6 +48,8 @@ export default function UsersContratFormsModal({
         situation_matrimoniale: contrat.situation_matrimoniale || "",
         type_contrat: contrat.type_contrat || "",
         customTypeContrat: "",
+        etat_contrat: contrat.etat_contrat || "",
+        customEtatContrat: "",
         numero_cni_ou_passeport: contrat.numero_cni_ou_passeport || "",
         type_piece: contrat.type_piece || "CNI",
         customTypePiece: "",
@@ -262,6 +265,32 @@ export default function UsersContratFormsModal({
                                             className="w-full mt-2 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 animate-fadeIn"
                                             value={form.customTypeContrat}
                                             onChange={(e) => handleChange("customTypeContrat", e.target.value)}
+                                        />
+                                    )}
+                                </div>
+
+                                {/* Statut contrat */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Statut contrat <span className="text-red-500">*</span>
+                                    </label>
+                                    <select
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                        value={form.etat_contrat}
+                                        onChange={(e) => handleChange("etat_contrat", e.target.value)}
+                                    >
+                                        <option value="">-- Choisir --</option>
+                                        {etatContratList.map((t) => (
+                                            <option key={t}>{t}</option>
+                                        ))}
+                                        <option value="Autre">Autre</option>
+                                    </select>
+                                    {form.etat_contrat === "Autre" && (
+                                        <input
+                                            placeholder="Préciser le statut du contrat..."
+                                            className="w-full mt-2 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 animate-fadeIn"
+                                            value={form.customEtatContrat}
+                                            onChange={(e) => handleChange("customEtatContrat", e.target.value)}
                                         />
                                     )}
                                 </div>

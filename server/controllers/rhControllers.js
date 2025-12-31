@@ -41,9 +41,10 @@ const getUsersContrat = async (req, res) => {
         c.date_naissance,
         c.type_piece,
         c.updated_by,
-            s.id AS site_id,
-    s.code AS site_code,
-    s.name AS site_name
+        c.etat_contrat,
+        s.id AS site_id,
+        s.code AS site_code,
+        s.name AS site_name
       FROM users u
       LEFT JOIN contrat c ON c.user_id = u.id
       LEFT JOIN sites s ON s.id = u.site_id
@@ -71,7 +72,9 @@ const getUsersContrat = async (req, res) => {
       profil: u.profil,
       active: u.is_active === true || u.is_active === 1,
       created_at: u.created_at,
-      site: u.site_id ? { id: u.site_id, code: u.site_code, name: u.site_name } : null,
+      site: u.site_id
+        ? { id: u.site_id, code: u.site_code, name: u.site_name }
+        : null,
       contrat: u.contrat_id
         ? {
             id: u.contrat_id,
@@ -92,6 +95,7 @@ const getUsersContrat = async (req, res) => {
             date_naissance: u.date_naissance,
             type_piece: u.type_piece,
             updated_by: u.updated_by,
+            etat_contrat: u.etat_contrat
           }
         : null,
     }));
@@ -130,6 +134,7 @@ const updateAgentContract = async (req, res) => {
     matricule,
     date_naissance,
     type_piece,
+    etat_contrat,
   } = req.body;
 
   // 🔢 Calcul âge
@@ -208,8 +213,9 @@ const updateAgentContract = async (req, res) => {
           date_naissance = $15,
           type_piece = $16,
           updated_at = NOW(),
-          updated_by = $17
-        WHERE user_id = $18
+          updated_by = $17,
+          etat_contrat = $18
+        WHERE user_id = $19
         `,
         [
           type_contrat,
@@ -229,6 +235,7 @@ const updateAgentContract = async (req, res) => {
           date_naissance,
           type_piece,
           updatedBy,
+          etat_contrat,
           userId,
         ]
       );
@@ -241,11 +248,11 @@ const updateAgentContract = async (req, res) => {
           user_id, type_contrat, date_integration, date_debut_contrat, date_fin_contrat,
           poste, situation_matrimoniale, numero_cni_ou_passeport, adresse, code_postal,
           telephone, age, genre_sexe, mail_perso, matricule, date_naissance, type_piece,
-          updated_at, updated_by
+          updated_at, updated_by, etat_contrat
         ) VALUES (
           $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,
           $11,$12,$13,$14,$15,$16,$17,
-          NOW(),$18
+          NOW(),$18,$19
         )
         `,
         [
@@ -267,6 +274,7 @@ const updateAgentContract = async (req, res) => {
           date_naissance,
           type_piece,
           updatedBy,
+          etat_contrat,
         ]
       );
     }
@@ -279,6 +287,7 @@ const updateAgentContract = async (req, res) => {
       .json({ error: "Erreur serveur lors de la mise à jour du contrat" });
   }
 };
+
 
 const getNotificationsFinContrat = async (req, res) => {
   try {

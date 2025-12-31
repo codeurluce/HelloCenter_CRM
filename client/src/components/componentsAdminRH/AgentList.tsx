@@ -147,6 +147,9 @@ export default function AgentList() {
                 Type de contrat
               </th>
               <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
+                Statut contrat
+              </th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
                 Date debut contrat
               </th>
               <th className="px-6 py-3 text-left text-sm font-semibold text-blue-700">
@@ -215,6 +218,9 @@ export default function AgentList() {
                   </td>
                   <td className="px-6 py-3 text-gray-800">
                     {a.contrat?.type_contrat || "-"}
+                  </td>
+                  <td className="px-6 py-3 text-gray-800">
+                    {a.contrat?.etat_contrat || "-"}
                   </td>
                   <td className="px-6 py-3 text-gray-800">
                     {a.contrat?.date_debut_contrat
