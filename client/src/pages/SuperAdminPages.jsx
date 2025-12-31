@@ -13,6 +13,7 @@ import AdminSettings from '../components/componentsdesongletsAdmins/AdminSetting
 import Footer from '../components/dashbords/Footer.jsx';
 import { NotificationsProvider } from '../components/componentsAdminRH/NotificationsContext.jsx';
 import SidebarSuperAdmin from '../components/sidebars/SidebarSuperAdmin.jsx';
+import RHPanel from '../components/componentsdesongletsAdmins/RHPanel.tsx';
 
 const SuperAdminDashboard = () => {
   const { user } = useContext(AuthContext);
@@ -156,6 +157,7 @@ const SuperAdminDashboard = () => {
             currentSession={currentSession}
           />
           <main className="flex-1 p-6 bg-gray-100 overflow-auto">
+            {activeItem === 'rh' && <RHPanel />}
             {activeItem === 'administration' && <AdministrationUsers />}
             {activeItem === 'settings' && <AdminSettings />}
           </main>

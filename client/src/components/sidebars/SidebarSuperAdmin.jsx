@@ -5,17 +5,21 @@ import {
   ChevronLeft,
   ChevronRight,
   UserSearch,
+  Users,
 } from "lucide-react";
 import Swal from "sweetalert2";
 import { colorThemes } from "../../shared/colorThemes";
 import { useTheme } from "../../shared/ThemeContext";
+import { useNotifications } from '../componentsAdminRH/NotificationsContext';
 
 const SidebarSuperAdmin = ({ activeItem, setActiveItem, onLogout }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { theme } = useTheme();
   const sidebarClass = colorThemes[theme] || colorThemes.blue;
+  const { unreadCount } = useNotifications();
 
   const menuItems = [
+    { id: 'rh', label: 'RH', icon: Users },
     { id: "administration", label: "Administration", icon: UserSearch },
     { id: "settings", label: "Paramètres", icon: Settings },
   ];
