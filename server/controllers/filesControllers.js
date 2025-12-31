@@ -1,27 +1,29 @@
-const db = require('../db');
+const db = require("../db");
 const XLSX = require("xlsx");
 const columnOptions = require("../shared/columnsConfig");
 const dayjs = require("dayjs");
 
 // Obtenir les nouvelles fiches avec le statut nouvelle
 exports.getNewFilesCountByAgent = async (req, res) => {
-
   try {
     const agentFiles = req.user.id; // exemple: 'Energie' ou 'OffreMobile'
     const siteId = req.siteId;
 
-    const result = await db.query(`
+    const result = await db.query(
+      `
       SELECT COUNT(*) AS total_files_today
       FROM files
       WHERE statut = 'nouvelle'
         AND assigned_to = $1
         AND site_id = $2
-    `, [agentFiles, siteId]);
+    `,
+      [agentFiles, siteId]
+    );
 
     res.json({ total_files_today: result.rows[0].total_files_today });
   } catch (error) {
-    console.error('Erreur getTodayNewFilesByUniverse:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
+    console.error("Erreur getTodayNewFilesByUniverse:", error);
+    res.status(500).json({ error: "Erreur serveur" });
   }
 };
 
@@ -29,7 +31,8 @@ exports.getNewFilesCountByAgent = async (req, res) => {
 exports.getAdminFilesSummary = async (req, res) => {
   try {
     const siteId = req.siteId;
-    const result = await db.query(`
+    const result = await db.query(
+      `
       SELECT COUNT(*) AS total_files_today
       FROM files
       WHERE statut = 'nouvelle'
@@ -51,7 +54,12 @@ exports.traiterFiche = async (req, res) => {
   const { statut, assigned_to, date_modification } = req.body;
 
   try {
-    console.log('🔧 Reçu pour traitement :', { id, statut, assigned_to, date_modification });
+    console.log("🔧 Reçu pour traitement :", {
+      id,
+      statut,
+      assigned_to,
+      date_modification,
+    });
 
     // Mise à jour + on récupère la fiche mise à jour
     const result = await db.query(
@@ -76,8 +84,11 @@ exports.traiterFiche = async (req, res) => {
       assigned_to_name,
     });
   } catch (error) {
-    console.error('❌ Erreur serveur lors de la mise à jour de la fiche :', error);
-    res.status(500).json({ error: 'Erreur serveur' });
+    console.error(
+      "❌ Erreur serveur lors de la mise à jour de la fiche :",
+      error
+    );
+    res.status(500).json({ error: "Erreur serveur" });
   }
 };
 
@@ -88,8 +99,8 @@ exports.annulerFiche = async (req, res) => {
   try {
     // On ne touche pas à agent_id : on le garde
     await db.query(
-      'UPDATE files SET statut = $1, date_modification = NOW() WHERE id = $2',
-      ['nouvelle', id]
+      "UPDATE files SET statut = $1, date_modification = NOW() WHERE id = $2",
+      ["nouvelle", id]
     );
 
     res.sendStatus(200);
@@ -111,9 +122,9 @@ exports.cloturerFiche = async (req, res) => {
        WHERE id = $4`,
       [tag, commentaire, date_modification, id]
     );
-    res.status(200).json({ message: 'Fiche clôturée avec succès' });
+    res.status(200).json({ message: "Fiche clôturée avec succès" });
   } catch (err) {
-    console.error('Erreur clôture fiche :', err);
+    console.error("Erreur clôture fiche :", err);
     res.sendStatus(500);
   }
 };
@@ -159,11 +170,11 @@ exports.programRdv = async (req, res) => {
     res.sendStatus(200);
   } catch (error) {
     console.error(error);
-    res.status(500).send('Erreur lors de la mise à jour du rendez-vous');
+    res.status(500).send("Erreur lors de la mise à jour du rendez-vous");
   }
 };
 
-//  Export pour recuperer toutes les fiches en RDV 
+//  Export pour recuperer toutes les fiches en RDV
 exports.getFilesToRDV = async (req, res) => {
   try {
     const result = await db.query(
@@ -173,10 +184,10 @@ exports.getFilesToRDV = async (req, res) => {
     );
     res.json(result.rows);
   } catch (err) {
-    console.error('Erreur lors de la récupération des fiches en RDV :', err);
-    res.status(500).json({ error: 'Erreur serveur' });
+    console.error("Erreur lors de la récupération des fiches en RDV :", err);
+    res.status(500).json({ error: "Erreur serveur" });
   }
-}
+};
 
 // GET /api/rendezvous/upcoming/:agentId
 exports.getUpcomingRendezVous = async (req, res) => {
@@ -197,7 +208,7 @@ exports.getUpcomingRendezVous = async (req, res) => {
     res.json(result.rows);
   } catch (err) {
     console.error(err);
-    res.status(500).send('Erreur lors de la récupération des rendez-vous');
+    res.status(500).send("Erreur lors de la récupération des rendez-vous");
   }
 };
 
@@ -214,7 +225,9 @@ exports.getFilesbyAgent = async (req, res) => {
     res.json(result.rows);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Erreur serveur lors de la récupération des fiches' });
+    res
+      .status(500)
+      .json({ error: "Erreur serveur lors de la récupération des fiches" });
   }
 };
 
@@ -235,8 +248,8 @@ exports.getAllFiches = async (req, res) => {
 
     res.json(result.rows);
   } catch (error) {
-    console.error('Erreur getAllFiches:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
+    console.error("Erreur getAllFiches:", error);
+    res.status(500).json({ error: "Erreur serveur" });
   }
 };
 
@@ -244,10 +257,14 @@ exports.getAllFiches = async (req, res) => {
 exports.getAssignedFichesTo = async (req, res) => {
   try {
     const { ficheIds, agentId } = req.body;
-    const adminId = req.user.id; // l'admin qui fait l'action
+    const adminId = req.user.id; // admin qui fait l'action
+    const userRole = req.user.role;
+    const siteId = req.siteId; // injecté par middleware siteScope
 
     if (!ficheIds || !agentId || ficheIds.length === 0) {
-      return res.status(400).json({ error: 'ficheIds et agentId sont obligatoires' });
+      return res
+        .status(400)
+        .json({ error: "ficheIds et agentId sont obligatoires" });
     }
 
     // 🔎 Récupérer le nom/prénom du manager (admin)
@@ -258,24 +275,39 @@ exports.getAssignedFichesTo = async (req, res) => {
         [adminId]
       );
       const admin = adminRes.rows[0];
-      adminName = admin ? `${admin.firstname} ${admin.lastname}` : `ID ${adminId}`;
+      adminName = admin
+        ? `${admin.firstname} ${admin.lastname}`
+        : `ID ${adminId}`;
     } else {
       adminName = `${req.user.firstname} ${req.user.lastname}`;
     }
 
-    // 🔎 Récupérer le nom/prénom de l’agent assigné
-    const agentRes = await db.query(
-      `SELECT firstname, lastname FROM users WHERE id = $1`,
-      [agentId]
-    );
+    // 🔎 Récupérer l’agent assigné avec restriction site si Admin
+    let query = `SELECT id, firstname, lastname FROM users WHERE id = $1`;
+    const params = [agentId];
+
+    if (userRole === "Admin") {
+      query += ` AND site_id = $2`;
+      params.push(siteId);
+    }
+
+    const agentRes = await db.query(query, params);
     const agent = agentRes.rows[0];
-    const agentName = agent ? `${agent.firstname} ${agent.lastname}` : `ID ${agentId}`;
+
+    if (!agent) {
+      return res.status(403).json({
+        error:
+          "Vous ne pouvez pas assigner à cet agent (il n'est pas sur votre site ou n'existe pas)",
+      });
+    }
+
+    const agentName = `${agent.firstname} ${agent.lastname}`;
 
     // 🔄 Mise à jour des fiches
     const result = await db.query(
       `UPDATE files 
        SET assigned_to = $1,
-          agent_id = $1, 
+           agent_id = $1, 
            assigned_by = $2,
            statut = 'nouvelle', 
            date_assignation = NOW()
@@ -291,7 +323,7 @@ exports.getAssignedFichesTo = async (req, res) => {
          VALUES ($1, $2, $3, $4, $5, NOW())`,
         [
           fiche.id,
-          'ASSIGNATION',
+          "ASSIGNATION",
           adminId,
           adminName,
           `Fiche assignée à l’agent ${agentName}`,
@@ -301,25 +333,25 @@ exports.getAssignedFichesTo = async (req, res) => {
 
     return res.json({
       message: `✅ ${result.rowCount} fiche(s) assignée(s) à l’agent ${agentName}`,
-      updated: result.rows.map(r => r.id),
+      updated: result.rows.map((r) => r.id),
     });
   } catch (error) {
-    console.error('Erreur assignation:', error);
-    res.status(500).json({ error: 'Erreur serveur lors de l’assignation' });
+    console.error("Erreur assignation:", error);
+    res.status(500).json({ error: "Erreur serveur lors de l’assignation" });
   }
 };
 
-// Retirer assignation d'une fiche
+// retirer assignation d'une fiche et nettoyer le tag si nécessaire
 exports.unassignFiches = async (req, res) => {
   try {
     const { ficheIds } = req.body;
-    const adminId = req.user.id; // l'admin qui retire l'assignation
+    const adminId = req.user.id;
 
     if (!ficheIds || ficheIds.length === 0) {
-      return res.status(400).json({ error: 'ficheIds est obligatoire' });
+      return res.status(400).json({ error: "ficheIds est obligatoire" });
     }
 
-    // 🔎 Récupérer le nom/prénom du manager (admin)
+    // 🔎 Nom de l'admin
     let adminName;
     if (!req.user.firstname || !req.user.lastname) {
       const adminRes = await db.query(
@@ -327,45 +359,49 @@ exports.unassignFiches = async (req, res) => {
         [adminId]
       );
       const admin = adminRes.rows[0];
-      adminName = admin ? `${admin.firstname} ${admin.lastname}` : `ID ${adminId}`;
+      adminName = admin
+        ? `${admin.firstname} ${admin.lastname}`
+        : `ID ${adminId}`;
     } else {
       adminName = `${req.user.firstname} ${req.user.lastname}`;
     }
 
-    // 🔎 Récupérer les agents actuellement assignés aux fiches
+    // 🔎 Récupérer les fiches à désassigner (avec tag et commentaire)
     const fichesRes = await db.query(
-      `SELECT id, assigned_to FROM files WHERE id = ANY($1::int[])`,
+      `SELECT id, assigned_to, statut, tag, commentaire FROM files WHERE id = ANY($1::int[])`,
       [ficheIds]
     );
 
-    // Vérifier si les fiches existent
     if (fichesRes.rows.length === 0) {
       return res.status(404).json({ error: "Aucune fiche trouvée." });
     }
 
-    // 🔎 Récupération des noms des agents assignés
-    const agentIds = [...new Set(fichesRes.rows.map(f => f.assigned_to).filter(Boolean))];
-
+    // 🔎 Récupération noms des agents assignés
+    const agentIds = [
+      ...new Set(fichesRes.rows.map((f) => f.assigned_to).filter(Boolean)),
+    ];
     const agentsMap = {};
-
     if (agentIds.length > 0) {
       const agentsRes = await db.query(
         `SELECT id, firstname, lastname FROM users WHERE id = ANY($1::int[])`,
         [agentIds]
       );
-
       for (const a of agentsRes.rows) {
         agentsMap[a.id] = `${a.firstname} ${a.lastname}`;
       }
     }
 
-    // 🔄 Mise à jour des fiches → suppression assignation
+    // 🔄 Mise à jour des fiches → suppression assignation, reset tag et commentaire si cloturée
     const result = await db.query(
       `UPDATE files
        SET assigned_to = NULL,
            agent_id = NULL,
            assigned_by = NULL,
+           assigned_to_name = NULL,
+           assigned_by_name = NULL,
            statut = 'nouvelle',
+           tag = CASE WHEN statut = 'cloturee' THEN NULL ELSE tag END,
+           commentaire = CASE WHEN statut = 'cloturee' THEN NULL ELSE commentaire END,
            date_assignation = NULL
        WHERE id = ANY($1::int[])
        RETURNING id`,
@@ -377,27 +413,29 @@ exports.unassignFiches = async (req, res) => {
       const oldAgentId = fiche.assigned_to;
       const oldAgentName = oldAgentId ? agentsMap[oldAgentId] : "Agent inconnu";
 
+      const oldTag = fiche.tag;
+      const oldCommentaire = fiche.commentaire;
+
+      const commentaireLog = `Assignation retirée à : ${oldAgentName}. Fiche remise au statut 'nouvelle'${
+        fiche.statut.toLowerCase() === 'cloturee' && oldTag
+          ? `, tag: "${oldTag}" supprimé et commentaire: "${oldCommentaire}" supprimé`
+          : ''
+      }.`;  
+
       await db.query(
         `INSERT INTO historique_files (fiche_id, action, actor_id, actor_name, commentaire, created_at)
          VALUES ($1, $2, $3, $4, $5, NOW())`,
-        [
-          fiche.id,
-          'UNASSIGNATION',
-          adminId,
-          adminName,
-          `Assignation retirée à : ${oldAgentName}) Fiche remise au statut 'nouvelle'`,
-        ]
+        [fiche.id, "UNASSIGNATION", adminId, adminName, commentaireLog]
       );
     }
 
     return res.json({
       message: `♻️ ${result.rowCount} fiche(s) désassignée(s) avec succès.`,
-      updated: result.rows.map(r => r.id),
+      updated: result.rows.map((r) => r.id),
     });
-
   } catch (error) {
-    console.error('Erreur unassign:', error);
-    res.status(500).json({ error: 'Erreur serveur lors de la désassignation' });
+    console.error("Erreur unassign:", error);
+    res.status(500).json({ error: "Erreur serveur lors de la désassignation" });
   }
 };
 
@@ -408,7 +446,7 @@ exports.importFiles = async (req, res) => {
     const adminId = req.user?.id;
 
     if (!files || !Array.isArray(files) || files.length === 0) {
-      return res.status(400).json({ error: 'Aucun fichier à importer' });
+      return res.status(400).json({ error: "Aucun fichier à importer" });
     }
 
     // 🔎 Récupérer le nom/prénom exact du manager (admin)
@@ -419,35 +457,41 @@ exports.importFiles = async (req, res) => {
         [adminId]
       );
       const admin = adminRes.rows[0];
-      adminName = admin ? `${admin.firstname} ${admin.lastname}` : `ID ${adminId}`;
+      adminName = admin
+        ? `${admin.firstname} ${admin.lastname}`
+        : `ID ${adminId}`;
     } else {
       adminName = `${req.user.firstname} ${req.user.lastname}`;
     }
 
     // Normalisation des textes
-    const normalizeText = (str) => (str == null ? null : String(str).normalize("NFC").trim());
+    const normalizeText = (str) =>
+      str == null ? null : String(str).normalize("NFC").trim();
 
     // Validation stricte des numéros PDL et PCE
     for (const [index, f] of files.entries()) {
-      const pdlClean = f.pdl != null ? String(f.pdl).replace(/\s/g, '') : null;
-      const pceClean = f.pce != null ? String(f.pce).replace(/\s/g, '') : null;
+      const pdlClean = f.pdl != null ? String(f.pdl).replace(/\s/g, "") : null;
+      const pceClean = f.pce != null ? String(f.pce).replace(/\s/g, "") : null;
 
       if (pdlClean && !/^\d{1,14}$/.test(pdlClean)) {
         return res.status(400).json({
-          error: `Format invalide dans la colonne PDL à la ligne ${index + 1}. Doit contenir 1 à 14 chiffres sans espaces.`
+          error: `Format invalide dans la colonne PDL à la ligne ${
+            index + 1
+          }. Doit contenir 1 à 14 chiffres sans espaces.`,
         });
       }
 
       if (pceClean && !/^\d{1,14}$/.test(pceClean)) {
         return res.status(400).json({
-          error: `Format invalide dans la colonne PCE à la ligne ${index + 1}. Doit contenir 1 à 14 chiffres sans espaces.`
+          error: `Format invalide dans la colonne PCE à la ligne ${
+            index + 1
+          }. Doit contenir 1 à 14 chiffres sans espaces.`,
         });
       }
     }
 
-
     // Préparer les valeurs pour l'insertion
-    const insertValues = files.map(f => [
+    const insertValues = files.map((f) => [
       normalizeText(f.nom_client),
       normalizeText(f.prenom_client),
       normalizeText(f.adresse_client),
@@ -457,11 +501,11 @@ exports.importFiles = async (req, res) => {
       normalizeText(f.univers),
       normalizeText(f.numero_fixe),
       normalizeText(f.ville_client),
-      normalizeText(f.pdl != null ? String(f.pdl).replace(/\s/g, '') : null),
-      normalizeText(f.pce != null ? String(f.pce).replace(/\s/g, '') : null),
-      f.statut || 'nouvelle',
+      normalizeText(f.pdl != null ? String(f.pdl).replace(/\s/g, "") : null),
+      normalizeText(f.pce != null ? String(f.pce).replace(/\s/g, "") : null),
+      f.statut || "nouvelle",
       new Date(),
-      adminId
+      adminId,
     ]);
 
     // Générer la requête multi-insertion
@@ -469,32 +513,39 @@ exports.importFiles = async (req, res) => {
       INSERT INTO files
         (nom_client, prenom_client, adresse_client, code_postal, mail_client, numero_mobile, univers, numero_fixe, ville_client, pdl, pce, statut, date_import, imported_by)
       VALUES
-        ${insertValues.map((_, i) =>
-      `(
-            $${i * 14 + 1}, $${i * 14 + 2}, $${i * 14 + 3}, $${i * 14 + 4}, $${i * 14 + 5},
-            $${i * 14 + 6}, $${i * 14 + 7}, $${i * 14 + 8}, $${i * 14 + 9}, $${i * 14 + 10},
+        ${insertValues
+          .map(
+            (_, i) =>
+              `(
+            $${i * 14 + 1}, $${i * 14 + 2}, $${i * 14 + 3}, $${i * 14 + 4}, $${
+                i * 14 + 5
+              },
+            $${i * 14 + 6}, $${i * 14 + 7}, $${i * 14 + 8}, $${i * 14 + 9}, $${
+                i * 14 + 10
+              },
             $${i * 14 + 11}, $${i * 14 + 12}, $${i * 14 + 13}, $${i * 14 + 14}
           )`
-    ).join(', ')}
+          )
+          .join(", ")}
       RETURNING id
     `;
 
     const flatValues = insertValues.flat();
 
     // Début transaction
-    await db.query('BEGIN');
+    await db.query("BEGIN");
 
     // Insertion des fichiers
     const result = await db.query(queryText, flatValues);
 
-if (!result.rowCount || result.rowCount === 0) {
-  await db.query('ROLLBACK');
-  return res.status(400).json({
-    success: false,
-    message: "Aucune fiche n’a été importée.",
-    addedFiches: []
-  });
-}
+    if (!result.rowCount || result.rowCount === 0) {
+      await db.query("ROLLBACK");
+      return res.status(400).json({
+        success: false,
+        message: "Aucune fiche n’a été importée.",
+        addedFiches: [],
+      });
+    }
 
     // Insertion dans historique_files
     for (const fiche of result.rows) {
@@ -504,31 +555,31 @@ if (!result.rowCount || result.rowCount === 0) {
          ) VALUES ($1, $2, $3, $4, $5, NOW())`,
         [
           fiche.id,
-          'IMPORTATION',
+          "IMPORTATION",
           adminId,
           adminName,
-          `Fiche importée par ${adminName}`
+          `Fiche importée par ${adminName}`,
         ]
       );
     }
 
     // Commit transaction
-    await db.query('COMMIT');
+    await db.query("COMMIT");
 
-return res.json({
-  success: true,
-  message: `✅ ${result.rowCount} fiche(s) importée(s) avec succès`,
-  addedFiches: result.rows.map(r => r.id)
-});
-
+    return res.json({
+      success: true,
+      message: `✅ ${result.rowCount} fiche(s) importée(s) avec succès`,
+      addedFiches: result.rows.map((r) => r.id),
+    });
   } catch (error) {
     // Rollback en cas d'erreur
-    await db.query('ROLLBACK');
-    console.error('Erreur import:', error);
+    await db.query("ROLLBACK");
+    console.error("Erreur import:", error);
 
-    if (error.code === '23514') {
+    if (error.code === "23514") {
       return res.status(400).json({
-        error: "⚠️ Univers invalide. Vérifie que la colonne 'univers' contient une valeur autorisée."
+        error:
+          "⚠️ Univers invalide. Vérifie que la colonne 'univers' contient une valeur autorisée.",
       });
     }
     // if (error.code === "23505") {
@@ -538,47 +589,60 @@ return res.json({
     //   return res.status(400).json({ error: "Champs obligatoires manquants." });
     // }
     if (error.code === "22P02") {
-      return res.status(400).json({ error: "Format invalide pour certaines données, vérifier les colonnes PDL et PCE." });
+      return res
+        .status(400)
+        .json({
+          error:
+            "Format invalide pour certaines données, vérifier les colonnes PDL et PCE.",
+        });
     }
-    return res.status(500).json({ error: 'Erreur serveur lors de l’import des fichiers' });
+    return res
+      .status(500)
+      .json({ error: "Erreur serveur lors de l’import des fichiers" });
   }
 };
 
 // API pour exporter des fiches en XLSX
 exports.exportFichesToXLSX = async (req, res) => {
-  const columnLabels = Object.fromEntries(columnOptions.map(c => [c.key, c.label]));
+  const columnLabels = Object.fromEntries(
+    columnOptions.map((c) => [c.key, c.label])
+  );
   try {
     const {
-      agents,     // JSON stringifié: [1, 2, 3]
-      columns,    // JSON stringifié: ['id', 'nom_client', ...]
-      dateType,   // 'single' | 'range'
+      agents, // JSON stringifié: [1, 2, 3]
+      columns, // JSON stringifié: ['id', 'nom_client', ...]
+      dateType, // 'single' | 'range'
       singleDate,
       startDate,
       endDate,
     } = req.query;
 
     // Requête de base : exclure "nouvelle"
-    let query = 'SELECT * FROM files WHERE 1 = 1';
+    let query = "SELECT * FROM files WHERE 1 = 1";
     const params = [];
     let paramIndex = 1;
 
     // Filtre agents
     if (agents) {
-      let agentsArray = JSON.parse(agents).filter(a => a !== null); // enlève null
+      let agentsArray = JSON.parse(agents).filter((a) => a !== null); // enlève null
       if (agentsArray.length > 0) {
-        const placeholders = agentsArray.map(() => `$${paramIndex++}`).join(',');
+        const placeholders = agentsArray
+          .map(() => `$${paramIndex++}`)
+          .join(",");
         query += ` AND assigned_to IN (${placeholders})`;
         params.push(...agentsArray);
       }
     }
 
     // Filtre dates
-    if (dateType === 'single' && singleDate) {
+    if (dateType === "single" && singleDate) {
       query += ` AND date_creation::date = $${paramIndex}`;
       params.push(singleDate);
       paramIndex++;
-    } else if (dateType === 'range' && startDate && endDate) {
-      query += ` AND date_creation::date BETWEEN $${paramIndex} AND $${paramIndex + 1}`;
+    } else if (dateType === "range" && startDate && endDate) {
+      query += ` AND date_creation::date BETWEEN $${paramIndex} AND $${
+        paramIndex + 1
+      }`;
       params.push(startDate, endDate);
       paramIndex += 2;
     }
@@ -586,19 +650,18 @@ exports.exportFichesToXLSX = async (req, res) => {
     // Exécution requête
     const { rows } = await db.query(query, params);
 
-
     // appliquer le mapping clé → label
     let dataToExport = rows;
     if (columns) {
       const columnsArray = JSON.parse(columns);
-      dataToExport = rows.map(row =>
+      dataToExport = rows.map((row) =>
         columnsArray.reduce((acc, col) => {
           const label = columnLabels[col] || col;
           let value = row[col];
 
           // formater si c'est une date
           if (value instanceof Date) {
-            value = value.toISOString().replace('T', ' ').substring(0, 19);
+            value = value.toISOString().replace("T", " ").substring(0, 19);
           }
           acc[label] = row[col];
           return acc;
@@ -612,10 +675,15 @@ exports.exportFichesToXLSX = async (req, res) => {
     XLSX.utils.book_append_sheet(workbook, worksheet, "Fiches");
 
     const buffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
-    res.setHeader("Content-Disposition", 'attachment; filename="export_fiches.xlsx"');
-    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader(
+      "Content-Disposition",
+      'attachment; filename="export_fiches.xlsx"'
+    );
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
     res.send(buffer);
-
   } catch (error) {
     console.error("Erreur export fiches:", error);
     res.status(500).json({ error: "Erreur lors de l’export des fiches" });
@@ -642,7 +710,9 @@ exports.deleteFilesBatch = async (req, res) => {
 
   // Vérification sécurisée
   if (!Array.isArray(ficheIds) || ficheIds.length === 0) {
-    return res.status(400).json({ error: "ficheIds est requis et doit être un tableau non vide." });
+    return res
+      .status(400)
+      .json({ error: "ficheIds est requis et doit être un tableau non vide." });
   }
 
   try {
@@ -657,6 +727,8 @@ exports.deleteFilesBatch = async (req, res) => {
     });
   } catch (err) {
     console.error("Erreur suppression batch:", err);
-    return res.status(500).json({ error: "Erreur serveur lors de la suppression" });
+    return res
+      .status(500)
+      .json({ error: "Erreur serveur lors de la suppression" });
   }
 };

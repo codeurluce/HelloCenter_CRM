@@ -46,7 +46,11 @@ const AssignModal: React.FC<AssignModalProps> = ({
     const fetchAgents = async () => {
       try {
         const res = await axiosInstance.get('/users-bd');
-        setAgents(res.data);
+        const agentsWithName = res.data.map((a: any) => ({
+        ...a,
+        name: `${a.firstname} ${a.lastname}`
+      }));
+      setAgents(agentsWithName);
       } catch (error) {
         console.error("❌ Erreur chargement agents:", (error as any).response?.data || (error as any).message);
       }
